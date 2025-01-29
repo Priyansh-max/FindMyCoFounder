@@ -15,7 +15,7 @@
   2. Security
     - Enable RLS on all tables
     - Set up policies for reading and writing data
-*/
+*/ 
 
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS profiles (
