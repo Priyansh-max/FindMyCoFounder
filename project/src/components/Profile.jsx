@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
 import { User, Phone, Github, CheckCircle, XCircle, Users } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import { AiOutlineStop } from "react-icons/ai";
+import { GrView } from "react-icons/gr";
+import { Tooltip } from "react-tooltip";
 
 function Profile() {
   const navigate = useNavigate();
@@ -11,9 +16,12 @@ function Profile() {
   const [applications, setApplications] = useState([]);
   const [ideas, setIdeas] = useState([]);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("all");
   const [formData, setFormData] = useState({
     full_name: '',
     whatsapp_number: '',
+    github_url : '',
+    description : '',
     is_founder: false
   });
 
@@ -266,6 +274,10 @@ function Profile() {
     }
   };
 
+  const filteredApplications = filter === "all"
+  ? applications
+  : applications.filter((app) => app.status === filter);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -275,72 +287,112 @@ function Profile() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 flex gap-8">
-      {/* Profile Section (Sticky Sidebar) */}
-      <div className="w-1/3 bg-white p-6 rounded-xl shadow-md h-fit sticky top-8">
-        <h2 className="text-2xl font-bold mb-6 flex items-center">
-          <User className="w-6 h-6 mr-2" />
-          Profile Settings
-        </h2>
-  
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Full Name
-            </label>
-            <input
-              type="text"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
+    <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
+      <div className='w-1/3 flex flex-col h-fit sticky top-8'>
+          {/* Numbers */}
+          <div className='bg-white shadow-md p-6 rounded-xl'>
+            <p>Add analystics for founders</p>
           </div>
-  
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              WhatsApp Number
-            </label>
-            <input
-              type="text"
-              name="whatsapp_number"
-              value={formData.whatsapp_number}
-              onChange={handleChange}
-              placeholder="+1234567890"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
+
+          <div className="h-6"></div>
+
+          {/* Profile Section (Sticky Sidebar) */}
+          <div className='bg-white shadow-md p-6 rounded-xl'>
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <User className="w-6 h-6 mr-2" />
+              Profile Settings
+            </h2>
+      
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  name="full_name"
+                  value={formData.full_name}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+      
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  WhatsApp Number
+                </label>
+                <input
+                  type="text"
+                  name="whatsapp_number"
+                  value={formData.whatsapp_number}
+                  onChange={handleChange}
+                  placeholder="+1234567890"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Describe Yourself
+                </label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                  placeholder="Describe yourself"
+                  className="w-full min-h-24"
+              />
+              </div>
+      
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="is_founder"
+                  id="is_founder"
+                  checked={formData.is_founder}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="is_founder" className="ml-2 block text-sm text-gray-900">
+                  I am a founder
+                </label>
+              </div>
+      
+              <button
+                type="submit"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Update Profile
+              </button>
+            </form>
           </div>
-  
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="is_founder"
-              id="is_founder"
-              checked={formData.is_founder}
-              onChange={handleChange}
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-            />
-            <label htmlFor="is_founder" className="ml-2 block text-sm text-gray-900">
-              I am a founder
-            </label>
-          </div>
-  
-          <button
-            type="submit"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Update Profile
-          </button>
-        </form>
       </div>
-  
+
       {/* Right Side Content */}
       <div className="w-2/3 space-y-8">
         {/* Applications Section */}
         <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-2xl font-bold mb-6">Your Applications</h2>
+          {/* Filter Dropdown */}
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Your Applications</h2>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="border rounded-md p-2 text-sm transition-all duration-200 ease-in-out 
+              focus:outline-none focus:ring-2 focus:ring-indigo-500 
+              hover:shadow-md cursor-pointer bg-white"
+              >
+          
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="accepted">Accepted</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
           <div className="space-y-4">
-            {applications.map((app) => (
+            {filteredApplications.map((app) => (
               <div key={app.id} className="border rounded-lg p-4">
                 <h3 className="font-semibold text-lg">{app.ideas.company_name}</h3>
                 <p className="text-sm text-gray-600 mb-2">{app.ideas.idea_desc}</p>
@@ -350,7 +402,7 @@ function Profile() {
                 </div>
                 <div className="mt-2 flex items-center">
                   <span className={`px-2 py-1 rounded-full text-xs ${
-                    app.status === 'pending' ? 'bg-green-100 text-green-800' :
+                    app.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                     app.status === 'accepted' ? 'bg-green-100 text-green-800' :
                     app.status === 'rejected' ? 'bg-red-100 text-red-800' :
                     'bg-yellow-100 text-yellow-800'
@@ -371,8 +423,8 @@ function Profile() {
                 </div>
               </div>
             ))}
-            {applications.length === 0 && (
-              <p className="text-gray-500 text-center py-4">No applications yet</p>
+            {filteredApplications.length === 0 && (
+              <p className="text-gray-500 border rounded-md text-center py-4">No applications yet</p>
             )}
           </div>
         </div>
@@ -392,14 +444,52 @@ function Profile() {
                     <span>Equity Offered: {idea.equity_term}%</span>
                   </div>
                 </div>
-  
-                <button 
-                  onClick={() => handleToggleApplications(idea.id)}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  {idea.showApplications ? 'Hide Applications' : 'View Applications'}
-                </button>
+
+                <div className='flex justify-between items-center w-full'>
+                  {/* Left Group (View Details + Stop) */}
+                  <div className="flex gap-x-4">
+                    <button 
+                      data-tooltip-id="view-tooltip"
+                      onClick={() => handleToggleApplications(idea.id)}
+                      className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                    >
+                      <GrView className="w-4 h-4 mr-2" />
+                      View Details
+                    </button>
+                    
+                    <button 
+                      data-tooltip-id="stop-tooltip"
+                      onClick={() => handleToggleApplications(idea.id)}
+                      className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                    >
+                      <AiOutlineStop className="w-4 h-4 mr-2" />
+                      Stop
+                    </button>
+                  </div>
+
+                  {/* Right (Delete Button) */}
+                  <button 
+                    data-tooltip-id="delete-tooltip"
+                    onClick={() => handleToggleApplications(idea.id)} // Change function for deleting the post
+                    className="inline-flex items-center justify-center w-10 h-10 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    <RiDeleteBin6Line className="w-5 h-5"/>
+                  </button>
+
+                  {/* Tooltips */}
+                  <Tooltip id="view-tooltip" place="bottom" effect="solid">
+                    View received applications
+                  </Tooltip>
+                  
+                  <Tooltip id="stop-tooltip" place="bottom" effect="solid">
+                    Stop receiving applications 
+                  </Tooltip>
+
+                  <Tooltip id="delete-tooltip" place="bottom" effect="solid">
+                    Delete post
+                  </Tooltip>
+                </div>
+
               </div>
             ))}
             {ideas.length === 0 && (
