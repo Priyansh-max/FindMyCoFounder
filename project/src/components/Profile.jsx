@@ -7,6 +7,7 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
 import { GrView } from "react-icons/gr";
 import { Tooltip } from "react-tooltip";
+import CircularProgress from '@/components/ui/CircularProgress';
 
 function Profile() {
   const navigate = useNavigate();
@@ -24,6 +25,13 @@ function Profile() {
     description : '',
     is_founder: false
   });
+
+  const data = {
+    total: 150,
+    accepted: 50,
+    pending: 50,
+    rejected: 50,
+  };
 
   useEffect(() => {
     checkUser();
@@ -290,9 +298,36 @@ function Profile() {
     <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
       <div className='w-1/3 flex flex-col h-fit sticky top-8'>
           {/* Numbers */}
-          <div className='bg-white shadow-md p-6 rounded-xl'>
-            <p>Add analystics for founders</p>
-          </div>
+          <div className='bg-white flex flex-col shadow-md p-6 rounded-xl'>
+            <h2 className="text-2xl font-bold mb-6 flex items-center">
+              <User className="w-6 h-6 mr-2" />
+              Overview
+            </h2>
+            <div className='flex justify-between'>
+              <CircularProgress
+              total={data.total}
+              accepted={data.accepted}
+              pending={data.pending}
+              rejected={data.rejected}
+              />
+              <div className="space-y-2 mr-6">
+                <div className="flex flex-col justify-between items-center w-[110px] p-2 bg-green-200 rounded">
+                  <span className="text-green-800">Accepted</span>
+                  <span className='text-center'>{data.accepted}</span>
+                </div>
+                <div className="flex flex-col justify-between bg-yellow-100 items-center w-[110px] p-2 rounded">
+                  <span className="text-yellow-800">Pending</span>
+                  <span>{data.pending}</span>
+                </div>
+                <div className="flex flex-col justify-between items-center w-[110px] bg-red-200 p-2 rounded">
+                  <span className="text-red-800">Rejected</span>
+                  <span>{data.rejected}</span>
+                </div>
+              </div>
+            </div>
+
+            </div>
+            
 
           <div className="h-6"></div>
 
