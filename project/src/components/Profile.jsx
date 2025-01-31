@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { User, Phone, Github, CheckCircle, XCircle, Users } from 'lucide-react';
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
@@ -296,11 +296,11 @@ function Profile() {
 
   return (
     <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
-      <div className='w-1/3 flex flex-col h-fit sticky top-8'>
+      <div className='w-1/3 flex flex-col h-fit top-8'>
           {/* Numbers */}
           <div className='bg-white flex flex-col shadow-md p-6 rounded-xl'>
             <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <User className="w-6 h-6 mr-2" />
+              <Users className="w-6 h-6 mr-2" />
               Overview
             </h2>
             <div className='flex justify-between'>
@@ -334,7 +334,7 @@ function Profile() {
           {/* Profile Section (Sticky Sidebar) */}
           <div className='bg-white shadow-md p-6 rounded-xl'>
             <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <User className="w-6 h-6 mr-2" />
+              <Users className="w-6 h-6 mr-2" />
               Profile Settings
             </h2>
       
@@ -426,35 +426,89 @@ function Profile() {
               <option value="rejected">Rejected</option>
             </select>
           </div>
-          <div className="space-y-4">
+
+          {/* Change it to display all the pitches and you have sent*/}
+          {/* display company name hosted by idea description then pitch by the user   */}
+          <div className="space-y-4"> 
             {filteredApplications.map((app) => (
-              <div key={app.id} className="border rounded-lg p-4">
-                <h3 className="font-semibold text-lg">{app.ideas.company_name}</h3>
-                <p className="text-sm text-gray-600 mb-2">{app.ideas.idea_desc}</p>
-                <div className="flex items-center text-sm text-gray-500">
-                  <Users className="w-4 h-4 mr-2" />
-                  <span>Equity Share: {app.ideas.equity_term}%</span>
+              <div key={app.id} className="border rounded-lg p-4 bg-white shadow-md">
+                <div className='flex justify-between'>
+                  <div>
+                    {/* Company Name & Founder */}
+
+                    <h4 className="font-semibold text-lg text-gray-900">{app.ideas.company_name}</h4>
+                    <p className="text-sm text-gray-500">
+                      <span className="font-bold">Posted by:</span> {app.profiles?.name || "Unknown"}
+                    </p>
+              
+                    {/* Idea Description */}
+                    <div className='flex flex-col'>
+                      <p className="text-sm text-gray-500">
+                        <span className="font-bold">Idea:</span> {app.ideas.idea_desc}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        <span className="font-bold">Equity Share:</span> {app.ideas.equity_term}%
+                      </p>
+                    </div> 
+                  </div> 
+
+                  <div className="flex flex-col items-end space-y-4">
+                    {/* Status Badge with Icon */}
+                    <div className="flex items-center">
+                      <span
+                        className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          app.status === "pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : app.status === "accepted"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {app.status === "pending" && <Clock className="w-4 h-4 mr-1" />}
+                        {app.status === "accepted" && <CheckCircle className="w-4 h-4 mr-1" />}
+                        {app.status === "rejected" && <XCircle className="w-4 h-4 mr-1" />}
+                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                      </span>
+                    </div>
+          
+                    {/* Action Buttons */}
+                    {app.status === "pending" && (
+                      <button
+                        onClick={() => onWithdraw(app.id)}
+                        className="text-yellow-600 hover:text-yellow-700 flex items-center text-sm font-medium"
+                      >
+                        <Undo className="w-4 h-4 mr-1" />
+                        Withdraw
+                      </button>
+                    )}
+          
+                    {app.status === "accepted" && app.profiles?.whatsapp_number && (
+                      <a
+                        href={`https://wa.me/${app.profiles.whatsapp_number}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:text-green-700 flex items-center text-sm font-medium"
+                      >
+                        <Phone className="w-4 h-4 mr-1" />
+                        Contact Founder
+                      </a>
+                    )}
+          
+                    {app.status === "rejected" && (
+                      <button
+                        onClick={() => onRemove(app.id)}
+                        className="text-red-600 hover:text-red-700 flex items-center text-sm font-medium"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-2 flex items-center">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    app.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    app.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                    app.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                  </span>
-                  {app.status === 'accepted' && app.profiles?.whatsapp_number && (
-                    <a
-                      href={`https://wa.me/${app.profiles.whatsapp_number}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-4 text-green-600 hover:text-green-700 flex items-center"
-                    >
-                      <Phone className="w-4 h-4 mr-1" />
-                      Contact Founder
-                    </a>
-                  )}
+                <div className="mt-3 p-3 bg-gray-100 rounded-lg">
+                    <h5 className="font-bold text-gray-800">
+                      Pitch : <span className="font-normal">This is a sample pitch from the user</span>
+                    </h5>
                 </div>
               </div>
             ))}
