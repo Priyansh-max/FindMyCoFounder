@@ -4,15 +4,17 @@ import { Chart as ChartJS, ArcElement, Tooltip } from "chart.js";
 
 ChartJS.register(ArcElement, Tooltip);
 
-const CircularProgress = ({ total, accepted, pending, rejected }) => {
+const CircularProgress = ({ total, accepted, pending, rejected, content }) => {
+  const isZero = total === 0;
+
   const data = {
     datasets: [
       {
-        data: [accepted, pending, rejected], // Values for the sections
-        backgroundColor: ["#2ecc71", "#f1c40f", "#e74c3c"], // Green, Yellow, Red
+        data: isZero ? [1] : [accepted, pending, rejected],
+        backgroundColor: isZero ? ["#e5e7eb"] : ["#2ecc71", "#f1c40f", "#e74c3c"],
         borderWidth: 0,
         hoverOffset: 4,
-        cutout: "75%", // Creates the hollow effect
+        cutout: "82%",
       },
     ],
   };
@@ -20,20 +22,24 @@ const CircularProgress = ({ total, accepted, pending, rejected }) => {
   const options = {
     responsive: true,
     plugins: {
-      legend: { display: false }, // Hide default legend
-      tooltip: { enabled: true }, // Show tooltips on hover
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        enabled: false, // Disable default tooltips
+      },
     },
+    events: [], // Disable all events
   };
 
   return (
-    <div className="mt-2 ml-4 relative w-48 h-48">
-      {/* Chart */}
+    <div className="relative w-48 h-48">
       <Doughnut data={data} options={options} />
-
-      {/* Center Text */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <span className="text-3xl font-bold">{total}</span>
-        <span className="text-sm text-gray-500">Applications</span>
+        <div className="text-sm text-gray-500 max-w-[80%] break-words whitespace-pre-line">
+          {content}
+        </div>
       </div>
     </div>
   );
