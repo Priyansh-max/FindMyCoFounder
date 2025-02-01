@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X } from "lucide-react";
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X,Lightbulb, Heart } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
@@ -31,6 +31,13 @@ function Profile() {
     accepted: 50,
     pending: 50,
     rejected: 50,
+  };
+
+  const datareceived = {
+    total: 0,
+    accepted: 30,
+    pending: 10,
+    rejected: 40,
   };
 
   useEffect(() => {
@@ -296,37 +303,107 @@ function Profile() {
 
   return (
     <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
-      <div className='w-1/3 flex flex-col h-fit top-8'>
+        <div className='w-1/3 flex flex-col h-fit top-8'>
           {/* Numbers */}
-          <div className='bg-white flex flex-col shadow-md p-6 rounded-xl'>
-            <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <Users className="w-6 h-6 mr-2" />
+          <div className='bg-white flex flex-col shadow-md p-4 md:p-6 rounded-xl'>
+            <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center">
+              <Users className="w-5 h-5 md:w-6 md:h-6 mr-2" />
               Overview
             </h2>
-            <div className='flex justify-between'>
-              <CircularProgress
-              total={data.total}
-              accepted={data.accepted}
-              pending={data.pending}
-              rejected={data.rejected}
-              />
-              <div className="space-y-2 mr-6">
-                <div className="flex flex-col justify-between items-center w-[110px] p-2 bg-green-200 rounded">
-                  <span className="text-green-800">Accepted</span>
-                  <span className='text-center'>{data.accepted}</span>
-                </div>
-                <div className="flex flex-col justify-between bg-yellow-100 items-center w-[110px] p-2 rounded">
-                  <span className="text-yellow-800">Pending</span>
-                  <span>{data.pending}</span>
-                </div>
-                <div className="flex flex-col justify-between items-center w-[110px] bg-red-200 p-2 rounded">
-                  <span className="text-red-800">Rejected</span>
-                  <span>{data.rejected}</span>
+
+            {/* Applications Sent Section */}
+            <div className='flex flex-col items-center'>
+              <div className="relative group">
+                <CircularProgress
+                  total={data.total}
+                  accepted={data.accepted}
+                  pending={data.pending}
+                  rejected={data.rejected}
+                  content="Applications Sent"
+                />
+                {/* Hover Stats */}
+                <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute top-1/4 left-full ml-2">
+                    <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm whitespace-nowrap">
+                      Accepted: {data.accepted}
+                    </div>
+                  </div>
+                  <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
+                    <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm whitespace-nowrap">
+                      Pending: {data.pending}
+                    </div>
+                  </div>
+                  <div className="absolute bottom-1/4 left-full ml-2">
+                    <div className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm whitespace-nowrap">
+                      Rejected: {data.rejected}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
+            <div className="border-b-2 mt-4"></div>
+
+            {/* Application Received Section */}
+            <div className='flex flex-col items-center mt-4'>
+              <div className="relative group">
+                <CircularProgress
+                  total={datareceived.total}
+                  accepted={datareceived.accepted}
+                  pending={datareceived.pending}
+                  rejected={datareceived.rejected}
+                  content="Applications Received"
+                />
+                {/* Hover Stats */}
+                <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute top-1/4 left-full ml-2">
+                    <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm whitespace-nowrap">
+                      Accepted: {datareceived.accepted}
+                    </div>
+                  </div>
+                  <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
+                    <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm whitespace-nowrap">
+                      Pending: {datareceived.pending}
+                    </div>
+                  </div>
+                  <div className="absolute bottom-1/4 left-full ml-2">
+                    <div className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm whitespace-nowrap">
+                      Rejected: {datareceived.rejected}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <div className="border-b-2 mt-4"></div>
+
+            {/* Stats Section */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4">
+              <div className="flex flex-col items-center p-2 md:p-3 bg-indigo-100 rounded shadow-md w-full">
+                <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
+                  <Lightbulb className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                  <span className="font-medium text-xs md:text-sm">Ideas</span>
+                </div>
+                <span className="text-lg md:text-xl font-bold mt-1">{data.accepted}</span>
+              </div>
+
+              <div className="flex flex-col items-center p-2 md:p-3 bg-indigo-100 rounded shadow-md w-full">
+                <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
+                  <Users className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                  <span className="font-medium text-xs md:text-sm">Contacts</span>
+                </div>
+                <span className="text-lg md:text-xl font-bold mt-1">{data.pending}</span>
+              </div>
+
+              <div className="flex flex-col items-center p-2 md:p-3 bg-indigo-100 rounded shadow-md w-full">
+                <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
+                  <Heart className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                  <span className="font-medium text-xs md:text-sm">Likes</span>
+                </div>
+                <span className="text-lg md:text-xl font-bold mt-1">{data.rejected}</span>
+              </div>
+            </div>
+          </div>
             
 
           <div className="h-6"></div>
@@ -403,10 +480,10 @@ function Profile() {
               </button>
             </form>
           </div>
-      </div>
+        </div>
 
       {/* Right Side Content */}
-      <div className="w-2/3 space-y-8">
+      <div className="w-4/5 space-y-8">
         {/* Applications Section */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           {/* Filter Dropdown */}
