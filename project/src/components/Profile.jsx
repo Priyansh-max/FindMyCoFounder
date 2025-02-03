@@ -129,59 +129,59 @@ function Profile() {
     }
   }
 
-  const handleToggleApplications = async (ideaId) => {
-    try {
-      setIdeas(prevIdeas =>
-        prevIdeas.map(idea =>
-          idea.id === ideaId
-            ? { ...idea, showApplications: !idea.showApplications }
-            : idea
-        )
-      );
+  // const handleToggleApplications = async (ideaId) => {
+  //   try {
+  //     setIdeas(prevIdeas =>
+  //       prevIdeas.map(idea =>
+  //         idea.id === ideaId
+  //           ? { ...idea, showApplications: !idea.showApplications }
+  //           : idea
+  //       )
+  //     );
 
-      // Fetch applications when opening
-      const ideaToUpdate = ideas.find(idea => idea.id === ideaId);
-      if (!ideaToUpdate?.showApplications) {
-        await fetchApplicationsForIdea(ideaId);
-      }
-    } catch (error) {
-      console.error('Error toggling applications:', error);
-      setError('Error toggling applications');
-    }
-  };
+  //     // Fetch applications when opening
+  //     const ideaToUpdate = ideas.find(idea => idea.id === ideaId);
+  //     if (!ideaToUpdate?.showApplications) {
+  //       await fetchApplicationsForIdea(ideaId);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error toggling applications:', error);
+  //     setError('Error toggling applications');
+  //   }
+  // };
 
-  const fetchApplicationsForIdea = async (ideaId) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            github_url,
-            whatsapp_number
-          )
-        `)
-        .eq('idea_id', ideaId);
+  // const fetchApplicationsForIdea = async (ideaId) => {
+  //   try {
+  //     setLoading(true);
+  //     const { data, error } = await supabase
+  //       .from('applications')
+  //       .select(`
+  //         *,
+  //         profiles (
+  //           full_name,
+  //           github_url,
+  //           whatsapp_number
+  //         )
+  //       `)
+  //       .eq('idea_id', ideaId);
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      // Update the specific idea with its applications
-      setIdeas(prevIdeas =>
-        prevIdeas.map(idea =>
-          idea.id === ideaId
-            ? { ...idea, applications: data }
-            : idea
-        )
-      );
-    } catch (error) {
-      console.error('Error fetching applications:', error);
-      setError('Error fetching applications');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Update the specific idea with its applications
+  //     setIdeas(prevIdeas =>
+  //       prevIdeas.map(idea =>
+  //         idea.id === ideaId
+  //           ? { ...idea, applications: data }
+  //           : idea
+  //       )
+  //     );
+  //   } catch (error) {
+  //     console.error('Error fetching applications:', error);
+  //     setError('Error fetching applications');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   
   
   async function fetchIdeas(userId) {

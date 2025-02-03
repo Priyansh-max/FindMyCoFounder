@@ -14,13 +14,14 @@ const CircularProgress = ({ total, accepted, pending, rejected, content }) => {
         backgroundColor: isZero ? ["#e5e7eb"] : ["#2ecc71", "#f1c40f", "#e74c3c"],
         borderWidth: 0,
         hoverOffset: 4,
-        cutout: "82%",
+        cutout: "84%",
       },
     ],
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false,
@@ -33,11 +34,13 @@ const CircularProgress = ({ total, accepted, pending, rejected, content }) => {
   };
 
   return (
-    <div className="relative w-48 h-48">
+    <div className="relative w-32 h-32 sm:w-56 sm:h-56"> 
+      {/* Adjust chart size on small screens */}
       <Doughnut data={data} options={options} />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <span className="text-3xl font-bold">{total}</span>
-        <div className="text-sm text-gray-500 max-w-[80%] break-words whitespace-pre-line">
+        <span className="text-xl sm:text-3xl font-bold">{total}</span> 
+        {/* Decrease font size on small screens */}
+        <div className="text-sm sm:text-md text-gray-500 max-w-[80%] break-words whitespace-pre-line">
           {content}
         </div>
       </div>
