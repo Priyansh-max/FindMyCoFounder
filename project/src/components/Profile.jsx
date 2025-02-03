@@ -117,6 +117,18 @@ function Profile() {
     }
   }
 
+  const viewDetails = async(ideaId) => {
+    try{
+      if(ideaId != null){
+        navigate(`/details/${ideaId}`)
+      }
+
+    }catch(error){
+      console.error("Error viewing details: ",error);
+      setError("Error viewing details");
+    }
+  }
+
   const handleToggleApplications = async (ideaId) => {
     try {
       setIdeas(prevIdeas =>
@@ -616,7 +628,7 @@ function Profile() {
                   <div className="flex gap-x-4">
                     <button 
                       data-tooltip-id="view-tooltip"
-                      onClick={() => handleToggleApplications(idea.id)}
+                      onClick={() => viewDetails(idea.id)}
                       className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                     >
                       <GrView className="w-4 h-4 mr-2" />

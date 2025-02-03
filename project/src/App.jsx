@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import IdeasList from "./components/IdeasList";
 import IdeaForm from "./components/IdeaForm";
 import Profile from "./components/Profile";
+import IdeaDetails from './components/IdeaDetails'
 
 function App() {
   const [user, setUser] = useState(null);
@@ -44,6 +45,10 @@ function App() {
             <Route
               path="/profile"
               element={user ? <Profile /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/details/:id"
+              element={user ? <IdeaDetails /> : <Navigate to="/" />}
             />
           </Routes>
         </main>
