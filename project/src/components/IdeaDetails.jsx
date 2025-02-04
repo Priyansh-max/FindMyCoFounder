@@ -190,7 +190,7 @@ const IdeaDetails = () => {
                     <Users className="w-4 h-4 " />
                     <h3>Posted by {idea.founder?.full_name || "Unknown"}</h3>
                 </div>
-                <div className='mt-2 w-full mt-4'>
+                <div className='w-full mt-4'>
                     <button className='p-1 bg-green-500 rounded-lg w-full'>
                         <p className='text-green-50 text-lg'>Edit Idea</p>
                     </button>
@@ -283,7 +283,7 @@ const IdeaDetails = () => {
                             {/* Idea Description */}
                             <div className='flex flex-col'>
                             <p className="text-sm text-gray-500">
-                                <span className="font-semibold text-">Github url :</span> {app.profiles?.github_url || "Unknown github url"}
+                                <span className="font-bold">Github url :</span> {app.profiles?.github_url || "Unknown github url"}
                             </p>
                             <p className="text-sm text-gray-500">
                                 <span className="font-bold">Portfolio link :</span> {app.profiles?.portfolio || "No portfolio link provided"}

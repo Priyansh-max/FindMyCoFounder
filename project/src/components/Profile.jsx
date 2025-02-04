@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X,Lightbulb, Heart } from "lucide-react";
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X,Lightbulb, Heart, ScrollText } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
@@ -22,6 +22,8 @@ function Profile() {
     full_name: '',
     whatsapp_number: '',
     github_url : '',
+    portfolio_url : '',
+    resume_url : '',
     description : '',
     is_founder: false
   });
@@ -319,7 +321,7 @@ function Profile() {
           {/* Numbers */}
           <div className='bg-white flex flex-col shadow-md p-4 md:p-6 rounded-xl'>
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center">
-              <Users className="w-5 h-5 md:w-6 md:h-6 mr-2" />
+              <ScrollText className="w-5 h-5 md:w-6 md:h-6 mr-2" />
               Overview
             </h2>
 
@@ -457,6 +459,48 @@ function Profile() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
+                  Github Url
+                </label>
+                <input
+                  type="text"
+                  name="github_url"
+                  value={formData.github_url}
+                  onChange={handleChange}
+                  placeholder="github_url"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Portfolio Url
+                </label>
+                <input
+                  type="text"
+                  name="portfolio_url"
+                  value={formData.portfolio_url}
+                  onChange={handleChange}
+                  placeholder="portfolio-url"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Resume Url
+                </label>
+                <input
+                  type="text"
+                  name="resume_url"
+                  value={formData.resume_url}
+                  onChange={handleChange}
+                  placeholder="resume-url"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Describe Yourself
                 </label>
                 <Textarea
@@ -464,12 +508,12 @@ function Profile() {
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  required
                   placeholder="Describe yourself"
                   className="w-full min-h-24"
               />
               </div>
-      
+
+              {/* not needed now  */}
               <div className="flex items-center">
                 <input
                   type="checkbox"
