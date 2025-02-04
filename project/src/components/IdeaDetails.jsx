@@ -95,6 +95,24 @@ const IdeaDetails = () => {
   ? applications
   : applications.filter((app) => app.status === filter);
 
+  const handleStatusUpdate = async (applicationId, newStatus) => {
+    try {
+        const { error } = await supabase
+            .from('applications')
+            .update({ status: newStatus })
+            .eq('id', applicationId);
+
+        if (error) throw error;
+
+        // Refresh the applications list
+        fetchApplicationsForIdea();
+
+    } catch (error) {
+        console.error('Error updating application status:', error);
+        // You might want to add some error handling UI here
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -126,22 +144,15 @@ const IdeaDetails = () => {
         <div className='w-1/4 flex flex-col top-8'>
             {idea ? (
             <div className="p-6 shadow-md rounded-xl bg-white border border-gray-100">
-                <div className='mb-1 flex flex-row gap-2 border-b-2 pb-2 items-center'>
+                <div className='mb-2 flex flex-row gap-2 border-b-2 pb-2 items-center'>
                     <ClipboardList className='w-5 h-5' />
                     <h2 className="text-2xl font-bold">Summary</h2>
                 </div>
                 {/* Header with Company Name and Status */}
                 <div className="mb-2">
-                    <div className="flex items-center mb-2">
-                        <p className="text-lg font-medium text-gray-500">
+                    <div className="flex items-center justify-between mt-2 mb-2">
+                        <p className="text-lg font-semibold text-gray-900">
                             {idea.company_name}
-                        </p>
-                    </div>
-                    
-                    {/* Description */}
-                    <div className='flex flex-row justify-between gap-2'>
-                        <p className="text-gray-700 leading-relaxed">
-                            {idea.idea_desc}
                         </p>
                         <div className="flex gap-4 items-center">
                                 <span className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium 
@@ -154,6 +165,14 @@ const IdeaDetails = () => {
                                     {idea.status === 'open' ? 'Open' : 'Closed'}
                                 </span>
                         </div>
+                    </div>
+                    
+                    {/* Description */}
+                    <div className='flex flex-row justify-between mt-2 mb-2'>
+                        <p className="text-gray-700">
+                            {idea.idea_desc}
+                        </p>
+
                     </div>
 
                     {/* Posted Date */}
@@ -275,23 +294,46 @@ const IdeaDetails = () => {
                             </div> 
                         </div> 
 
-                        <div className="flex flex-col items-end space-y-4">
-                            {/* Status Badge with Icon */}
-                            <div className="flex items-center">
-                                <span
-                                    className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                    app.status === "pending"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : app.status === "accepted"
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}
-                                >
-                                    {app.status === "pending" && <Clock className="w-4 h-4 mr-1" />}
-                                    {app.status === "accepted" && <CheckCircle className="w-4 h-4 mr-1" />}
-                                    {app.status === "rejected" && <XCircle className="w-4 h-4 mr-1" />}
-                                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                                </span>
+                        <div className="flex space-y-4">
+                            <div className='flex flex-col items-end justify-between'>
+                                {/* Status Badge with Icon */}
+                                <div>
+                                    <span
+                                        className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        app.status === "pending"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : app.status === "accepted"
+                                            ? "bg-green-100 text-green-800"
+                                            : "bg-red-100 text-red-800"
+                                        }`}
+                                    >
+                                        {app.status === "pending" && <Clock className="w-4 h-4 mr-1" />}
+                                        {app.status === "accepted" && <CheckCircle className="w-4 h-4 mr-1" />}
+                                        {app.status === "rejected" && <XCircle className="w-4 h-4 mr-1" />}
+                                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                                    </span>
+                                </div>
+                                <div>
+                                    {/* Accept/Reject Buttons for Pending Applications */}
+                                    {app.status === "pending" && (
+                                        <div className="flex gap-2">
+                                            <button 
+                                                className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                                                onClick={() => handleStatusUpdate(app.id, "accepted")}
+                                            >
+                                                <CheckCircle className="w-4 h-4" />
+                                                Accept
+                                            </button>
+                                            <button 
+                                                className="flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                                                onClick={() => handleStatusUpdate(app.id, "rejected")}
+                                            >
+                                                <X className="w-4 h-4" />
+                                                Reject
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
