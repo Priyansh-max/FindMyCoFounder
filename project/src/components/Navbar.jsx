@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaLightbulb, FaSignOutAlt, FaGithub, FaHandshake } from 'react-icons/fa';
 import supabase from "../lib/supabase";
+import { toast } from 'react-hot-toast';
 
 const Navbar = ({ onLogin }) => {
   const [user, setUser] = useState(null);
@@ -17,9 +18,56 @@ const Navbar = ({ onLogin }) => {
     });
   }, []);
 
-  const handleSignOut = () => {
-    supabase.auth.signOut();
-    navigate('/');
+  const handleSignIn = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: false,
+          scopes: 'read:user user:email',
+          queryParams: {
+            prompt: 'consent'  // This forces GitHub to show the authorization screen
+          }
+        }
+      });
+
+      if (error) throw error;
+
+    } catch (error) {
+      console.error('Error signing out:', error.message);
+      toast.error('Failed to sign in with GitHub');
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (window.confirm('Are you sure you want to sign out?')) {
+      try {
+        const loadingToast = toast.loading('Signing out...');
+        
+        // Sign out from Supabase
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) throw error;
+
+        // Clear any GitHub session cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+
+        toast.dismiss(loadingToast);
+        toast.success('Signed out successfully');
+        
+        // Force reload the page to clear any cached states
+        window.location.href = '/';
+        
+      } catch (error) {
+        console.error('Error signing out:', error.message);
+        toast.error('Failed to sign out. Please try again.');
+      }
+    }
   };
 
   const handlePostIdea = async () => {
@@ -72,7 +120,7 @@ const Navbar = ({ onLogin }) => {
               </>
             ) : (
               <button
-                onClick={onLogin}
+                onClick={handleSignIn}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700"
               >
                 <FaGithub className="w-5 h-5 mr-2" />
