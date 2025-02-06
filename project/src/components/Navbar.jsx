@@ -4,38 +4,27 @@ import { FaUser, FaLightbulb, FaSignOutAlt, FaGithub, FaHandshake } from 'react-
 import supabase from "../lib/supabase";
 import { toast } from 'react-hot-toast';
 
-const Navbar = ({ onLogin }) => {
-  const [user, setUser] = useState(null);
+const Navbar = ({user}) => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-  }, []);
 
   const handleSignIn = async () => {
     try {
+      const loadingToast = toast.loading('Connecting to GitHub...');
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/idealist`,
           skipBrowserRedirect: false,
-          scopes: 'read:user user:email',
-          queryParams: {
-            prompt: 'consent'  // This forces GitHub to show the authorization screen
-          }
         }
       });
 
       if (error) throw error;
 
+      toast.dismiss(loadingToast);
+      
     } catch (error) {
-      console.error('Error signing out:', error.message);
+      console.error('Error signing in:', error.message);
       toast.error('Failed to sign in with GitHub');
     }
   };
@@ -45,23 +34,14 @@ const Navbar = ({ onLogin }) => {
       try {
         const loadingToast = toast.loading('Signing out...');
         
-        // Sign out from Supabase
         const { error } = await supabase.auth.signOut();
         
         if (error) throw error;
 
-        // Clear any GitHub session cookies
-        document.cookie.split(";").forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, "")
-            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
-
         toast.dismiss(loadingToast);
         toast.success('Signed out successfully');
         
-        // Force reload the page to clear any cached states
-        window.location.href = '/';
+        navigate('/');
         
       } catch (error) {
         console.error('Error signing out:', error.message);
@@ -71,30 +51,42 @@ const Navbar = ({ onLogin }) => {
   };
 
   const handlePostIdea = async () => {
-    if (user) {
+    if (!user) {
+      toast.error('Please sign in first');
+      return;
+    }
+
+    console.log("woefbewjbfew")
+
+    try {
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('id, is_founder')
         .eq('id', user.id)
         .single();
 
-      if (error || !profile.is_founder) {
-        alert('Only founders can post an idea.');
+      if (error) throw error;
+
+      if (!profile.is_founder) {
+        toast.error('Only founders can post an idea');
         return;
       }
 
-      // Redirect to the "Post Idea" page if the user is a founder
       navigate('/post-idea');
+      
+    } catch (error) {
+      console.error('Error checking founder status:', error);
+      toast.error('Something went wrong. Please try again.');
     }
   };
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav className="bg-white shadow-lg w-full z-50 relative">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center text-xl font-bold text-gray-800">
             <FaHandshake className="w-8 h-8 mr-4 text-black-600 hover:text-black-800" />
-            <p className='hover:underline'>FindMyCoFounder</p>
+            <p className='hover:underline'>FindMyTeam</p>
           </Link>
           <div className="flex items-center space-x-10">
             {user ? (
