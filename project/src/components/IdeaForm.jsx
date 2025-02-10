@@ -21,6 +21,11 @@ function IdeaForm() {
     partnershipTerms: '',
     equityTerms: ''
   });
+  const points = [
+    { title: "Find teammates", description: "Connect with skilled people." },
+    { title: "Bring ideas to life", description: "Turn concepts into projects." },
+    { title: "Gain visibility", description: "Attract contributors easily." },
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -100,37 +105,39 @@ function IdeaForm() {
   
 
   return (
-    <div className="flex min-h-screen bg-gray-50 pt-8">
+    <div className="flex min-h-screen bg-zinc-50 pt-8 justify-between px-20">
       {/* Left Side - Image */}
-      <div className="hidden lg:flex lg:w-1/2 items-start justify-center p-12">
-        <div className="max-w-2xl">
+      <div className="ml-12 p-12">
+      {/* Image Section */}
+        <div className="flex mt-20 justify-center scale-125">
+          <motion.img
+            src={idea}
+            alt="Startup Team"
+            className="w-full h-auto rounded-2xl"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
+        {/* Text Section */}
+        <div className="p-6 mt-16 justify-start">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="space-y-8"
+            className="space-y-6"
           >
-            <motion.img
-              src={idea}
-              alt="Startup Team"
-              className="w-full h-auto rounded-2xl"
-              animate={{ 
-                y: [0, -10, 0]
-              }}
-              transition={{ 
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                Share Your Vision
-              </h2>
-              <p className="text-gray-600">
-                Connect with talented developers and bring your startup idea to life
-              </p>
-            </div>
+            <h2 className="text-2xl font-bold text-gray-800">Why Post an Idea?</h2>
+            <ul className="space-y-3 text-gray-700">
+              {points.map((point, index) => (
+                <li key={index} className="flex items-center space-x-3">
+                  <span className="text-blue-500 text-2xl">•</span>
+                  <span>
+                    <span className="font-semibold text-gray-900">{point.title}:</span> {point.description}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </motion.div>
         </div>
       </div>
