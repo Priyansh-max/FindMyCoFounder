@@ -81,7 +81,7 @@ const Navbar = ({user}) => {
   };
 
   return (
-    <nav className="bg-white shadow-lg w-full z-50 relative">
+    <nav className="bg-white shadow-lg w-full z-40 relative">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center text-xl font-bold text-gray-800">
