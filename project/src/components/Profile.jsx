@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X,Lightbulb, Heart, ScrollText } from "lucide-react";
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X,Lightbulb, Heart, ScrollText, Github } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
 import { GrView } from "react-icons/gr";
 import { Tooltip } from "react-tooltip";
 import CircularProgress from '@/components/ui/CircularProgress';
+import { IoDocumentTextOutline } from "react-icons/io5";
+import { GoLink } from "react-icons/go";
 
 function Profile() {
   const navigate = useNavigate();
@@ -318,6 +320,53 @@ function Profile() {
   return (
     <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
         <div className='w-1/3 flex flex-col h-fit top-8'>
+          <div className="bg-white text-white p-6 rounded-md shadow-md">
+              {/* Profile Header */}
+                {/* Profile Image */}
+                <div className='flex justify-content'>
+                  <div className='mr-4'>
+                    <img
+                      src="https://via.placeholder.com/60" // Replace with actual image
+                      alt="Profile"
+                      className="w-24 h-24 rounded-md object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h2 className="text-gray-800 text-xl font-bold mb-1">PriyanshAgarwal</h2>
+                    <p className="text-gray-800 text-sm">@PhoneNumber</p>
+                    <p className="text-gray-800 text-sm">@Email</p>
+                  </div>
+                                
+                </div>
+                <div className='pt-2'>
+                  <p className='text-gray-800'>this is my description</p>
+                </div>
+
+
+              {/* Edit Profile Button */}
+              <button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-md">
+                Edit Profile
+              </button>
+
+              {/* Location & Github */}
+              <div className="mt-4 space-y-2 text-gray-800">
+                <p className="flex items-center space-x-2">
+                  <Github className="w-5 h-5 text-gray-500" />
+                  <span>Github</span>
+                </p>
+                <p className="flex items-center space-x-2">
+                  <GoLink className="w-5 h-5 text-gray-500" />
+                  <span>Portfolio</span>
+                </p>
+                <p className="flex items-center space-x-2">
+                  <IoDocumentTextOutline className="w-5 h-5 text-gray-500" />
+                  <span>Resume</span>
+                </p>
+            </div>
+          </div>
+
+          <div className="h-6"></div>
+
           {/* Numbers */}
           <div className='bg-white flex flex-col shadow-md p-4 md:p-6 rounded-xl'>
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center">
@@ -418,12 +467,9 @@ function Profile() {
               </div>
             </div>
           </div>
-            
-
-          <div className="h-6"></div>
 
           {/* Profile Section (Sticky Sidebar) */}
-          <div className='bg-white shadow-md p-6 rounded-xl'>
+          {/* <div className='bg-white shadow-md p-6 rounded-xl'>
             <h2 className="text-2xl font-bold mb-6 flex items-center">
               <Users className="w-6 h-6 mr-2" />
               Profile Settings
@@ -431,7 +477,7 @@ function Profile() {
       
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-800">
                   Full Name
                 </label>
                 <input
@@ -444,7 +490,7 @@ function Profile() {
               </div>
       
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-800">
                   WhatsApp Number
                 </label>
                 <input
@@ -458,7 +504,7 @@ function Profile() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-800">
                   Github Url
                 </label>
                 <input
@@ -472,7 +518,7 @@ function Profile() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-800">
                   Portfolio Url
                 </label>
                 <input
@@ -486,7 +532,7 @@ function Profile() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-800">
                   Resume Url
                 </label>
                 <input
@@ -500,7 +546,7 @@ function Profile() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-800 mb-1">
                   Describe Yourself
                 </label>
                 <Textarea
@@ -513,7 +559,6 @@ function Profile() {
               />
               </div>
 
-              {/* not needed now  */}
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -535,7 +580,7 @@ function Profile() {
                 Update Profile
               </button>
             </form>
-          </div>
+          </div> */}
         </div>
 
       {/* Right Side Content */}
