@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import supabase from '../lib/supabase'; // Ensure you import your Supabase instance
-import { Users, Phone, ClipboardList, XCircle, Clock, CheckCircle, Undo, X,Lightbulb, Heart, Pencil } from "lucide-react";
+import { Users, Phone, ClipboardList, XCircle, Clock, CheckCircle, Undo, X,ArrowRight } from "lucide-react";
 import CircularProgress from '@/components/ui/CircularProgress';
+import ViewMyTeam from '../props/ViewMyTeam';
+import EditIdea from '../props/EditIdea';
 
 const IdeaDetails = () => {
   const { id } = useParams(); // Extracts idea ID from URL
@@ -11,6 +13,8 @@ const IdeaDetails = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [editIdeaOverlay , setEditIdeaOverlay] = useState(false);
+  const [viewMyTeamOverlay , setViewMyTeamOverlay] = useState(false);
 
   const data = {
     total: 150,
@@ -23,6 +27,15 @@ const IdeaDetails = () => {
     fetchApplicationsForIdea();
     fetchIdeaDetails();
   }, [id]); // Runs when `id` changes
+
+  function handleOverlayEditIdea(){
+    setEditIdeaOverlay(true);
+  }
+
+  function handleOverlayViewMyTeam(){
+    setViewMyTeamOverlay(true);
+  }
+
 
   const fetchApplicationsForIdea = async () => {
     try {
@@ -183,19 +196,19 @@ const IdeaDetails = () => {
                         }).format(new Date(idea.created_at))}</span>
                     </div>
                 </div>
-
-                {/* Founder Section */}
                 
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                     <Users className="w-4 h-4 " />
                     <h3>Posted by {idea.founder?.full_name || "Unknown"}</h3>
                 </div>
                 <div className='w-full mt-4'>
-                    <button className='p-1 bg-green-500 rounded-lg w-full'>
-                        <p className='text-green-50 text-lg'>Edit Idea</p>
+                    <button className='p-1 bg-green-500 hover:bg-green-600 rounded-lg w-full'
+                        onClick={handleOverlayEditIdea}
+                    >
+                        <p className='text-white text-lg'>Edit Idea</p>
                     </button>
                 </div>
-                    <div className='flex flex-col items-center mt-8'>
+                <div className='flex flex-col items-center mt-8'>
                     <div className="relative group">
                         <CircularProgress
                         total={data.total}
@@ -203,9 +216,9 @@ const IdeaDetails = () => {
                         pending={data.pending}
                         rejected={data.rejected}
                         content="Applications received"
-                    />
+                        />
                         {/* Hover Stats */}
-                        <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity         duration-200">
                             <div className="absolute top-1/4 left-full ml-2">
                                 <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm whitespace-nowrap">
                                     Accepted: {data.accepted}
@@ -224,14 +237,21 @@ const IdeaDetails = () => {
                         </div>
                     </div>
                 </div>
+                <div className='w-full mt-6'>
+                    <button className='w-full flex items-center justify-center p-1 border border-transparent text-lg rounded-md text-white bg-indigo-600 hover:bg-indigo-700'
+                    onClick={handleOverlayViewMyTeam}
+                    >
+                        View My Team
+                    </button>
+                </div>
             </div>
             ) : (
             <div className="text-center py-12 bg-white rounded-xl shadow-md">
                 <div className="mb-4 text-gray-400">
                     <XCircle className="w-16 h-16 mx-auto" />
                 </div>
-                <p className="text-xl text-gray-500 font-medium">No idea details found</p>
-                <p className="text-gray-400 mt-2">Try searching for another idea</p>
+                <p className="text-xl text-gray-500 font-medium">Currently Unavailable</p>
+                <p className="text-gray-400 mt-2">Try again in some time</p>
             </div>
             )}
         </div>
@@ -255,8 +275,6 @@ const IdeaDetails = () => {
                 </select>
             </div>
 
-            {/* Change it to display all the pitches and you have sent*/}
-            {/* display company name hosted by idea description then pitch by the user   */}
             <div className="space-y-4"> 
                 {filteredApplications.map((app) => (
                 <div key={app.id} className="border rounded-lg p-4 bg-white shadow-md">
@@ -351,6 +369,43 @@ const IdeaDetails = () => {
             </div>
         </div>
     </div>
+    {editIdeaOverlay && (
+        <div
+        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+        >
+        <div
+          className="bg-white p-6 rounded-lg shadow-lg w-96 relative"
+          onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        >
+          <button
+            onClick={() => setEditIdeaOverlay(false)}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+          >
+            ✖
+          </button>
+          <EditIdea></EditIdea>
+        </div>
+      </div>
+    )}
+
+    {viewMyTeamOverlay && (
+        <div
+        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+        >
+        <div
+          className="bg-white p-6 rounded-lg shadow-lg w-96 relative"
+          onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        >
+          <button
+            onClick={() => setViewMyTeamOverlay(false)}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+          >
+            ✖
+          </button>
+          <ViewMyTeam></ViewMyTeam>
+        </div>
+      </div>
+    )}
 </div>
   );
 };

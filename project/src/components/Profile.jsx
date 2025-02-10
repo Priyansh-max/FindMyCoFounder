@@ -10,6 +10,7 @@ import { Tooltip } from "react-tooltip";
 import CircularProgress from '@/components/ui/CircularProgress';
 import { IoDocumentTextOutline } from "react-icons/io5";
 import { GoLink } from "react-icons/go";
+import EditProfile from '../props/EditProfile';
 
 function Profile() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ function Profile() {
   const [ideas, setIdeas] = useState([]);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [EditprofileOverlay , setEditprofileOverlay] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     whatsapp_number: '',
@@ -47,6 +49,10 @@ function Profile() {
   useEffect(() => {
     checkUser();
   }, []);
+
+  function handleOverlay(){
+    setEditprofileOverlay(true);
+  }
 
   async function checkUser() {
     try {
@@ -320,7 +326,7 @@ function Profile() {
   return (
     <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
         <div className='w-1/3 flex flex-col h-fit top-8'>
-          <div className="bg-white text-white p-6 rounded-md shadow-md">
+          <div className="bg-white text-white p-6 rounded-lg shadow-md">
               {/* Profile Header */}
                 {/* Profile Image */}
                 <div className='flex justify-content'>
@@ -344,7 +350,9 @@ function Profile() {
 
 
               {/* Edit Profile Button */}
-              <button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-md">
+              <button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-md"
+                onClick={handleOverlay}
+              >
                 Edit Profile
               </button>
 
@@ -765,7 +773,30 @@ function Profile() {
           </div>
         )}
       </div>
+
+      {/* edit profile overlay */}
+
+      {EditprofileOverlay && (
+        <div
+        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+        >
+        <div
+          className="bg-white p-6 rounded-lg shadow-lg w-96 relative"
+          onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        >
+          <button
+            onClick={() => setEditprofileOverlay(false)}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+          >
+            ✖
+          </button>
+          <EditProfile></EditProfile>
+        </div>
+      </div>
+      )}
     </div>
+
+
   );
   
 }
