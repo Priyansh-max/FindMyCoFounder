@@ -33,7 +33,6 @@ function IdeasList() {
     if (session?.user) {
       fetchIdeas();
     }
-    setLoading(false);
   }
 
   async function fetchIdeas() {
@@ -49,25 +48,31 @@ function IdeasList() {
       const userId = session.user.id;
   
       // Query ideas, excluding those posted by the current user
+      // const { data, error } = await supabase.rpc('get_ideas_with_metadata');
+
       const { data, error } = await supabase
-        .from('ideas')
-        .select(`
-          *,
-          profiles:founder_id (
-            full_name,
-            github_url
-          )
-        `)
-        .eq('status', 'open') // Only open ideas
-        .not('founder_id', 'eq', userId) // Exclude ideas posted by the current user
-        .order('created_at', { ascending: false });
+      .from('ideas')
+      .select(`
+        *,
+        profiles:founder_id (
+          full_name,
+          github_url
+        )
+      `)
+      .eq('status', 'open')
+      .not('founder_id', 'eq', userId)
+      .order('created_at', { ascending: false });
   
       if (error) {
         console.error("Supabase Query Error:", error);
         return;
       }
+      console.log(data)
   
       setIdeas(data || []);
+
+      console.log(ideas);
+      setLoading(false);
     } catch (error) {
       console.error('Unexpected Error:', error);
     }
