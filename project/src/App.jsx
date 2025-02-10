@@ -56,8 +56,6 @@ function AuthHandler({ user, setUser }) {
       // Only redirect from landing page to idealist if user is logged in
       if (session?.user && window.location.pathname === '/') {
         navigate('/idealist');
-      }else if (!session?.user && window.location.pathname !== '/') {
-        navigate('/');
       }
     });
 
@@ -66,7 +64,7 @@ function AuthHandler({ user, setUser }) {
       setUser(session?.user ?? null);
       
       // Only redirect on specific auth events
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' && window.location.pathname === '/') {
         navigate('/idealist');
       } else if (event === 'SIGNED_OUT') {
         navigate('/');
