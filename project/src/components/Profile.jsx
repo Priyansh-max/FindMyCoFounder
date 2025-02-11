@@ -777,12 +777,10 @@ function Profile() {
       {/* edit profile overlay */}
 
       {EditprofileOverlay && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000] p-10">
         <div
-        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]"
-        >
-        <div
-          className="bg-white p-6 rounded-lg shadow-lg w-96 relative"
-          onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+          className="bg-white my-20 p-6 rounded-lg shadow-lg w-[500px] max-h-[90vh] relative overflow-y-auto modern-scrollbar"
+          onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={() => setEditprofileOverlay(false)}
@@ -790,7 +788,7 @@ function Profile() {
           >
             ✖
           </button>
-          <EditProfile></EditProfile>
+          <EditProfile />
         </div>
       </div>
       )}
