@@ -96,13 +96,13 @@ const EditIdea = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="partnershipTerms" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <label htmlFor="additionalDetails" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <Handshake className="w-4 h-4 text-gray-500" />
                       Additional Information
                     </label>
                     <Textarea
-                      id="additional"
-                      name="additional"
+                      id="additionalDetails"
+                      name="additionalDetails"
                       value={formData.additionalDetails}
                       onChange={handleChange}
                       required
