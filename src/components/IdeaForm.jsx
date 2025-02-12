@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { PlusCircle, User, Building2, Lightbulb, Code2, Handshake, PieChart, Send, Loader2 } from 'lucide-react';
+import { PlusCircle, Lightbulb, Code2, PenLine, Send, Loader2 ,Handshake } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,11 +15,10 @@ function IdeaForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    companyName: '',
+    title: '',
     ideaDescription: '',
     developerNeeds: '',
-    partnershipTerms: '',
-    equityTerms: ''
+    additionalDetails: ''
   });
   const points = [
     { title: "Find teammates", description: "Connect with skilled people." },
@@ -165,13 +164,13 @@ function IdeaForm() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="companyName" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-gray-500" />
-                      Company Name
+                      <PenLine className="w-4 h-4 text-gray-500" />
+                      Title
                     </label>
                     <Input
-                      id="companyName"
-                      name="companyName"
-                      value={formData.companyName}
+                      id="title"
+                      name="title"
+                      value={formData.title}
                       onChange={handleChange}
                       required
                       placeholder="Enter company name"
@@ -179,7 +178,7 @@ function IdeaForm() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <label htmlFor="ideaDescription" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <Lightbulb className="w-4 h-4 text-gray-500" />
                       Idea Description
@@ -190,9 +189,11 @@ function IdeaForm() {
                       value={formData.ideaDescription}
                       onChange={handleChange}
                       required
-                      placeholder="Describe your startup idea in detail"
+                      placeholder="Describe your startup idea in detail. atleast 100 characters!"
                       className="w-full min-h-32 transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
                     />
+                    <span className={`absolute bottom-2 italic right-2 text-sm ${formData.ideaDescription.length < 100 ? "text-red-500" : "text-green-500"}`}>
+                    {formData.ideaDescription.length}/100</span>
                   </div>
 
                   <div className="space-y-2">
@@ -211,37 +212,22 @@ function IdeaForm() {
                     />
                   </div>
 
+                  
                   <div className="space-y-2">
-                    <label htmlFor="partnershipTerms" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <label htmlFor="additionalDetails" className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <Handshake className="w-4 h-4 text-gray-500" />
-                      Partnership Terms
+                      Additional Information
                     </label>
                     <Textarea
-                      id="partnershipTerms"
-                      name="partnershipTerms"
-                      value={formData.partnershipTerms}
+                      id="additionalDetails"
+                      name="additionalDetails"
+                      value={formData.additionalDetails}
                       onChange={handleChange}
-                      required
-                      placeholder="Describe the partnership terms and expectations"
+                      placeholder="Describe any additional information here"
                       className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label htmlFor="equityTerms" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <PieChart className="w-4 h-4 text-gray-500" />
-                      Equity Terms
-                    </label>
-                    <Textarea
-                      id="equityTerms"
-                      name="equityTerms"
-                      value={formData.equityTerms}
-                      onChange={handleChange}
-                      required
-                      placeholder="Detail the equity split and vesting terms"
-                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
                 </div>
 
                 <Button
