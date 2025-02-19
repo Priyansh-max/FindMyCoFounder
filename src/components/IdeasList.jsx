@@ -142,7 +142,7 @@ function IdeasList() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -150,14 +150,14 @@ function IdeasList() {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Startup Ideas</h1>
-        <p className="text-xl text-gray-600">Connect with founders and build the next big thing</p>
+        <h1 className="text-4xl font-bold text-foreground mb-4">Startup Ideas</h1>
+        <p className="text-xl text-muted-foreground">Connect with founders and build the next big thing</p>
       </div>
 
       {user && ideas.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {ideas.map((idea) => (
-            <div key={idea.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <div key={idea.id} className="bg-card text-card-foreground rounded-xl shadow-md dark:shadow-primary/10 overflow-hidden hover:shadow-lg transition-all border border-border">
               <div className="p-6">
                 <div className="flex items-center mb-4">
                   <img
@@ -166,33 +166,41 @@ function IdeasList() {
                     className="w-10 h-10 rounded-full mr-4"
                   />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{idea.company_name}</h3>
-                    <p className="text-sm text-gray-600">by {idea.profiles.full_name}</p>
+                    <h3 className="text-lg font-semibold text-foreground">{idea.company_name}</h3>
+                    <p className="text-sm text-muted-foreground">by {idea.profiles.full_name}</p>
                   </div>
                 </div>
                 
-                <p className="text-gray-600 mb-4 line-clamp-3">{idea.idea_desc}</p>
+                <p className="text-muted-foreground mb-4 line-clamp-3">{idea.idea_desc}</p>
                 
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Users className="w-4 h-4 mr-2" />
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Users className="w-4 h-4 mr-2 text-primary" />
                     <span>Equity Share: {idea.equity_term}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Rocket className="w-4 h-4 mr-2" />
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Rocket className="w-4 h-4 mr-2 text-primary" />
                     <span>Requirements: {idea.dev_req}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Calendar className="w-4 h-4 mr-2" />
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4 mr-2 text-primary" />
                     <span>Posted {new Date(idea.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleApply(idea.id)}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  disabled={submitting}
+                  className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md 
+                    bg-primary text-primary-foreground hover:bg-primary/90 
+                    focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Apply Now <ArrowRight className="ml-2 w-4 h-4" />
+                  {submitting ? 'Applying...' : (
+                    <>
+                      Apply Now <ArrowRight className="ml-2 w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -200,8 +208,8 @@ function IdeasList() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <h3 className="text-xl font-medium text-gray-900 mb-2">No ideas posted yet</h3>
-          <p className="text-gray-600">Check back later for new opportunities!</p>
+          <h3 className="text-xl font-medium text-foreground mb-2">No ideas posted yet</h3>
+          <p className="text-muted-foreground">Check back later for new opportunities!</p>
         </div>
       )}
     </div>

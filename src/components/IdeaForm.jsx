@@ -104,10 +104,10 @@ function IdeaForm() {
   
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 pt-8 justify-between px-20">
+    <div className="flex min-h-screen bg-background pt-8 justify-between px-20 transition-colors duration-200">
       {/* Left Side - Image */}
       <div className="ml-12 p-12">
-      {/* Image Section */}
+        {/* Image Section */}
         <div className="flex mt-20 justify-center scale-125">
           <motion.img
             src={idea}
@@ -126,13 +126,13 @@ function IdeaForm() {
             transition={{ duration: 0.8 }}
             className="space-y-6"
           >
-            <h2 className="text-2xl font-bold text-gray-800">Why Post an Idea?</h2>
-            <ul className="space-y-3 text-gray-700">
+            <h2 className="text-2xl font-bold text-foreground">Why Post an Idea?</h2>
+            <ul className="space-y-3 text-muted-foreground">
               {points.map((point, index) => (
                 <li key={index} className="flex items-center space-x-3">
-                  <span className="text-blue-500 text-2xl">•</span>
+                  <span className="text-primary text-2xl">•</span>
                   <span>
-                    <span className="font-semibold text-gray-900">{point.title}:</span> {point.description}
+                    <span className="font-semibold text-foreground">{point.title}:</span> {point.description}
                   </span>
                 </li>
               ))}
@@ -144,11 +144,11 @@ function IdeaForm() {
       {/* Right Side - Form */}
       <div className="w-full lg:w-1/2 p-8">
         <div className="max-w-2xl mx-auto">
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur">
+          <Card className="border-border shadow-xl bg-card/90 backdrop-blur">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-                <PlusCircle className="w-6 h-6 text-indigo-600" />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                <PlusCircle className="w-6 h-6 text-primary" />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                   Submit New Startup Idea
                 </span>
               </CardTitle>
@@ -163,8 +163,8 @@ function IdeaForm() {
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="companyName" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <PenLine className="w-4 h-4 text-gray-500" />
+                    <label htmlFor="companyName" className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <PenLine className="w-4 h-4 text-muted-foreground" />
                       Title
                     </label>
                     <Input
@@ -174,13 +174,13 @@ function IdeaForm() {
                       onChange={handleChange}
                       required
                       placeholder="Enter company name"
-                      className="w-full transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
+                      className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
                     />
                   </div>
 
                   <div className="space-y-2 relative">
-                    <label htmlFor="ideaDescription" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4 text-gray-500" />
+                    <label htmlFor="ideaDescription" className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-muted-foreground" />
                       Idea Description
                     </label>
                     <Textarea
@@ -190,15 +190,18 @@ function IdeaForm() {
                       onChange={handleChange}
                       required
                       placeholder="Describe your startup idea in detail. atleast 100 characters!"
-                      className="w-full min-h-32 transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
+                      className="w-full min-h-32 transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
                     />
-                    <span className={`absolute bottom-2 italic right-2 text-sm ${formData.ideaDescription.length < 100 ? "text-red-500" : "text-green-500"}`}>
-                    {formData.ideaDescription.length}/100</span>
+                    <span className={`absolute bottom-2 italic right-2 text-sm ${
+                      formData.ideaDescription.length < 100 ? "text-destructive" : "text-primary"
+                    }`}>
+                      {formData.ideaDescription.length}/100
+                    </span>
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="developerNeeds" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Code2 className="w-4 h-4 text-gray-500" />
+                    <label htmlFor="developerNeeds" className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Code2 className="w-4 h-4 text-muted-foreground" />
                       Developer Requirements
                     </label>
                     <Textarea
@@ -208,14 +211,13 @@ function IdeaForm() {
                       onChange={handleChange}
                       required
                       placeholder="What kind of developers are you looking for? List specific skills and experience needed."
-                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
+                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
                     />
                   </div>
 
-                  
                   <div className="space-y-2">
-                    <label htmlFor="additionalDetails" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <Handshake className="w-4 h-4 text-gray-500" />
+                    <label htmlFor="additionalDetails" className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Handshake className="w-4 h-4 text-muted-foreground" />
                       Additional Information
                     </label>
                     <Textarea
@@ -224,16 +226,15 @@ function IdeaForm() {
                       value={formData.additionalDetails}
                       onChange={handleChange}
                       placeholder="Describe any additional information here"
-                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-indigo-500"
+                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
                     />
                   </div>
-
                 </div>
 
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">

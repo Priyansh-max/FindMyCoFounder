@@ -325,287 +325,170 @@ function Profile() {
 
   return (
     <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
-        <div className='w-1/3 flex flex-col h-fit top-8'>
-          <div className="bg-white text-white p-6 rounded-lg shadow-md">
-              {/* Profile Header */}
-                {/* Profile Image */}
-                <div className='flex justify-content'>
-                  <div className='mr-4'>
-                    <img
-                      src="https://via.placeholder.com/60" // Replace with actual image
-                      alt="Profile"
-                      className="w-24 h-24 rounded-md object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h2 className="text-gray-800 text-xl font-bold mb-1">PriyanshAgarwal</h2>
-                    <p className="text-gray-800 text-sm">@PhoneNumber</p>
-                    <p className="text-gray-800 text-sm">@Email</p>
-                  </div>
-                                
-                </div>
-                <div className='pt-2'>
-                  <p className='text-gray-800'>this is my description</p>
-                </div>
-
-
-              {/* Edit Profile Button */}
-              <button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-md"
-                onClick={handleOverlay}
-              >
-                Edit Profile
-              </button>
-
-              {/* Location & Github */}
-              <div className="mt-4 space-y-2 text-gray-800">
-                <p className="flex items-center space-x-2">
-                  <Github className="w-5 h-5 text-gray-500" />
-                  <span>Github</span>
-                </p>
-                <p className="flex items-center space-x-2">
-                  <GoLink className="w-5 h-5 text-gray-500" />
-                  <span>Portfolio</span>
-                </p>
-                <p className="flex items-center space-x-2">
-                  <IoDocumentTextOutline className="w-5 h-5 text-gray-500" />
-                  <span>Resume</span>
-                </p>
-            </div>
-          </div>
-
-          <div className="h-6"></div>
-
-          {/* Numbers */}
-          <div className='bg-white flex flex-col shadow-md p-4 md:p-6 rounded-xl'>
-            <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center">
-              <ScrollText className="w-5 h-5 md:w-6 md:h-6 mr-2" />
-              Overview
-            </h2>
-
-            {/* Applications Sent Section */}
-            <div className='flex flex-col items-center'>
-              <div className="relative group">
-                <CircularProgress
-                  total={data.total}
-                  accepted={data.accepted}
-                  pending={data.pending}
-                  rejected={data.rejected}
-                  content="Applications Sent"
-                />
-                {/* Hover Stats */}
-                <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="absolute top-1/4 left-full ml-2">
-                    <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Accepted: {data.accepted}
-                    </div>
-                  </div>
-                  <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
-                    <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Pending: {data.pending}
-                    </div>
-                  </div>
-                  <div className="absolute bottom-1/4 left-full ml-2">
-                    <div className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Rejected: {data.rejected}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-b-2 mt-4"></div>
-
-            {/* Application Received Section */}
-            <div className='flex flex-col items-center mt-4'>
-              <div className="relative group">
-                <CircularProgress
-                  total={datareceived.total}
-                  accepted={datareceived.accepted}
-                  pending={datareceived.pending}
-                  rejected={datareceived.rejected}
-                  content="Applications Received"
-                />
-                {/* Hover Stats */}
-                <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="absolute top-1/4 left-full ml-2">
-                    <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Accepted: {datareceived.accepted}
-                    </div>
-                  </div>
-                  <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
-                    <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Pending: {datareceived.pending}
-                    </div>
-                  </div>
-                  <div className="absolute bottom-1/4 left-full ml-2">
-                    <div className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Rejected: {datareceived.rejected}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-b-2 mt-4"></div>
-
-            {/* Stats Section */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4">
-              <div className="flex flex-col items-center p-2 md:p-3 bg-indigo-100 rounded shadow-md w-full">
-                <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
-                  <Lightbulb className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                  <span className="font-medium text-xs md:text-sm">Ideas</span>
-                </div>
-                <span className="text-lg md:text-xl font-bold mt-1">{data.accepted}</span>
-              </div>
-
-              <div className="flex flex-col items-center p-2 md:p-3 bg-indigo-100 rounded shadow-md w-full">
-                <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
-                  <Users className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                  <span className="font-medium text-xs md:text-sm">Contacts</span>
-                </div>
-                <span className="text-lg md:text-xl font-bold mt-1">{data.pending}</span>
-              </div>
-
-              <div className="flex flex-col items-center p-2 md:p-3 bg-indigo-100 rounded shadow-md w-full">
-                <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
-                  <Heart className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-                  <span className="font-medium text-xs md:text-sm">Likes</span>
-                </div>
-                <span className="text-lg md:text-xl font-bold mt-1">{data.rejected}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Section (Sticky Sidebar) */}
-          {/* <div className='bg-white shadow-md p-6 rounded-xl'>
-            <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <Users className="w-6 h-6 mr-2" />
-              Profile Settings
-            </h2>
-      
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-800">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-      
-              <div>
-                <label className="block text-sm font-medium text-gray-800">
-                  WhatsApp Number
-                </label>
-                <input
-                  type="text"
-                  name="whatsapp_number"
-                  value={formData.whatsapp_number}
-                  onChange={handleChange}
-                  placeholder="+1234567890"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-800">
-                  Github Url
-                </label>
-                <input
-                  type="text"
-                  name="github_url"
-                  value={formData.github_url}
-                  onChange={handleChange}
-                  placeholder="github_url"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-800">
-                  Portfolio Url
-                </label>
-                <input
-                  type="text"
-                  name="portfolio_url"
-                  value={formData.portfolio_url}
-                  onChange={handleChange}
-                  placeholder="portfolio-url"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-800">
-                  Resume Url
-                </label>
-                <input
-                  type="text"
-                  name="resume_url"
-                  value={formData.resume_url}
-                  onChange={handleChange}
-                  placeholder="resume-url"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-800 mb-1">
-                  Describe Yourself
-                </label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Describe yourself"
-                  className="w-full min-h-24"
+      <div className='w-1/3 flex flex-col h-fit top-8'>
+        <div className="bg-card text-card-foreground p-6 rounded-lg shadow-md dark:shadow-primary/10 border border-border">
+          {/* Profile Header */}
+          <div className='flex justify-content'>
+            <div className='mr-4'>
+              <img
+                src="https://via.placeholder.com/60"
+                alt="Profile"
+                className="w-24 h-24 rounded-md object-cover"
               />
-              </div>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold mb-1 text-foreground">PriyanshAgarwal</h2>
+              <p className="text-muted-foreground text-sm">@PhoneNumber</p>
+              <p className="text-muted-foreground text-sm">@Email</p>
+            </div>
+          </div>
+          <div className='pt-2'>
+            <p className='text-muted-foreground'>this is my description</p>
+          </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="is_founder"
-                  id="is_founder"
-                  checked={formData.is_founder}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="is_founder" className="ml-2 block text-sm text-gray-900">
-                  I am a founder
-                </label>
-              </div>
-      
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Update Profile
-              </button>
-            </form>
-          </div> */}
+          {/* Edit Profile Button */}
+          <button 
+            className="w-full mt-4 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 rounded-md transition-colors"
+            onClick={handleOverlay}
+          >
+            Edit Profile
+          </button>
+
+          {/* Location & Github */}
+          <div className="mt-4 space-y-2 text-muted-foreground">
+            <p className="flex items-center space-x-2">
+              <Github className="w-5 h-5 text-muted-foreground" />
+              <span>Github</span>
+            </p>
+            <p className="flex items-center space-x-2">
+              <GoLink className="w-5 h-5 text-muted-foreground" />
+              <span>Portfolio</span>
+            </p>
+            <p className="flex items-center space-x-2">
+              <IoDocumentTextOutline className="w-5 h-5 text-muted-foreground" />
+              <span>Resume</span>
+            </p>
+          </div>
         </div>
+
+        <div className="h-6"></div>
+
+        {/* Numbers */}
+        <div className='bg-card text-card-foreground flex flex-col shadow-md dark:shadow-primary/10 p-4 md:p-6 rounded-xl border border-border'>
+          <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center text-foreground">
+            <ScrollText className="w-5 h-5 md:w-6 md:h-6 mr-2 text-primary" />
+            Overview
+          </h2>
+
+          {/* Applications Sent Section */}
+          <div className='flex flex-col items-center'>
+            <div className="relative group">
+              <CircularProgress
+                total={data.total}
+                accepted={data.accepted}
+                pending={data.pending}
+                rejected={data.rejected}
+                content="Applications Sent"
+              />
+              {/* Hover Stats */}
+              <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="absolute top-1/4 left-full ml-2">
+                  <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                    Accepted: {data.accepted}
+                  </div>
+                </div>
+                <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
+                  <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                    Pending: {data.pending}
+                  </div>
+                </div>
+                <div className="absolute bottom-1/4 left-full ml-2">
+                  <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                    Rejected: {data.rejected}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-b border-border mt-4"></div>
+
+          {/* Application Received Section */}
+          <div className='flex flex-col items-center mt-4'>
+            <div className="relative group">
+              <CircularProgress
+                total={datareceived.total}
+                accepted={datareceived.accepted}
+                pending={datareceived.pending}
+                rejected={datareceived.rejected}
+                content="Applications Received"
+              />
+              {/* Hover Stats */}
+              <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="absolute top-1/4 left-full ml-2">
+                  <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                    Accepted: {datareceived.accepted}
+                  </div>
+                </div>
+                <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
+                  <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                    Pending: {datareceived.pending}
+                  </div>
+                </div>
+                <div className="absolute bottom-1/4 left-full ml-2">
+                  <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                    Rejected: {datareceived.rejected}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-b border-border mt-4"></div>
+
+          {/* Stats Section */}
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4">
+            <div className="flex flex-col items-center p-2 md:p-3 bg-accent rounded shadow-md dark:shadow-primary/5 w-full">
+              <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
+                <Lightbulb className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-primary" />
+                <span className="font-medium text-xs md:text-sm text-foreground">Ideas</span>
+              </div>
+              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{data.accepted}</span>
+            </div>
+
+            <div className="flex flex-col items-center p-2 md:p-3 bg-accent rounded shadow-md dark:shadow-primary/5 w-full">
+              <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
+                <Users className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-primary" />
+                <span className="font-medium text-xs md:text-sm text-foreground">Contacts</span>
+              </div>
+              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{data.pending}</span>
+            </div>
+
+            <div className="flex flex-col items-center p-2 md:p-3 bg-accent rounded shadow-md dark:shadow-primary/5 w-full">
+              <div className='flex flex-row items-center justify-center gap-1 md:gap-2'>
+                <Heart className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-primary" />
+                <span className="font-medium text-xs md:text-sm text-foreground">Likes</span>
+              </div>
+              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{data.rejected}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Right Side Content */}
       <div className="w-4/5 space-y-8">
         {/* Applications Section */}
-        <div className="bg-white p-6 rounded-xl shadow-md">
+        <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
           {/* Filter Dropdown */}
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Your Applications</h2>
+            <h2 className="text-2xl font-bold text-foreground">Your Applications</h2>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="border rounded-md p-2 text-sm transition-all duration-200 ease-in-out 
-              focus:outline-none focus:ring-2 focus:ring-indigo-500 
-              hover:shadow-md cursor-pointer bg-white"
-              >
-          
+              focus:outline-none focus:ring-2 focus:ring-primary 
+              hover:shadow-md cursor-pointer bg-background text-foreground border-border"
+            >
               <option value="all">All</option>
               <option value="pending">Pending</option>
               <option value="accepted">Accepted</option>
@@ -617,22 +500,22 @@ function Profile() {
           {/* display company name hosted by idea description then pitch by the user   */}
           <div className="space-y-4"> 
             {filteredApplications.map((app) => (
-              <div key={app.id} className="border rounded-lg p-4 bg-white shadow-md">
+              <div key={app.id} className="border border-border rounded-lg p-4 bg-card text-card-foreground shadow-md dark:shadow-primary/10">
                 <div className='flex justify-between'>
                   <div>
                     {/* Company Name & Founder */}
 
-                    <h4 className="font-semibold text-lg text-gray-900">{app.ideas.company_name}</h4>
-                    <p className="text-sm text-gray-500">
+                    <h4 className="font-semibold text-lg text-foreground">{app.ideas.company_name}</h4>
+                    <p className="text-sm text-muted-foreground">
                       <span className="font-bold">Posted by:</span> {app.profiles?.name || "Unknown"}
                     </p>
               
                     {/* Idea Description */}
                     <div className='flex flex-col'>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         <span className="font-bold">Idea:</span> {app.ideas.idea_desc}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         <span className="font-bold">Equity Share:</span> {app.ideas.equity_term}%
                       </p>
                     </div> 
@@ -644,10 +527,10 @@ function Profile() {
                       <span
                         className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           app.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
+                            ? "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100"
                             : app.status === "accepted"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
+                            : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
                         }`}
                       >
                         {app.status === "pending" && <Clock className="w-4 h-4 mr-1" />}
@@ -691,29 +574,30 @@ function Profile() {
                     )}
                   </div>
                 </div>
-                <div className="mt-3 p-3 bg-gray-100 rounded-lg">
-                    <h5 className="font-bold text-gray-800">
-                      Pitch : <span className="font-normal">This is a sample pitch from the user</span>
-                    </h5>
+                <div className="mt-3 p-3 bg-accent rounded-lg border border-border">
+                  <h5 className="text-foreground">
+                    <span className="font-semibold">Pitch:</span>{" "}
+                    <span className="text-muted-foreground">{app.pitch || "This is a sample pitch from the user"}</span>
+                  </h5>
                 </div>
               </div>
             ))}
             {filteredApplications.length === 0 && (
-              <p className="text-gray-500 border rounded-md text-center py-4">No applications yet</p>
+              <p className="text-muted-foreground border border-border rounded-md text-center py-4">No applications yet</p>
             )}
           </div>
         </div>
   
         {/* Posted Ideas Section */}
         {formData.is_founder && (
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <h2 className="text-2xl font-bold mb-6">Your Posted Ideas</h2>
+          <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Your Posted Ideas</h2>
             {ideas.map((idea) => (
-              <div key={idea.id} className="border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2">{idea.company_name}</h3>
+              <div key={idea.id} className="border border-border rounded-lg p-6">
+                <h3 className="text-xl font-semibold mb-2 text-foreground">{idea.company_name}</h3>
                 <div className="space-y-2 mb-4">
-                  <p className="text-gray-600">{idea.idea_desc}</p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <p className="text-muted-foreground">{idea.idea_desc}</p>
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <span>Developer Requirements: {idea.dev_req}</span>
                     <span>Partnership Terms: {idea.partner_term}</span>
                     <span>Equity Offered: {idea.equity_term}%</span>
@@ -726,7 +610,7 @@ function Profile() {
                     <button 
                       data-tooltip-id="view-tooltip"
                       onClick={() => viewDetails(idea.id)}
-                      className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                      className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
                       <GrView className="w-4 h-4 mr-2" />
                       View Details
@@ -735,7 +619,7 @@ function Profile() {
                     <button 
                       data-tooltip-id="stop-tooltip"
                       onClick={() => handleToggleApplications(idea.id)}
-                      className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                      className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
                     >
                       <AiOutlineStop className="w-4 h-4 mr-2" />
                       Stop
@@ -746,7 +630,7 @@ function Profile() {
                   <button 
                     data-tooltip-id="delete-tooltip"
                     onClick={() => handleToggleApplications(idea.id)} // Change function for deleting the post
-                    className="inline-flex items-center justify-center w-10 h-10 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    className="inline-flex items-center justify-center w-10 h-10 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-colors"
                   >
                     <RiDeleteBin6Line className="w-5 h-5"/>
                   </button>
@@ -768,7 +652,7 @@ function Profile() {
               </div>
             ))}
             {ideas.length === 0 && (
-              <p className="text-gray-500 text-center py-4">No ideas posted yet</p>
+              <p className="text-muted-foreground text-center py-4">No ideas posted yet</p>
             )}
           </div>
         )}
@@ -777,14 +661,14 @@ function Profile() {
       {/* edit profile overlay */}
 
       {EditprofileOverlay && (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000] p-10">
+      <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000] p-10">
         <div
-          className="bg-white my-20 p-6 rounded-lg shadow-lg w-[500px] max-h-[90vh] relative overflow-y-auto modern-scrollbar"
+          className="bg-card text-card-foreground my-20 p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[500px] max-h-[90vh] relative overflow-y-auto modern-scrollbar border border-border"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={() => setEditprofileOverlay(false)}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             ✖
           </button>

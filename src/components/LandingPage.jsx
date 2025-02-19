@@ -54,19 +54,19 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="bg-zinc-50 flex flex-col">
-      <BackgroundLines className="flex items-center justify-center w-full flex-col px-4">
+    <div className="bg-background transition-colors duration-200">
+      <BackgroundLines className="flex items-center justify-center w-full flex-col px-4 ">
         {/* Hero Section */}
         <div>
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 ">
             <motion.div 
-            className="container mx-auto px-4 pt-12 pb-16"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+              className="container mx-auto px-4 pt-12 pb-16"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
               <motion.h1 
-                className="text-6xl font-bold text-center mb-6 text-zinc-900"
+                className="text-6xl font-bold text-center mb-6 text-foreground"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -74,7 +74,7 @@ const LandingPage = () => {
                 Turn Ideas into Reality
               </motion.h1>
               <motion.p 
-                className="text-xl text-center text-zinc-600 mb-12 max-w-2xl mx-auto"
+                className="text-xl text-center text-muted-foreground mb-12 max-w-2xl mx-auto"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -89,25 +89,22 @@ const LandingPage = () => {
                 transition={{ delay: 0.4 }}
               >
                 <motion.button 
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold flex items-center gap-2"
+                  className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold flex items-center gap-2 hover:bg-primary/90 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   Share Your Idea <ArrowRight className="w-5 h-5" />
                 </motion.button>
                 <motion.button 
-                  className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg font-semibold"
-                  whileHover={{ scale: 1.05, backgroundColor: 'rgba(37, 99, 235, 0.05)' }}
+                  className="border-2 border-primary text-primary px-8 py-3 rounded-lg font-semibold hover:bg-primary/10 transition-colors"
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   Browse Projects
                 </motion.button>
               </motion.div>
             </motion.div>
-
           </div>
-        
-
         </div>
 
         {/* How It Works Section */}
@@ -129,17 +126,14 @@ const LandingPage = () => {
                   className="relative"
                 >
                   <motion.div 
-                    className="text-center p-6 rounded-xl bg-white shadow-lg"
+                    className="text-center p-6 rounded-xl bg-card text-card-foreground shadow-lg dark:shadow-primary/10"
                     whileHover={{ y: -10 }}
                     animate={{
                       scale: hoveredCard === index ? 1.05 : 1,
-                      boxShadow: hoveredCard === index 
-                        ? "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
-                        : "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
                     }}
                   >
                     <motion.div 
-                      className="flex justify-center mb-4 text-blue-600"
+                      className="flex justify-center mb-4 text-primary"
                       animate={{ 
                         rotate: hoveredCard === index ? [0, -10, 10, 0] : 0 
                       }}
@@ -147,10 +141,10 @@ const LandingPage = () => {
                     >
                       {step.icon}
                     </motion.div>
-                    <h3 className="text-xl font-semibold mb-2 text-zinc-900">
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">
                       {step.title}
                     </h3>
-                    <p className="text-zinc-600">
+                    <p className="text-muted-foreground">
                       {step.description}
                     </p>
                   </motion.div>
@@ -159,7 +153,7 @@ const LandingPage = () => {
             </motion.div>
           </div>
         </div>
-        </BackgroundLines>
+      </BackgroundLines>
     </div>
   );
 };

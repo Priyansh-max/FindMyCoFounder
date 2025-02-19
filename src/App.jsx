@@ -7,6 +7,8 @@ import IdeaForm from "./components/IdeaForm";
 import Profile from "./components/Profile";
 import IdeaDetails from './components/IdeaDetails'
 import LandingPage from "./components/LandingPage";
+import { ThemeProvider } from './context/ThemeContext';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   console.log("app rendered")
@@ -15,33 +17,36 @@ function App() {
   console.log(user);
 
   return (
-    <Router>
-      <AuthHandler user={user} setUser={setUser} />
-      <div className="min-h-screen bg-gray-50">
-        <Navbar user={user} />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/idealist" element={<IdeasList />} />
-            {/* <Route 
-              path="/idealist" 
-              element={user ? <IdeasList /> : <Navigate to="/" />}/> */}
-            <Route
-              path="/post-idea"
-              element={user ? <IdeaForm /> : <Navigate to="/" />}
-            />
-            <Route
-              path="/profile"
-              element={user ? <Profile /> : <Navigate to="/" />}
-            />
-            <Route
-              path="/details/:id"
-              element={user ? <IdeaDetails /> : <Navigate to="/" />}
-            />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <AuthHandler user={user} setUser={setUser} />
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+          <Navbar user={user} />
+          <main className="container mx-auto px-4 py-8">
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/idealist" element={<IdeasList />} />
+              {/* <Route 
+                path="/idealist" 
+                element={user ? <IdeasList /> : <Navigate to="/" />}/> */}
+              <Route
+                path="/post-idea"
+                element={user ? <IdeaForm /> : <Navigate to="/" />}
+              />
+              <Route
+                path="/profile"
+                element={user ? <Profile /> : <Navigate to="/" />}
+              />
+              <Route
+                path="/details/:id"
+                element={user ? <IdeaDetails /> : <Navigate to="/" />}
+              />
+            </Routes>
+          </main>
+          <Toaster position="bottom-right" />
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 
