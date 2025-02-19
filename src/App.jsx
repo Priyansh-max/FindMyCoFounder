@@ -9,6 +9,7 @@ import IdeaDetails from './components/IdeaDetails'
 import LandingPage from "./components/LandingPage";
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 function App() {
   console.log("app rendered")
@@ -65,16 +66,23 @@ function AuthHandler({ user, setUser }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       
-      // Only redirect on specific auth events
-      if (event === 'SIGNED_IN' && window.location.pathname === '/') {
-        navigate('/idealist');
+      // Handle auth state changes
+      if (event === 'SIGNED_IN') {
+        // Add a small delay to ensure navigation completes
+        setTimeout(() => {
+          toast.success('Signed in successfully!');
+        }, 500);
+        
+        if (window.location.pathname === '/') {
+          navigate('/idealist', { replace: true });
+        }
       } else if (event === 'SIGNED_OUT') {
         navigate('/');
+        toast.success('Signed out successfully');
       }
-      // Don't redirect on other auth state changes
     });
 
     return () => subscription.unsubscribe();

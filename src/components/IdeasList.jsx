@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import supabase from '../lib/supabase';
 import { Rocket, Users, Calendar, ArrowRight } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 function IdeasList() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     console.log('Component mounted');
