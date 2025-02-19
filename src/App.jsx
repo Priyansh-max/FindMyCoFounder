@@ -54,6 +54,7 @@ function App() {
 // New component to handle auth and navigation
 function AuthHandler({ user, setUser }) {
   const navigate = useNavigate();
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   useEffect(() => {
     // Check initial session
@@ -67,26 +68,34 @@ function AuthHandler({ user, setUser }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
+      console.log('Auth event:', event); // For debugging
       
-      // Handle auth state changes
-      if (event === 'SIGNED_IN') {
-        // Add a small delay to ensure navigation completes
+      if (event === 'INITIAL_SESSION') {
+        setUser(session?.user ?? null);
+        return;
+      }
+
+      if (event === 'SIGNED_IN' && !hasShownWelcome) {
+        setUser(session?.user ?? null);
+        setHasShownWelcome(true);
+        
         setTimeout(() => {
           toast.success('Signed in successfully!');
-        }, 500);
+        }, 1000);
         
         if (window.location.pathname === '/') {
           navigate('/idealist', { replace: true });
         }
       } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setHasShownWelcome(false);
         navigate('/');
         toast.success('Signed out successfully');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, setUser]);
+  }, [navigate, setUser, hasShownWelcome]);
 
   return null;
 }
