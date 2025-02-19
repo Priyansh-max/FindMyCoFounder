@@ -174,7 +174,7 @@ function IdeaForm() {
                       onChange={handleChange}
                       required
                       placeholder="Enter company name"
-                      className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
+                      className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
                     />
                   </div>
 
@@ -190,7 +190,7 @@ function IdeaForm() {
                       onChange={handleChange}
                       required
                       placeholder="Describe your startup idea in detail. atleast 100 characters!"
-                      className="w-full min-h-32 transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
+                      className="w-full min-h-32 transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
                     />
                     <span className={`absolute bottom-2 italic right-2 text-sm ${
                       formData.ideaDescription.length < 100 ? "text-destructive" : "text-primary"
@@ -211,7 +211,7 @@ function IdeaForm() {
                       onChange={handleChange}
                       required
                       placeholder="What kind of developers are you looking for? List specific skills and experience needed."
-                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
+                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
                     />
                   </div>
 
@@ -226,7 +226,7 @@ function IdeaForm() {
                       value={formData.additionalDetails}
                       onChange={handleChange}
                       placeholder="Describe any additional information here"
-                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-background"
+                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
                     />
                   </div>
                 </div>
