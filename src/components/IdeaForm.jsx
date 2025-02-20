@@ -1,7 +1,7 @@
 import React, { useState, useEffect , useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { PlusCircle, Lightbulb, Code2, PenLine, Send, Loader2 ,Handshake } from 'lucide-react';
+import { PlusCircle, Lightbulb, Code2, PenLine, Send, Loader2, Handshake, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import idea from '../assets/idea.png'
 import SkillSelect from '@/components/ui/SkillSelect';
+import axios from 'axios';
 
 function IdeaForm() {
   const navigate = useNavigate();
@@ -27,6 +28,12 @@ function IdeaForm() {
     { title: "Bring ideas to life", description: "Turn concepts into projects." },
     { title: "Gain visibility", description: "Attract contributors easily." },
   ];
+  const [fieldStatus, setFieldStatus] = useState({
+    title: { loading: false, valid: null },
+    description: { loading: false, valid: null },
+    devReq: { loading: false, valid: null },
+    additionalDetails: { loading: false, valid: null }
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,6 +54,15 @@ function IdeaForm() {
   }, [developerNeeds]);
   
 
+  const resetFieldStatus = () => {
+    setFieldStatus({
+      title: { loading: false, valid: null },
+      description: { loading: false, valid: null },
+      devReq: { loading: false, valid: null },
+      additionalDetails: { loading: false, valid: null }
+    });
+  };
+
   const handleSubmitDemo = async(e) => {
     e.preventDefault();
     
@@ -66,12 +82,78 @@ function IdeaForm() {
     }
 
     setError('');
+    resetFieldStatus();
 
     const formRecord = {
       ...formData,
       developerNeeds: selectedSkills.join(', ')
     };
+
     console.log('Form Record:', formRecord);
+
+    setLoading(true);
+
+    try {
+      // Set all fields to loading
+      setFieldStatus(prev => ({
+        title: { ...prev.title, loading: true },
+        description: { ...prev.description, loading: true },
+        devReq: { ...prev.devReq, loading: true },
+        additionalDetails: { ...prev.additionalDetails, loading: true }
+      }));
+
+      const response = await axios.post('http://localhost:5000/validate', {
+        title : formRecord.title,
+        description : formRecord.ideaDescription,
+        devReq : formRecord.developerNeeds,
+        additionalDetails : formRecord.additionalDetails
+      });
+      
+      console.log('Response:', response.data);
+
+      // Update field status based on validation results
+      setFieldStatus({
+        title: { loading: false, valid: response.data.title.isValid },
+        description: { loading: false, valid: response.data.description.isValid },
+        devReq: { loading: false, valid: response.data.devReq.isValid },
+        additionalDetails: { loading: false, valid: response.data.additionalDetails.isValid }
+      });
+
+      if(response.data.success){
+        console.log("posted successfully");
+      }
+      else{
+        const invalidFields = [];
+        
+        if (!response.data.title.isValid) {
+          invalidFields.push(`Title: ${response.data.title.reason}`);
+        }
+        if (!response.data.description.isValid) {
+          invalidFields.push(`Description: ${response.data.description.reason}`);
+        }
+        if (!response.data.devReq.isValid) {
+          invalidFields.push(`Developer Requirements: ${response.data.devReq.reason}`);
+        }
+        if (!response.data.additionalDetails.isValid) {
+          invalidFields.push(`Additional Details: ${response.data.additionalDetails.reason}`);
+        }
+
+        setError(
+          <div className="space-y-1">
+            {invalidFields.map((message, index) => (
+              <p key={index}>{message}</p>
+            ))}
+          </div>
+        );
+      }
+
+    } catch (error) {
+      console.error('API Error:', error);
+      setError('Failed to submit form. Please try again.');
+      resetFieldStatus();
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -158,6 +240,19 @@ function IdeaForm() {
   };
   
 
+  const StatusIndicator = ({ status }) => {
+    if (status.loading) {
+      return <Loader2 className="w-4 h-4 animate-spin text-primary" />;
+    }
+    if (status.valid === true) {
+      return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    }
+    if (status.valid === false) {
+      return <XCircle className="w-4 h-4 text-destructive" />;
+    }
+    return null;
+  };
+
   return (
     <div className="flex min-h-screen bg-background pt-8 justify-between px-20 transition-colors duration-200">
       {/* Left Side - Image */}
@@ -216,16 +311,20 @@ function IdeaForm() {
                       <PenLine className="w-4 h-4 text-muted-foreground" />
                       Title
                     </label>
-                    <Input
-                      id="title"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      required
-                      placeholder="Title goes here :) "
-                      className="w-full focus:ring-1 focus:ring-primary
-                      bg-white dark:bg-background"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleChange}
+                        required
+                        placeholder="Title goes here :) "
+                        className="w-full focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <StatusIndicator status={fieldStatus.title} />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2 relative">
@@ -233,15 +332,20 @@ function IdeaForm() {
                       <Lightbulb className="w-4 h-4 text-muted-foreground" />
                       Idea Description
                     </label>
-                    <Textarea
-                      id="ideaDescription"
-                      name="ideaDescription"
-                      value={formData.ideaDescription}
-                      onChange={handleChange}
-                      required
-                      placeholder="Describe your startup idea in detail. atleast 100 characters!"
-                      className="w-full min-h-32 focus:ring-1 focus:ring-primary bg-white dark:bg-background"
-                    />
+                    <div className="relative">
+                      <Textarea
+                        id="ideaDescription"
+                        name="ideaDescription"
+                        value={formData.ideaDescription}
+                        onChange={handleChange}
+                        required
+                        placeholder="Describe your startup idea in detail. atleast 100 characters!"
+                        className="w-full min-h-32 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none"
+                      />
+                      <div className="absolute right-2 top-2">
+                        <StatusIndicator status={fieldStatus.description} />
+                      </div>
+                    </div>
                     <span className={`absolute bottom-2 italic right-2 text-sm ${
                       formData.ideaDescription.length < 100 ? "text-destructive" : "text-primary"
                     }`}>
@@ -254,10 +358,15 @@ function IdeaForm() {
                       <Code2 className="w-4 h-4 text-muted-foreground" />
                       Developer Requirements
                     </label>
-                    <SkillSelect
-                      selectedSkills={selectedSkills}
-                      setSelectedSkills={setSelectedSkills}
-                    />
+                    <div className="relative">
+                      <SkillSelect
+                        selectedSkills={selectedSkills}
+                        setSelectedSkills={setSelectedSkills}
+                      />
+                      <div className="absolute right-2 top-2">
+                        <StatusIndicator status={fieldStatus.devReq} />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -265,15 +374,20 @@ function IdeaForm() {
                       <Handshake className="w-4 h-4 text-muted-foreground" />
                       Additional Information
                     </label>
-                    <Textarea
-                      id="additionalDetails"
-                      name="additionalDetails"
-                      value={formData.additionalDetails}
-                      onChange={handleChange}
-                      required
-                      placeholder="Describe any additional information here"
-                      className="w-full min-h-24 focus:ring-1 focus:ring-primary bg-white dark:bg-background"
-                    />
+                    <div className="relative">
+                      <Textarea
+                        id="additionalDetails"
+                        name="additionalDetails"
+                        value={formData.additionalDetails}
+                        onChange={handleChange}
+                        required
+                        placeholder="Describe any additional information here"
+                        className="w-full min-h-24 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none"
+                      />
+                      <div className="absolute right-2 top-2">
+                        <StatusIndicator status={fieldStatus.additionalDetails} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
