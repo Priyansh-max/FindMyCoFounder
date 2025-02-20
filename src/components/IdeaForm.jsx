@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import idea from '../assets/idea.png'
+import SkillSelect from '@/components/ui/SkillSelect';
 
 function IdeaForm() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ function IdeaForm() {
     developerNeeds: '',
     additionalDetails: ''
   });
+  const [selectedSkills, setSelectedSkills] = useState([]);
   const points = [
     { title: "Find teammates", description: "Connect with skilled people." },
     { title: "Bring ideas to life", description: "Turn concepts into projects." },
@@ -40,58 +42,66 @@ function IdeaForm() {
     setError('');
   
     try {
-      // Get the current authenticated user
       const { data: userData, error: UserError } = await supabase.auth.getUser();
+      if (UserError) throw new Error('Error fetching user');
   
-      if (UserError) {
-        console.error('Error fetching user:', UserError);
-        throw new Error('Error fetching user');
-      }
+      const user = userData.user;
+      if (!user) throw new Error('User is not authenticated');
   
-      const user = userData.user; // Access the user object from the renamed variable
-  
-      if (!user) {
-        throw new Error('User is not authenticated');
-      }
-  
-      console.log(user.id); // Now this should work and log the user ID
-  
-      // Get the user's profile information (assuming the profile table contains the profile for the authenticated user)
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, is_founder')  // Fetch both id and is_founder
-        .eq('id', user.id) // Assuming user.id is linked to your profile table
+        .select('id, is_founder')
+        .eq('id', user.id)
         .single();
   
-      console.log(profile);
-      if (profileError || !profile) {
-        throw new Error('Profile not found');
-      }
-  
-      // Check if the user is a founder before allowing them to post an idea
-      if (!profile.is_founder) {
-        throw new Error('You must be a founder to post an idea');
-      }
-  
-      // Insert the new idea with the found founder_id (profile.id)
-      const { data, error } = await supabase
+      if (profileError || !profile) throw new Error('Profile not found');
+      if (!profile.is_founder) throw new Error('You must be a founder to post an idea');
+
+      // First, insert the idea
+      const { data: ideaData, error: ideaError } = await supabase
         .from('ideas')
         .insert([
           {
             created_at: new Date(),
-            founder_id: profile.id, // Use the profile's id as the founder_id
-            company_name: formData.companyName,
+            founder_id: profile.id,
+            company_name: formData.title,
             idea_desc: formData.ideaDescription,
-            dev_req: formData.developerNeeds,
-            partner_term: formData.partnershipTerms,
+            partner_term: formData.additionalDetails,
             equity_term: formData.equityTerms,
             status: 'open',
           },
-        ]);
+        ])
+        .select()
+        .single();
+
+      if (ideaError) throw ideaError;
+
+      // Then, handle skills
+      if (selectedSkills.length > 0) {
+        // Upsert skills to ensure they exist
+        const { data: skillsData, error: skillsError } = await supabase
+          .from('skills')
+          .upsert(
+            selectedSkills.map(name => ({ name })),
+            { onConflict: 'name' }
+          )
+          .select('id, name');
+
+        if (skillsError) throw skillsError;
+
+        // Create skill associations
+        const skillAssociations = skillsData.map(skill => ({
+          idea_id: ideaData.id,
+          skill_id: skill.id
+        }));
+
+        const { error: associationError } = await supabase
+          .from('idea_skills')
+          .insert(skillAssociations);
+
+        if (associationError) throw associationError;
+      }
   
-      if (error) throw error;
-  
-      // Redirect to success page or ideas list
       navigate('/');
   
     } catch (err) {
@@ -163,7 +173,7 @@ function IdeaForm() {
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="companyName" className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <label htmlFor="title" className="text-sm font-medium text-foreground flex items-center gap-2">
                       <PenLine className="w-4 h-4 text-muted-foreground" />
                       Title
                     </label>
@@ -173,8 +183,9 @@ function IdeaForm() {
                       value={formData.title}
                       onChange={handleChange}
                       required
-                      placeholder="Enter company name"
-                      className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
+                      placeholder="Title goes here :) "
+                      className="w-full focus:ring-1 focus:ring-primary
+                      bg-white dark:bg-background"
                     />
                   </div>
 
@@ -190,7 +201,7 @@ function IdeaForm() {
                       onChange={handleChange}
                       required
                       placeholder="Describe your startup idea in detail. atleast 100 characters!"
-                      className="w-full min-h-32 transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
+                      className="w-full min-h-32 focus:ring-1 focus:ring-primary bg-white dark:bg-background"
                     />
                     <span className={`absolute bottom-2 italic right-2 text-sm ${
                       formData.ideaDescription.length < 100 ? "text-destructive" : "text-primary"
@@ -204,14 +215,9 @@ function IdeaForm() {
                       <Code2 className="w-4 h-4 text-muted-foreground" />
                       Developer Requirements
                     </label>
-                    <Textarea
-                      id="developerNeeds"
-                      name="developerNeeds"
-                      value={formData.developerNeeds}
-                      onChange={handleChange}
-                      required
-                      placeholder="What kind of developers are you looking for? List specific skills and experience needed."
-                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
+                    <SkillSelect
+                      selectedSkills={selectedSkills}
+                      setSelectedSkills={setSelectedSkills}
                     />
                   </div>
 
@@ -226,7 +232,7 @@ function IdeaForm() {
                       value={formData.additionalDetails}
                       onChange={handleChange}
                       placeholder="Describe any additional information here"
-                      className="w-full min-h-24 transition-all duration-200 focus:ring-2 focus:ring-primary bg-white dark:bg-background"
+                      className="w-full min-h-24 focus:ring-1 focus:ring-primary bg-white dark:bg-background"
                     />
                   </div>
                 </div>
