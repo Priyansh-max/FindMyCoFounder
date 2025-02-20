@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect , useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
 import { PlusCircle, Lightbulb, Code2, PenLine, Send, Loader2 ,Handshake } from 'lucide-react';
@@ -36,8 +36,53 @@ function IdeaForm() {
     }));
   };
 
+  // Add effect to update developerNeeds when skills change
+  const developerNeeds = useMemo(() => selectedSkills.join(', '), [selectedSkills]);
+
+  useEffect(() => {
+    setFormData(prevData => ({
+      ...prevData,
+      developerNeeds
+    }));
+  }, [developerNeeds]);
+  
+
+  const handleSubmitDemo = async(e) => {
+    e.preventDefault();
+    
+    // Validate skills
+    if (selectedSkills.length === 0) {
+      setError( <>
+        Please select at least one skill -- <strong>Developer Requirements</strong>
+      </>);
+      return;
+    }
+
+    if (formData.ideaDescription.length < 100){
+      setError(<>
+        Description must be atleast 100 characters long -- <strong>Idea Description*</strong>
+      </>);
+      return;
+    }
+
+    setError('');
+
+    const formRecord = {
+      ...formData,
+      developerNeeds: selectedSkills.join(', ')
+    };
+    console.log('Form Record:', formRecord);
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate skills
+    if (selectedSkills.length === 0) {
+      setError('Please select at least one required skill');
+      return;
+    }
+
     setLoading(true);
     setError('');
   
@@ -118,7 +163,7 @@ function IdeaForm() {
       {/* Left Side - Image */}
       <div className="ml-12 p-12">
         {/* Image Section */}
-        <div className="flex mt-20 justify-center scale-125">
+        <div className="flex justify-center scale-125">
           <motion.img
             src={idea}
             alt="Startup Team"
@@ -164,13 +209,7 @@ function IdeaForm() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
+              <form onSubmit={handleSubmitDemo} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="title" className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -231,11 +270,18 @@ function IdeaForm() {
                       name="additionalDetails"
                       value={formData.additionalDetails}
                       onChange={handleChange}
+                      required
                       placeholder="Describe any additional information here"
                       className="w-full min-h-24 focus:ring-1 focus:ring-primary bg-white dark:bg-background"
                     />
                   </div>
                 </div>
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
 
                 <Button
                   type="submit"
