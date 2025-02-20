@@ -27,6 +27,7 @@ app.post("/validate", async (req, res) => {
       1. They contain slang or offensive words.
       2. They are gibberish or meaningless.
       3. They are informative
+      4. The title field should look like a name or heading of a project
 
       Respond in JSON format like this:
       {
