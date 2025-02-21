@@ -9,11 +9,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import idea from '../assets/idea.png'
+import ideadark from '../assets/ideadark.png'
 import SkillSelect from '@/components/ui/SkillSelect';
 import axios from 'axios';
+import { useTheme } from '../context/ThemeContext';
 
 function IdeaForm() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -156,6 +159,7 @@ function IdeaForm() {
     }
   }
 
+  //not used currently
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -260,7 +264,7 @@ function IdeaForm() {
         {/* Image Section */}
         <div className="flex justify-center scale-125">
           <motion.img
-            src={idea}
+            src={theme === 'dark' ? ideadark : idea}
             alt="Startup Team"
             className="w-full h-auto rounded-2xl"
             animate={{ y: [0, -10, 0] }}
