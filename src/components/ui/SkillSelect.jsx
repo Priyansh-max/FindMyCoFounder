@@ -86,7 +86,7 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills }) => {
     <div className="space-y-2">
       {/* Combined Input and Selected Skills */}
       <div 
-        className="relative flex flex-wrap items-center gap-2 px-2 py-1 rounded-md border border-input bg-white dark:bg-background focus-within:ring-1 focus-within:ring-primary"
+        className="relative flex flex-wrap items-center gap-2 px-2 rounded-md border border-input bg-white dark:bg-background focus-within:ring-1 focus-within:ring-primary"
         onClick={() => inputRef.current?.focus()}
       >
         {/* Selected Skills */}
