@@ -6,6 +6,7 @@ import IdeasList from "./components/IdeasList";
 import IdeaForm from "./components/IdeaForm";
 import Profile from "./components/Profile";
 import IdeaDetails from './components/IdeaDetails'
+import OnboardingForm from "./components/OnboardingForm";
 import LandingPage from "./components/LandingPage";
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
