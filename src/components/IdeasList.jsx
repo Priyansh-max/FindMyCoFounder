@@ -273,7 +273,7 @@ function IdeasList() {
               <Button 
                 variant="outline"
                 className="bg-yellow-100 dark:bg-yellow-900/40 border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 transition-colors ml-2"
-                onClick={() => navigate('/post-idea')}
+                onClick={() => navigate('/onboarding')}
               >
                 Complete Now
               </Button>
