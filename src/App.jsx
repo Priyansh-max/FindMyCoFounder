@@ -33,7 +33,7 @@ function App() {
                 element={user ? <IdeasList /> : <Navigate to="/" />}/> */}
               <Route
                 path="/post-idea"
-                element={user ? <IdeaForm /> : <Navigate to="/" />}
+                element={user ? <OnboardingForm /> : <Navigate to="/" />}
               />
               <Route
                 path="/profile"

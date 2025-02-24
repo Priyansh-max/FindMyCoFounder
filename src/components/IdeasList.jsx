@@ -49,21 +49,26 @@ function IdeasList() {
   }
 
   const checkOnboardingStatus = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        setShowOnboardingWarning(!profile || !profile.full_name);
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-    }
+        setShowOnboardingWarning(true);
   };
+
+  // const checkOnboardingStatus = async () => {
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser();
+  //     if (user) {
+  //       const { data: profile } = await supabase
+  //         .from('profiles')
+  //         .select('*')
+  //         .eq('id', user.id)
+  //         .single();
+        
+  //       console.log(profile);
+  //       setShowOnboardingWarning(!profile || !profile.full_name);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking onboarding status:', error);
+  //   }
+  // };
 
   async function fetchIdeas() {
     try {
@@ -203,22 +208,6 @@ function IdeasList() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {showOnboardingWarning && (
-        <Alert className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-900">
-          <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
-          <AlertDescription className="text-yellow-600 dark:text-yellow-500 ml-2">
-            Please complete your onboarding to unlock all features. 
-            <Button 
-              variant="link" 
-              className="text-yellow-700 dark:text-yellow-400 underline ml-1 p-0 h-auto font-medium"
-              onClick={() => navigate('/post-idea')}
-            >
-              Complete Now
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="max-w-4xl mx-auto mb-8">
         <div className="flex flex-col gap-4">
           <div className="relative w-full">
@@ -267,6 +256,31 @@ function IdeasList() {
           </div>
         </div>
       </div>
+
+      {showOnboardingWarning && (
+        <div className="max-w-7xl mx-auto mb-8">
+          <Alert className="bg-gradient-to-r from-yellow-50/80 to-orange-50/80 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-200 dark:border-yellow-900/50">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-400">
+                  Chief, Complete Your Profile! 🚀
+                </h3>
+                <p className="text-yellow-700 dark:text-yellow-300 mt-1">
+                  Take a moment to complete your onboarding and unlock the full potential of our platform.
+                </p>
+              </div>
+              <Button 
+                variant="outline"
+                className="bg-yellow-100 dark:bg-yellow-900/40 border-yellow-300 dark:border-yellow-800 text-yellow-800 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 transition-colors ml-2"
+                onClick={() => navigate('/post-idea')}
+              >
+                Complete Now
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      )}
 
       {user && filteredIdeas.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
