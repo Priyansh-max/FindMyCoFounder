@@ -33,6 +33,10 @@ function App() {
                 element={user ? <IdeasList /> : <Navigate to="/" />}/> */}
               <Route
                 path="/post-idea"
+                element={user ? <IdeaForm /> : <Navigate to="/" />}
+              />
+              <Route
+                path="/onboarding"
                 element={user ? <OnboardingForm /> : <Navigate to="/" />}
               />
               <Route
