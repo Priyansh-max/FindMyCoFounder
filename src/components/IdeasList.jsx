@@ -1,19 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import supabase from '../lib/supabase';
-import { Rocket, Users, Calendar, ArrowRight } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { Rocket, Users, Calendar, ArrowRight, Search, RefreshCcw, Filter, AlertTriangle } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import SkillSelect from '@/components/ui/SkillSelect';
 
 function IdeasList() {
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [showOnboardingWarning, setShowOnboardingWarning] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log('Component mounted');
     checkUser();
+    checkOnboardingStatus();
   }, []);
 
   // Watch for auth state changes
@@ -37,6 +47,23 @@ function IdeasList() {
       fetchIdeas();
     }
   }
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        setShowOnboardingWarning(!profile || !profile.full_name);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+    }
+  };
 
   async function fetchIdeas() {
     try {
@@ -142,6 +169,30 @@ function IdeasList() {
     }
   }
 
+  const handleRefresh = () => {
+    setLoading(true);
+    fetchIdeas();
+  };
+
+  const filteredIdeas = useMemo(() => {
+    return ideas.filter(idea => {
+      // Text search match
+      const matchesSearch = idea.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          idea.idea_desc.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Status filter match
+      const matchesStatus = filter === 'all' || idea.status === filter;
+
+      // Skills filter match
+      const matchesSkills = selectedSkills.length === 0 || 
+                          (idea.dev_req && selectedSkills.some(skill => 
+                            idea.dev_req.toLowerCase().includes(skill.toLowerCase())
+                          ));
+      
+      return matchesSearch && matchesStatus && matchesSkills;
+    });
+  }, [ideas, searchQuery, filter, selectedSkills]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -151,15 +202,75 @@ function IdeasList() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-foreground mb-4">Startup Ideas</h1>
-        <p className="text-xl text-muted-foreground">Connect with founders and build the next big thing</p>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {showOnboardingWarning && (
+        <Alert className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-900">
+          <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
+          <AlertDescription className="text-yellow-600 dark:text-yellow-500 ml-2">
+            Please complete your onboarding to unlock all features. 
+            <Button 
+              variant="link" 
+              className="text-yellow-700 dark:text-yellow-400 underline ml-1 p-0 h-auto font-medium"
+              onClick={() => navigate('/post-idea')}
+            >
+              Complete Now
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="flex flex-col gap-4">
+          <div className="relative w-full">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center text-muted-foreground">
+              <Search className="w-5 h-5" />
+            </div>
+            <Input
+              type="text"
+              placeholder="Search by idea name or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-full bg-background hover:border-primary/50 focus:border-primary transition-colors"
+            />
+          </div>
+          
+          <div className="flex items-center gap-3 justify-between">
+            <div className="flex-1">
+              <SkillSelect
+                selectedSkills={selectedSkills}
+                setSelectedSkills={setSelectedSkills}
+                placeholder="Filter by skills..."
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm hover:border-primary/50 focus:border-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="all">All Ideas</option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+              </select>
+
+              <Button
+                onClick={handleRefresh}
+                size="icon"
+                variant="ghost"
+                className="h-10 w-10 hover:text-primary transition-colors"
+                disabled={loading}
+              >
+                <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {user && ideas.length > 0 ? (
+      {user && filteredIdeas.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {ideas.map((idea) => (
+          {filteredIdeas.map((idea) => (
             <div key={idea.id} className="bg-card text-card-foreground rounded-xl shadow-md dark:shadow-primary/10 overflow-hidden hover:shadow-lg transition-all border border-border">
               <div className="p-6">
                 <div className="flex items-center mb-4">
@@ -211,8 +322,8 @@ function IdeasList() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <h3 className="text-xl font-medium text-foreground mb-2">No ideas posted yet</h3>
-          <p className="text-muted-foreground">Check back later for new opportunities!</p>
+          <h3 className="text-xl font-medium text-foreground mb-2">No ideas found</h3>
+          <p className="text-muted-foreground">Try adjusting your search or filters</p>
         </div>
       )}
     </div>
