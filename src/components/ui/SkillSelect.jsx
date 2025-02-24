@@ -83,7 +83,7 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills }) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 relative">
       {/* Combined Input and Selected Skills */}
       <div 
         className="relative flex flex-wrap items-center gap-2 px-2 rounded-md border border-input bg-white dark:bg-background focus-within:ring-1 focus-within:ring-primary"
@@ -122,18 +122,21 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills }) => {
       {isOpen && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 max-h-60 overflow-auto rounded-md border border-border bg-white dark:bg-background shadow-lg"
+          className="absolute z-50 w-full left-0 right-0 mt-1 max-h-60 overflow-auto rounded-md border border-border bg-white dark:bg-background shadow-lg"
+          style={{ maxWidth: '100%' }}
         >
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => addSkill(suggestion)}
-              className="w-full px-4 py-2 text-left hover:bg-accent text-foreground hover:text-accent-foreground transition-colors"
-            >
-              {suggestion}
-            </button>
-          ))}
+          <div className="py-1">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => addSkill(suggestion)}
+                className="w-full px-4 py-2 text-left hover:bg-accent text-foreground hover:text-accent-foreground transition-colors truncate"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
