@@ -1,4 +1,4 @@
-import React, { useState , useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Link, FileText, User, Phone, Mail, CheckCircle2, Loader2, Shield, ShieldCheck, ShieldAlert, X, Code2 } from 'lucide-react';
@@ -151,22 +151,39 @@ const OnboardingForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [verificationState, setVerificationState] = useState({
-    email: { status: 'pending', loading: false },
-    phone: { status: 'pending', loading: false }
+    email: { status: 'idle', loading: false },
+    phone: { status: 'idle', loading: false }
   });
   const [formData, setFormData] = useState({
-    fullName: '',
     email: '',
     phone: '',
-    skills: '',
-    description: '',
+    fullName: '',
     githubUrl: '',
     portfolioUrl: '',
     resumeUrl: '',
+    description: ''
   });
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [currentVerificationType, setCurrentVerificationType] = useState(null);
   const [selectedSkills, setSelectedSkills] = useState([]);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        // Pre-fill GitHub URL if available
+        if (user.user_metadata?.user_name) {
+          setFormData(prev => ({
+            ...prev,
+            githubUrl: `https://github.com/${user.user_metadata.user_name}`
+          }));
+        }
+      }
+    };
+    getUser();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -255,24 +272,33 @@ const OnboardingForm = () => {
         variants={containerVariants}
         transition={{ duration: 0.5 }}
       >
-        <div className="text-center mb-8">
-          <motion.h2 
-            className="text-3xl font-bold"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            Welcome to FindMyTeam
-          </motion.h2>
-          <motion.p 
-            className="mt-2 text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            Let's set up your profile to help you connect with the right people
-          </motion.p>
-        </div>
+        {user && (
+          <div className="mb-8 bg-card text-card-foreground rounded-xl p-6 shadow-xl dark:shadow-primary/10 border border-border overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+            <div className="flex items-center gap-6 relative">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/10 rounded-full animate-pulse" />
+                <img
+                  src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.user_metadata?.user_name || 'User')}`}
+                  alt="Profile"
+                  className="w-20 h-20 rounded-full border-2 border-primary/20 relative z-10"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-foreground">
+                    {user.user_metadata?.user_name || 'GitHub User'}
+                  </h2>
+                  <Github className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <p className="text-lg text-primary mt-1 font-medium">
+                  {`Welcome aboard, Chief! Let's gear up your profile 🚀`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-card text-card-foreground rounded-xl shadow-lg dark:shadow-primary/10 p-6 sm:p-8 border border-border">
           <form onSubmit={handleSubmit} className="space-y-6" autoComplete='new-off'>
