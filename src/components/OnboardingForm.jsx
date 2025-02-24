@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Github, Link, FileText, User, Phone, Mail, CheckCircle2, Loader2, Shield, ShieldCheck, ShieldAlert, X, Code2 } from 'lucide-react';
+import { Github, Link, FileText, User, Phone, Mail, CheckCircle2, Loader2, Shield, ShieldCheck, ShieldAlert, X, Code2, Upload } from 'lucide-react';
 import supabase from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
@@ -160,13 +160,16 @@ const OnboardingForm = () => {
     fullName: '',
     githubUrl: '',
     portfolioUrl: '',
-    resumeUrl: '',
     description: ''
   });
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [currentVerificationType, setCurrentVerificationType] = useState(null);
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [user, setUser] = useState(null);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -222,6 +225,74 @@ const OnboardingForm = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file type
+      if (!file.type.includes('pdf')) {
+        toast.error('Please upload a PDF file');
+        return;
+      }
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size should be less than 5MB');
+        return;
+      }
+      setResumeFile(file);
+    }
+  };
+
+  const uploadResume = async (userId) => {
+    console.log("Starting resume upload");
+    if (!resumeFile) return null;
+    setUploadSuccess(false);
+    setUploadComplete(false);
+  
+    try {
+      const fileExt = resumeFile.name.split('.').pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+  
+      setUploadProgress(0);
+  
+      const { data, error } = await supabase.storage
+        .from('Resume')
+        .upload(filePath, resumeFile, {
+          cacheControl: '3600',
+          upsert: true,
+          onUploadProgress: (progress) => {
+            const percent = (progress.loaded / progress.total) * 100;
+            console.log('Upload progress:', percent.toFixed(2) + '%');
+            setUploadProgress(percent);
+          },
+        });
+  
+      if (error) {
+        throw error;
+      }
+  
+      setUploadProgress(100);
+      
+      // Add a delay before getting the public URL to show the upload animation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setUploadSuccess(true);
+      setUploadComplete(true);
+  
+      const { data: { publicUrl } } = supabase.storage
+        .from('Resume')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading resume:', error);
+      setUploadProgress(0);
+      setUploadSuccess(false);
+      throw error;
+    }
+  };
+  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -231,30 +302,23 @@ const OnboardingForm = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: formData.fullName,
-          email: formData.email,
-          whatsapp_number: formData.phone,
-          description: formData.description,
-          github_url: formData.githubUrl,
-          portfolio_url: formData.portfolioUrl,
-          resume_url: formData.resumeUrl,
-          updated_at: new Date()
-        });
+      if (!resumeFile) {
+        throw new Error('Please select a resume file');
+      }
 
-      if (profileError) throw profileError;
-
-      toast.success('Profile created successfully!');
-      navigate('/idealist', { replace: true });
+      console.log('Starting resume upload test...');
+      const resumeUrl = await uploadResume(user.id);
+      console.log('Resume uploaded successfully:', resumeUrl);
+      
+      toast.success('Resume uploaded successfully!');
+      
     } catch (error) {
       console.error('Error:', error);
       setError(error.message);
-      toast.error('Failed to create profile');
+      toast.error(error.message || 'Failed to upload resume');
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -406,20 +470,6 @@ const OnboardingForm = () => {
                       autoComplete="off"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">
-                      Resume URL
-                    </label>
-                    <Input
-                      name="resumeUrl"
-                      value={formData.resumeUrl}
-                      onChange={handleChange}
-                      placeholder="https://drive.google.com/resume"
-                      className="w-full bg-white dark:bg-background"
-                      autoComplete="off"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -445,7 +495,82 @@ const OnboardingForm = () => {
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Resume Upload
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="resume-upload"
+                  />
+                  <label
+                    htmlFor="resume-upload"
+                    className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors relative"
+                  >
+                    <div className="flex flex-col items-center space-y-2 py-4 w-full">
+                      {uploadSuccess ? (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="text-green-500"
+                        >
+                          <CheckCircle2 className="w-8 h-8" />
+                        </motion.div>
+                      ) : (
+                        <Upload className={`w-8 h-8 text-muted-foreground ${uploadProgress > 0 && uploadProgress < 100 ? 'animate-bounce' : ''}`} />
+                      )}
+                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        {resumeFile ? (
+                          <>
+                            {resumeFile.name}
+                            {uploadComplete && (
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-green-500 text-xs"
+                              >
+                                (Upload Complete)
+                              </motion.span>
+                            )}
+                          </>
+                        ) : (
+                          'Upload your resume (PDF, max 5MB)'
+                        )}
+                      </span>
+                      {uploadProgress > 0 && (
+                        <div className="w-full max-w-xs h-2 bg-secondary rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-primary"
+                            initial={{ width: 0 }}
+                            animate={{ 
+                              width: `${uploadProgress}%`,
+                              transition: { duration: 0.3 }
+                            }}
+                            style={{
+                              backgroundImage: uploadProgress < 100 ? 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)' : 'none',
+                              backgroundSize: '1rem 1rem',
+                              animation: uploadProgress < 100 ? 'progress-stripes 1s linear infinite' : 'none'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
+
+            <style jsx>{`
+              @keyframes progress-stripes {
+                from { background-position: 1rem 0; }
+                to { background-position: 0 0; }
+              }
+            `}</style>
 
             <button
               type="submit"
