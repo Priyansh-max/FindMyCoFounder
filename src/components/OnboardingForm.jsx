@@ -407,18 +407,6 @@ const OnboardingForm = () => {
                     placeholder="john@example.com"
                     autoComplete="off"
                   />
-
-                  <VerificationInput
-                    label="Phone Number"
-                    type="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    name="phone"
-                    verificationState={verificationState}
-                    onVerify={handleVerification}
-                    placeholder="+1 (555) 000-0000"
-                    autoComplete="new-off"
-                  />
                 </div>
               </div>
 
@@ -431,6 +419,7 @@ const OnboardingForm = () => {
                   <SkillSelect
                     selectedSkills={selectedSkills}
                     setSelectedSkills={setSelectedSkills}
+                    text="Add Skills....."
                   />
                 </div>
               </div>

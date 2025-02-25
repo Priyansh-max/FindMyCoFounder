@@ -62,16 +62,16 @@ const Navbar = ({user}) => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, is_founder')
+        .select('*')
         .eq('id', user.id)
         .single();
 
       if (error) throw error;
 
-      if (!profile.is_founder) {
-        toast.error('Only founders can post an idea');
-        return;
-      }
+      // if (!profile.is_founder) {
+      //   toast.error('Only founders can post an idea');
+      //   return;
+      // }
 
       navigate('/post-idea');
       

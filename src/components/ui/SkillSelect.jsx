@@ -19,7 +19,7 @@ const SKILL_SUGGESTIONS = [
   'Blockchain', 'WebGL', 'Unity', 'Game Development', 'UI/UX Design', 'GraphQL', 'REST API'
 ];
 
-const SkillSelect = ({ selectedSkills, setSelectedSkills }) => {
+const SkillSelect = ({ selectedSkills, setSelectedSkills , text}) => {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -114,7 +114,7 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills }) => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           className="flex-1 min-w-[100px] bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-          placeholder={selectedSkills.length === 0 ? "Add skills..." : ""}
+          placeholder={selectedSkills.length === 0 ? text : ""}
         />
       </div>
 
