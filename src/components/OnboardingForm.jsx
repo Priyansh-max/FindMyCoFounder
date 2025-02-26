@@ -196,7 +196,39 @@ const OnboardingForm = () => {
         if (!resumeUrl) {
           throw new Error('Failed to upload resume');
         }
-        console.log("posted successfully");
+
+        const profileData = {
+          ...formData,
+          skills: selectedSkills.join(', '),
+          resumeUrl,
+          avatar_url: user.user_metadata?.avatar_url
+        };
+
+        console.log(profileData);
+
+        try{
+          const profileResponse = await axios.post('http://localhost:5000/api/profile/create', profileData, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+          }});
+
+        if(profileResponse.status === 200){
+          toast.success('Profile created successfully!');
+          navigate('/idealist');
+        }
+        else{
+          throw new Error('Failed to create profile');
+        } 
+          console.log(profileResponse);
+          console.log("posted successfully");
+        }
+        catch(error){
+          console.error('Error:', error);
+          setError(error.message);
+          toast.error(error.message);
+          resetFieldStatus();
+        }
       }
 
       else{
@@ -228,7 +260,6 @@ const OnboardingForm = () => {
 
 
       // const profileData = {
-      //   userId: user.id,
       //   fullName: formData.fullName,
       //   email: formData.email,
       //   githubUrl: formData.githubUrl,
