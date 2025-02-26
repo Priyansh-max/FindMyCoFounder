@@ -1,169 +1,35 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Github, Link, FileText, User, Phone, Mail, CheckCircle2, Loader2, Shield, ShieldCheck, ShieldAlert, X, Code2, Upload } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Github, Link, FileText, User, CheckCircle2, Loader2, Code2, Upload, XCircle } from 'lucide-react';
 import supabase from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SkillSelect from '@/components/ui/SkillSelect';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-// Add this new component for the verification modal
-const VerificationModal = ({ isOpen, onClose, type, onVerify }) => {
-  const [code, setCode] = useState(['', '', '', '', '', '']);
-  const inputRefs = Array(6).fill(0).map(() => React.createRef());
-
-  const handleInputChange = (index, value) => {
-    if (value.length > 1) value = value[0];
-    const newCode = [...code];
-    newCode[index] = value;
-    setCode(newCode);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      inputRefs[index + 1].current.focus();
-    }
-  };
-
-  const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs[index - 1].current.focus();
-    }
-  };
-
-  const handleVerify = () => {
-    onVerify(code.join(''));
-    onClose();
-  };
-
-  return isOpen ? (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-card border border-border p-6 rounded-xl shadow-lg max-w-md w-full mx-4"
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Verify {type === 'email' ? 'Email' : 'Phone'}</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <p className="text-muted-foreground mb-6">
-          Enter the verification code sent to your {type === 'email' ? 'email' : 'phone'}
-        </p>
-
-        <div className="flex justify-between mb-8">
-          {code.map((digit, index) => (
-            <input
-              key={index}
-              ref={inputRefs[index]}
-              type="text"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleInputChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-12 h-12 text-center text-lg font-semibold rounded-lg border border-border bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-            />
-          ))}
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2 px-4 border border-border rounded-lg text-foreground hover:bg-accent transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleVerify}
-            className="flex-1 py-2 px-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Verify
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  ) : null;
-};
-
-const VerificationInput = ({ label, type, value, onChange, name, verificationState, onVerify, placeholder ,autoComplete}) => {
-  const state = verificationState[type];
-  const isEmail = type === 'email';
-  const isValid = isEmail ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) : value.length >= 10;
-
-  return (
-    <div>
-      <label className="block text-sm font-medium text-foreground mb-1">
-        {label}
-      </label>
-      <div className="relative">
-        <Input
-          name={name}
-          autoComplete={autoComplete}
-          type={isEmail ? "email" : "text"}
-          value={value}
-          onChange={onChange}
-          required
-          disabled={state.status === 'verified'}
-          placeholder={placeholder}
-          className="w-full bg-white dark:bg-background pr-24 duration-200"
-        />
-        <div className="absolute right-1 top-1 bottom-1 flex items-center">
-          {state.status === 'verified' ? (
-            <span className="flex items-center gap-1 px-3 text-sm text-green-600 dark:text-green-400">
-              <CheckCircle2 className="w-4 h-4" />
-              Verified
-            </span>
-          ) : (
-            <button
-              type="button"
-              disabled={!isValid || state.loading}
-              onClick={() => onVerify(type)}
-              className="flex items-center gap-1 px-3 h-full rounded-md text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-                bg-red-800/5 dark:bg-red-900/5 hover:bg-primary/10 text-red-600 dark:text-red-500"
-            >
-              {state.loading ? (
-                <div className="flex items-center gap-1">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  <Shield className="w-4 h-4" />
-                  Verify
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+import axios from 'axios';
 
 const OnboardingForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [verificationState, setVerificationState] = useState({
-    email: { status: 'idle', loading: false },
-    phone: { status: 'idle', loading: false }
-  });
   const [formData, setFormData] = useState({
-    email: '',
-    phone: '',
     fullName: '',
+    email: '',
+    skills: '',
     githubUrl: '',
     portfolioUrl: '',
-    description: ''
+    description: '',
+    resumeUrl: '',
   });
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [currentVerificationType, setCurrentVerificationType] = useState(null);
+  const [fieldStatus, setFieldStatus] = useState({
+    fullName: { loading: false, valid: null },
+    skills: { loading: false, valid: null },
+    portfolioUrl: { loading: false, valid: null },
+    description: { loading: false, valid: null },
+  });
+
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [user, setUser] = useState(null);
   const [resumeFile, setResumeFile] = useState(null);
@@ -174,66 +40,52 @@ const OnboardingForm = () => {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log(user);
       if (user) {
         setUser(user);
-        // Pre-fill GitHub URL if available
-        if (user.user_metadata?.user_name) {
-          setFormData(prev => ({
-            ...prev,
-            githubUrl: `https://github.com/${user.user_metadata.user_name}`
-          }));
-        }
+        setFormData(prev => ({
+          ...prev,
+          githubUrl: user.user_metadata?.user_name ? `https://github.com/${user.user_metadata.user_name}` : '',
+          email: user.email || ''
+        }));
       }
     };
     getUser();
   }, []);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
     }));
   };
 
-  const handleVerification = async (type) => {
-    setCurrentVerificationType(type);
-    setShowVerificationModal(true);
-  };
+  const skills = useMemo(() => selectedSkills.join(', '), [selectedSkills]);
 
-  const handleVerificationComplete = async (code) => {
-    setVerificationState(prev => ({
-      ...prev,
-      [currentVerificationType]: { ...prev[currentVerificationType], loading: true }
+  useEffect(() => {
+    setFormData(prevData => ({
+      ...prevData,
+      skills
     }));
+  }, [skills]);
 
-    try {
-      // Simulate verification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setVerificationState(prev => ({
-        ...prev,
-        [currentVerificationType]: { status: 'verified', loading: false }
-      }));
-      toast.success(`${currentVerificationType === 'email' ? 'Email' : 'Phone'} verified successfully!`);
-    } catch (error) {
-      setVerificationState(prev => ({
-        ...prev,
-        [currentVerificationType]: { status: 'error', loading: false }
-      }));
-      toast.error('Verification failed. Please try again.');
-    }
+  const resetFieldStatus = () => {
+    setFieldStatus({
+      fullName: { loading: false, valid: null },
+      skills: { loading: false, valid: null },
+      portfolioUrl: { loading: false, valid: null },
+      description: { loading: false, valid: null },
+    });
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file type
       if (!file.type.includes('pdf')) {
         toast.error('Please upload a PDF file');
         return;
       }
-      // Check file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('File size should be less than 5MB');
         return;
@@ -242,84 +94,181 @@ const OnboardingForm = () => {
     }
   };
 
-  const uploadResume = async (userId) => {
-    console.log("Starting resume upload");
+  const uploadResume = async () => {
     if (!resumeFile) return null;
-    setUploadSuccess(false);
-    setUploadComplete(false);
-  
-    try {
-      const fileExt = resumeFile.name.split('.').pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-  
-      setUploadProgress(0);
-  
-      const { data, error } = await supabase.storage
-        .from('Resume')
-        .upload(filePath, resumeFile, {
-          cacheControl: '3600',
-          upsert: true,
-          onUploadProgress: (progress) => {
-            const percent = (progress.loaded / progress.total) * 100;
-            console.log('Upload progress:', percent.toFixed(2) + '%');
-            setUploadProgress(percent);
-          },
-        });
-  
-      if (error) {
-        throw error;
-      }
-  
-      setUploadProgress(100);
-      
-      // Add a delay before getting the public URL to show the upload animation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setUploadSuccess(true);
-      setUploadComplete(true);
-  
-      const { data: { publicUrl } } = supabase.storage
-        .from('Resume')
-        .getPublicUrl(filePath);
 
-      return publicUrl;
-    } catch (error) {
-      console.error('Error uploading resume:', error);
+    const formData = new FormData();
+    formData.append('resume', resumeFile);
+
+    console.log(formData.get('resume'));
+    try {
       setUploadProgress(0);
       setUploadSuccess(false);
-      throw error;
+      setUploadComplete(false);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No authentication session found');
+      }
+
+      console.log(session);
+
+      const response = await axios.post(
+        `http://localhost:5000/api/profile/resume`, 
+        formData,
+        {
+          headers: {
+            'authorization': `Bearer ${session.access_token}`
+          },
+          onUploadProgress: (progressEvent) => {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(progress);
+          },
+        }
+      );
+
+      setUploadSuccess(true);
+      setUploadComplete(true);
+      return response.data.publicUrl;
+    } catch (error) {
+      console.error('Resume upload error:', error);
+      setUploadSuccess(false);
+      setUploadComplete(false);
+      throw new Error('Failed to upload resume');
     }
   };
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
-      if (!resumeFile) {
-        throw new Error('Please select a resume file');
+      if (selectedSkills.length === 0) {
+        setError(<>
+          Please select at least one skill -- <strong>Skills</strong>
+        </>);
+        return;
       }
 
-      console.log('Starting resume upload test...');
-      const resumeUrl = await uploadResume(user.id);
-      console.log('Resume uploaded successfully:', resumeUrl);
-      
-      toast.success('Resume uploaded successfully!');
-      
+      if(!resumeFile){
+        setError(<>
+          Please upload your resume -- <strong>Resume Upload</strong>
+        </>);
+        return;
+      }
+
+      setError('');
+      resetFieldStatus();
+
+      const formRecord = {
+        ...formData,
+        skills: selectedSkills.join(', ')
+      };
+  
+      console.log('Form Record:', formRecord);
+  
+      setLoading(true);
+
+      setFieldStatus(prev => ({
+        fullName: { ...prev.fullName, loading: true },
+        skills: { ...prev.skills, loading: true },
+        portfolioUrl: { ...prev.portfolioUrl, loading: true },
+        description: { ...prev.description, loading: true },
+      }));
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await axios.post('http://localhost:5000/api/validate/profile', {
+        fullName: formRecord.fullName,
+        skills: formRecord.skills,
+        portfolioUrl: formRecord.portfolioUrl,
+        description: formRecord.description
+      });
+
+      setFieldStatus({
+        fullName: { loading: false, valid: response.data.fullName.isValid },
+        skills: { loading: false, valid: response.data.skills.isValid },
+        portfolioUrl: { loading: false, valid: response.data.portfolioUrl.isValid },
+        description: { loading: false, valid: response.data.description.isValid }
+      });
+
+      if(response.data.success){
+        const resumeUrl = await uploadResume();
+        if (!resumeUrl) {
+          throw new Error('Failed to upload resume');
+        }
+        console.log("posted successfully");
+      }
+
+      else{
+        const invalidFields = [];
+        
+        if (!response.data.fullName.isValid) {
+          invalidFields.push(`fullName: ${response.data.fullName.reason}`);
+        }
+        if (!response.data.skills.isValid) {
+          invalidFields.push(`Skills: ${response.data.skills.reason}`);
+        }
+        if (!response.data.portfolioUrl.isValid) {
+          invalidFields.push(`Portfolio URL: ${response.data.portfolioUrl.reason}`);
+        }
+        if (!response.data.description.isValid) {
+          invalidFields.push(`Description: ${response.data.description.reason}`);
+        }
+
+        setError(
+          <div className="space-y-1">
+            {invalidFields.map((message, index) => (
+              <p key={index}>{message}</p>
+            ))}
+          </div>
+        );
+        return;
+      }
+
+
+
+      // const profileData = {
+      //   userId: user.id,
+      //   fullName: formData.fullName,
+      //   email: formData.email,
+      //   githubUrl: formData.githubUrl,
+      //   portfolioUrl: formData.portfolioUrl || '',
+      //   description: formData.description,
+      //   resumeUrl,
+      //   skills: selectedSkills.join(', ')
+      // };
+
+      // const profileResponse = await axios.post('http://localhost:5000/api/profile/creat', profileData, {
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${session.access_token}`
+      //   }
+      // });
+
+      // toast.success('Profile created successfully!');
+      // navigate('/idealist');
+
     } catch (error) {
       console.error('Error:', error);
       setError(error.message);
-      toast.error(error.message || 'Failed to upload resume');
+      toast.error(error.message);
+      resetFieldStatus();
     } finally {
       setLoading(false);
-      setUploadProgress(0);
     }
+  };
+
+  const StatusIndicator = ({ status }) => {
+    if (status.loading) {
+      return <Loader2 className="w-4 h-4 animate-spin text-primary" />;
+    }
+    if (status.valid === true) {
+      return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    }
+    if (status.valid === false) {
+      return <XCircle className="w-4 h-4 text-destructive" />;
+    }
+    return null;
   };
 
   const containerVariants = {
@@ -366,12 +315,6 @@ const OnboardingForm = () => {
 
         <div className="bg-card text-card-foreground rounded-xl shadow-lg dark:shadow-primary/10 p-6 sm:p-8 border border-border">
           <form onSubmit={handleSubmit} className="space-y-6" autoComplete='new-off'>
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
             <div className="space-y-6">
               {/* Basic Information */}
               <div className="space-y-4">
@@ -383,37 +326,47 @@ const OnboardingForm = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1">
-                      Full Name
+                      Full Name <span className='text-red-500'>*</span>
                     </label>
-                    <Input
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      required
-                      placeholder="John Doe"
-                      className="w-full bg-white dark:bg-background"
-                      autoComplete="new-off"
-                    />
+                    <div className="relative">
+                      <Input
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleChange}
+                        required
+                        placeholder="John Doe"
+                        className="w-full bg-white dark:bg-background pr-8"
+                        autoComplete="new-off"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <StatusIndicator status={fieldStatus.fullName} />
+                      </div>
+                    </div>
                   </div>
 
-                  <VerificationInput
-                    label="Email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    name="email"
-                    verificationState={verificationState}
-                    onVerify={handleVerification}
-                    placeholder="john@example.com"
-                    autoComplete="off"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Email <span className='text-red-500'>*</span>
+                    </label>
+                    <Input
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      disabled
+                      placeholder="john@example.com"
+                      className="w-full bg-white dark:bg-background opacity-70"
+                      autoComplete="off"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Skills Section */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                   Skills
+                   Skills <span className='text-red-500'>*</span>
                 </label>
                 <div className="relative">
                   <SkillSelect
@@ -421,6 +374,9 @@ const OnboardingForm = () => {
                     setSelectedSkills={setSelectedSkills}
                     text="Add Skills....."
                   />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <StatusIndicator status={fieldStatus.skills} />
+                  </div>
                 </div>
               </div>
 
@@ -434,7 +390,7 @@ const OnboardingForm = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1">
-                      GitHub URL
+                      GitHub URL <span className='text-red-500'>*</span>
                     </label>
                     <Input
                       name="githubUrl"
@@ -443,6 +399,7 @@ const OnboardingForm = () => {
                       placeholder="https://github.com/username"
                       className="w-full bg-white dark:bg-background"
                       autoComplete="off"
+                      disabled
                     />
                   </div>
 
@@ -450,14 +407,19 @@ const OnboardingForm = () => {
                     <label className="block text-sm font-medium text-foreground mb-1">
                       Portfolio URL
                     </label>
-                    <Input
-                      name="portfolioUrl"
-                      value={formData.portfolioUrl}
-                      onChange={handleChange}
-                      placeholder="https://yourportfolio.com"
-                      className="w-full bg-white dark:bg-background"
+                    <div className="relative">
+                      <Input
+                        name="portfolioUrl"
+                        value={formData.portfolioUrl}
+                        onChange={handleChange}
+                        placeholder="https://yourportfolio.com"
+                        className="w-full bg-white dark:bg-background pr-8"
                       autoComplete="off"
-                    />
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <StatusIndicator status={fieldStatus.portfolioUrl} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -471,23 +433,28 @@ const OnboardingForm = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">
-                    Brief Description
-                  </label>
-                  <Textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                    placeholder="Tell us about yourself, your skills, and what you're looking for..."
-                    className="w-full min-h-[100px] bg-white dark:bg-background"
-                    autoComplete="off"
-                  />
+                    Brief Description <span className='text-red-500'>*</span>
+                  </label> 
+                  <div className="relative">
+                    <Textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      required
+                      placeholder="Tell us about yourself, your skills, and what you're looking for..."
+                      className="w-full min-h-[100px] bg-white dark:bg-background pr-8"
+                      autoComplete="off"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">     
+                      <StatusIndicator status={fieldStatus.description} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  Resume Upload
+                  Resume Upload <span className='text-red-500'>*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -560,6 +527,11 @@ const OnboardingForm = () => {
                 to { background-position: 0 0; }
               }
             `}</style>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             <button
               type="submit"
@@ -581,14 +553,6 @@ const OnboardingForm = () => {
           </form>
         </div>
       </motion.div>
-      <AnimatePresence>
-        <VerificationModal
-          isOpen={showVerificationModal}
-          onClose={() => setShowVerificationModal(false)}
-          type={currentVerificationType}
-          onVerify={handleVerificationComplete}
-        />
-      </AnimatePresence>
     </div>
   );
 };
