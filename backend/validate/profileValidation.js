@@ -7,7 +7,7 @@ const router = express.Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 router.post("/profile", async (req, res) => {
-  const { fullName, description } = req.body;
+  const { fullName, skills, portfolioUrl, description } = req.body;
 
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -21,24 +21,38 @@ router.post("/profile", async (req, res) => {
       2. The description (if provided):
          - Doesn't contain inappropriate content like any slang
          - Is not gibberish or meaningless
+      3. The skills:
+         - Are not gibberish or meaningless
+         - Are not too vague or broad
+      4. The portfolio URL:
+         - Is a valid URL
+         - consider empty portfolio url as valid
 
       Respond in JSON format like this:
       {
         "fullName": { 
           "isValid": true/false, 
           "reason": "...",
-          "suggestions": ["..."]
         },
         "description": { 
           "isValid": true/false, 
           "reason": "...",
-          "suggestions": ["..."]
+        },
+        "skills": { 
+          "isValid": true/false, 
+          "reason": "...",
+        },
+        "portfolioUrl": { 
+          "isValid": true/false, 
+          "reason": "...",
         }
       }
 
       Inputs:
       - Full Name: "${fullName}"
       - Description: "${description || ''}"
+      - Skills: "${skills || ''}"
+      - Portfolio URL: "${portfolioUrl || ''}"
     `;
 
     const response = await model.generateContent(prompt);

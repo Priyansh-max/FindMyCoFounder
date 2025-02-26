@@ -1,6 +1,7 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const router = express.Router();
+require('dotenv').config();
 
 // Store validation codes temporarily (in production, use a database)
 const validationCodes = new Map();
@@ -10,7 +11,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASSWORD // Use App Password for Gmail
+    pass: process.env.EMAIL_APP_PASSWORD
   }
 });
 
