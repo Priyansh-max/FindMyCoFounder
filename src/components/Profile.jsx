@@ -91,6 +91,8 @@ function Profile() {
           is_founder: data.is_founder || false
         });
       }
+
+      console.log(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -331,19 +333,18 @@ function Profile() {
           <div className='flex justify-content'>
             <div className='mr-4'>
               <img
-                src="https://via.placeholder.com/60"
+                src={profile.avatar_url}
                 alt="Profile"
-                className="w-24 h-24 rounded-md object-cover"
+                className="w-20 h-20 rounded-md object-cover"
               />
             </div>
             <div>
-              <h2 className="text-xl font-bold mb-1 text-foreground">PriyanshAgarwal</h2>
-              <p className="text-muted-foreground text-sm">@PhoneNumber</p>
-              <p className="text-muted-foreground text-sm">@Email</p>
+              <h2 className="text-xl font-bold mb-1 text-foreground">{profile.full_name}</h2>
+              <p className="text-muted-foreground text-sm">{profile.email}</p>
             </div>
           </div>
           <div className='pt-2'>
-            <p className='text-muted-foreground'>this is my description</p>
+            <p className='text-muted-foreground'>{profile.description}</p>
           </div>
 
           {/* Edit Profile Button */}
@@ -356,18 +357,39 @@ function Profile() {
 
           {/* Location & Github */}
           <div className="mt-4 space-y-2 text-muted-foreground">
-            <p className="flex items-center space-x-2">
-              <Github className="w-5 h-5 text-muted-foreground" />
-              <span>Github</span>
-            </p>
-            <p className="flex items-center space-x-2">
-              <GoLink className="w-5 h-5 text-muted-foreground" />
-              <span>Portfolio</span>
-            </p>
-            <p className="flex items-center space-x-2">
-              <IoDocumentTextOutline className="w-5 h-5 text-muted-foreground" />
+          {profile.github_url && (
+            <a 
+              href={profile.github_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 hover:text-primary transition-colors"
+            >
+              <Github className="w-5 h-5" />
+              <span>{new URL(profile.github_url).pathname.substring(1)}</span>
+            </a>
+          )}
+          {profile.portfolio_url && (
+            <a 
+              href={profile.portfolio_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 hover:text-primary transition-colors"
+            >
+              <GoLink className="w-5 h-5" />
+              <span>{new URL(profile.portfolio_url).hostname}</span>
+            </a>
+          )}
+          {profile.resume_url && (
+            <a 
+              href={profile.resume_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 hover:text-primary transition-colors"
+            >
+              <IoDocumentTextOutline className="w-5 h-5" />
               <span>Resume</span>
-            </p>
+            </a>
+          )}
           </div>
         </div>
 
