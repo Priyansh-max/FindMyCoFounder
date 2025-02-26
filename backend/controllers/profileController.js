@@ -2,8 +2,8 @@ const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_ANON_KEY
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
 );
 
 // Email transporter setup
@@ -21,7 +21,8 @@ const verificationCodes = new Map();
 // Create or update profile
 const createProfile = async (req, res) => {
   try {
-    const { fullName, email, githubUrl, portfolioUrl, description, skills } = req.body;
+    const { fullName, email, githubUrl, portfolioUrl, description, skills, resumeUrl } = req.body;
+    
     const userId = req.user.id;
 
     const { data, error } = await supabase
@@ -34,6 +35,7 @@ const createProfile = async (req, res) => {
         portfolio_url: portfolioUrl,
         description,
         skills,
+        resume_url: resumeUrl,
         updated_at: new Date()
       });
 
@@ -120,33 +122,35 @@ const uploadResume = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-
+    console.log("Uploading resume");
     const userId = req.user.id;
     const file = req.file;
     const fileExt = file.originalname.split('.').pop();
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
 
-    const { data, error } = await supabase.storage
+    console.log(userId);
+
+    const serviceClient = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY, // Use service role key instead of anon key
+    );
+
+    const { error } = await serviceClient.storage
       .from('Resume')
       .upload(fileName, file.buffer, {
         contentType: file.mimetype,
-        cacheControl: '3600'
+        cacheControl: '3600',
+        upsert: true
       });
-
+    
     if (error) throw error;
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = serviceClient.storage
       .from('Resume')
       .getPublicUrl(fileName);
 
-    // Update profile with resume URL
-    await supabase
-      .from('profiles')
-      .update({ resume_url: publicUrl })
-      .eq('id', userId);
-
-    res.json({ message: 'Resume uploaded successfully', url: publicUrl });
+    res.json({ publicUrl });
   } catch (error) {
     console.error('Resume upload error:', error);
     res.status(500).json({ error: error.message });
