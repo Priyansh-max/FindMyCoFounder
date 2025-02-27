@@ -81,7 +81,7 @@ const updateProfile = async (req, res) => {
 // Get profile
 const getProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.id;
 
     const { data, error } = await supabase
       .from('profiles')
@@ -99,6 +99,7 @@ const getProfile = async (req, res) => {
 };
 
 // Update skills
+//no use
 const updateSkills = async (req, res) => {
   try {
     const { skills } = req.body;
