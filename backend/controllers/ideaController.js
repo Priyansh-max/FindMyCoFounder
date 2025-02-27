@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js');
-const { get } = require('../routes/profileRoutes');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -110,14 +109,20 @@ const createIdea = async (req, res) => {
       const { data, error } = await supabase
         .from('ideas')
         .select('*')
-        .eq('id', id)
-        .single();
+        .eq('founder_id', userId)
+        .order('created_at', { ascending: false });
   
       if (error) throw error;
-  
-      res.json(data);
+      res.json({
+
+        success: true,
+
+        data: data
+
+      });
+      console.log(data);
     } catch (error) {
-      console.error('Profile fetch error:', error);
+      console.error('Idea fetch error:', error);
       res.status(500).json({ error: error.message });
     }
   };
