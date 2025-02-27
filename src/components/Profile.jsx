@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X,Lightbulb, Heart, ScrollText, Github } from "lucide-react";
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X, Lightbulb, Heart, ScrollText, Github, PlayCircle, Calendar, Info } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
@@ -11,6 +11,8 @@ import CircularProgress from '@/components/ui/CircularProgress';
 import { IoDocumentTextOutline } from "react-icons/io5";
 import { GoLink } from "react-icons/go";
 import EditProfile from '../props/EditProfile';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 function Profile() {
   const navigate = useNavigate();
@@ -64,7 +66,7 @@ function Profile() {
 
       setUser(session.user);
       await fetchProfile(session.user.id);
-      await fetchApplications(session.user.id);
+      await fetchApplications();
       await fetchIdeas(session.user.id);
     } catch (error) {
       console.error('Error:', error);
@@ -98,34 +100,33 @@ function Profile() {
     }
   }
 
-  async function fetchApplications(userId) {
+  //done
+  async function fetchApplications() {
     try {
-      const { data, error } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          ideas (
-            company_name,
-            founder_id,
-            idea_desc,
-            dev_req,
-            partner_term,
-            equity_term,
-            status
-          ),
-          profiles (
-            full_name,
-            whatsapp_number
-          )
-        `)
-        .eq('profile_id', userId);  // Fetch applications based on profile_id (userId)
+      const { data: { session } } = await supabase.auth.getSession();
   
-      if (error) throw error;
-  
-      // Update state with fetched data (or empty array if no data is found)
+      if (!session?.user) {
+        console.log("User not signed in");
+        return;
+      }
+
+      const response = await axios.get('http://localhost:5000/api/application/user', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      const { data, error } = response.data;
+      
+      if (error) {
+        throw new Error(error);
+      }
+
       setApplications(data || []);
+      console.log('Fetched applications:', data);
     } catch (error) {
       console.error('Error fetching applications:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch applications');
     }
   }
 
@@ -198,27 +199,30 @@ function Profile() {
   
   async function fetchIdeas(userId) {
     try {
-      const { data, error } = await supabase
-        .from('ideas')
-        .select(`
-          *,
-          applications (
-            id,
-            pitch,
-            status,
-            profiles (
-              full_name,
-              github_url,
-              whatsapp_number
-            )
-          )
-        `)
-        .eq('founder_id', userId);
+      const { data: { session } } = await supabase.auth.getSession();
+  
+      if (!session?.user) {
+        console.log("User not signed in");
+        return;
+      }
 
-      if (error) throw error;
-      setIdeas(data || []);
+      const response = await axios.get('http://localhost:5000/api/idea/user', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      const { success, data } = response.data;
+      
+      if (success) {
+        setIdeas(data || []);
+        console.log('Fetched ideas:', data);
+      } else {
+        throw new Error('Failed to fetch ideas');
+      }
     } catch (error) {
       console.error('Error fetching ideas:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch ideas');
     }
   }
 
@@ -545,31 +549,12 @@ function Profile() {
           <div className="space-y-4"> 
             {filteredApplications.map((app) => (
               <div key={app.id} className="border border-border rounded-lg p-4 bg-card text-card-foreground shadow-md dark:shadow-primary/10">
-                <div className='flex justify-between'>
-                  <div>
-                    {/* Company Name & Founder */}
-
-                    <h4 className="font-semibold text-lg text-foreground">{app.ideas.company_name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-bold">Posted by:</span> {app.profiles?.name || "Unknown"}
-                    </p>
-              
-                    {/* Idea Description */}
-                    <div className='flex flex-col'>
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-bold">Idea:</span> {app.ideas.idea_desc}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-bold">Equity Share:</span> {app.ideas.equity_term}%
-                      </p>
-                    </div> 
-                  </div> 
-
-                  <div className="flex flex-col items-end space-y-4">
-                    {/* Status Badge with Icon */}
-                    <div className="flex items-center">
+                <div className='flex justify-between items-start'>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-semibold text-lg text-foreground">{app.idea.title}</h4>
                       <span
-                        className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        className={`flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                           app.status === "pending"
                             ? "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100"
                             : app.status === "accepted"
@@ -577,52 +562,79 @@ function Profile() {
                             : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
                         }`}
                       >
-                        {app.status === "pending" && <Clock className="w-4 h-4 mr-1" />}
-                        {app.status === "accepted" && <CheckCircle className="w-4 h-4 mr-1" />}
-                        {app.status === "rejected" && <XCircle className="w-4 h-4 mr-1" />}
+                        {app.status === "pending" && <Clock className="w-3 h-3 mr-1" />}
+                        {app.status === "accepted" && <CheckCircle className="w-3 h-3 mr-1" />}
+                        {app.status === "rejected" && <XCircle className="w-3 h-3 mr-1" />}
                         {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
                       </span>
                     </div>
-          
-                    {/* Action Buttons */}
-                    {app.status === "pending" && (
-                      <button
-                        onClick={() => onWithdraw(app.id)}
-                        className="text-yellow-600 hover:text-yellow-700 flex items-center text-sm font-medium"
-                      >
-                        <Undo className="w-4 h-4 mr-1" />
-                        Withdraw
-                      </button>
-                    )}
-          
-                    {app.status === "accepted" && app.profiles?.whatsapp_number && (
-                      <a
-                        href={`https://wa.me/${app.profiles.whatsapp_number}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-700 flex items-center text-sm font-medium"
-                      >
-                        <Phone className="w-4 h-4 mr-1" />
-                        Contact Founder
-                      </a>
-                    )}
-          
-                    {app.status === "rejected" && (
-                      <button
-                        onClick={() => onRemove(app.id)}
-                        className="text-red-600 hover:text-red-700 flex items-center text-sm font-medium"
-                      >
-                        <X className="w-4 h-4 mr-1" />
-                        Remove
-                      </button>
-                    )}
+                    <div className="bg-accent/30 rounded-lg border border-border p-3">
+                      <p className="text-muted-foreground text-sm">
+                        <strong>Pitch - </strong> {app.pitch || "This is a sample pitch from the user"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-4">
+                    <button 
+                      onClick={() => {
+                        const element = document.getElementById(`idea-details-${app.id}`);
+                        const isExpanded = element.style.maxHeight !== "0px" && element.style.maxHeight !== "";
+                        element.style.maxHeight = isExpanded ? "0px" : `${element.scrollHeight}px`;
+                      }}
+                      className="p-2 text-muted-foreground hover:text-primary transition-colors rounded-full hover:bg-accent"
+                    >
+                      <Info className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
-                <div className="mt-3 p-3 bg-accent rounded-lg border border-border">
-                  <h5 className="text-foreground">
-                    <span className="font-semibold">Pitch:</span>{" "}
-                    <span className="text-muted-foreground">{app.pitch || "This is a sample pitch from the user"}</span>
-                  </h5>
+
+                {/* Expandable Idea Details */}
+                <div 
+                  id={`idea-details-${app.id}`}
+                  className="overflow-hidden transition-all duration-300 ease-in-out"
+                  style={{ maxHeight: "0px" }}
+                >
+                  <div className="mt-4 pt-4 border-t border-border space-y-3">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={app.idea.founder.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.idea.founder.full_name || 'Founder')}`}
+                        alt={app.idea.founder.full_name || 'Founder'}
+                        className="w-6 h-6 rounded-full"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Posted by <span className="font-medium text-foreground">{app.idea.founder.full_name || "Unknown"}</span>
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h5 className="text-sm font-medium text-foreground mb-1">Description</h5>
+                      <p className="text-sm text-muted-foreground">{app.idea.idea_desc}</p>
+                    </div>
+
+                    {app.idea.dev_req && (
+                      <div>
+                        <h5 className="text-sm font-medium text-foreground mb-2">Required Skills</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {app.idea.dev_req.split(',').map((skill, index) => (
+                            <span 
+                              key={index} 
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary"
+                            >
+                              {skill.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {app.idea.additional_details && (
+                      <div>
+                        <h5 className="text-sm font-medium text-foreground mb-1">Additional Details</h5>
+                        <p className="text-sm text-muted-foreground">{app.idea.additional_details}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -633,73 +645,118 @@ function Profile() {
         </div>
   
         {/* Posted Ideas Section */}
-        {formData.is_founder && (
-          <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
+
+        <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
             <h2 className="text-2xl font-bold mb-6 text-foreground">Your Posted Ideas</h2>
             {ideas.map((idea) => (
               <div key={idea.id} className="border border-border rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-2 text-foreground">{idea.company_name}</h3>
-                <div className="space-y-2 mb-4">
-                  <p className="text-muted-foreground">{idea.idea_desc}</p>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <span>Developer Requirements: {idea.dev_req}</span>
-                    <span>Partnership Terms: {idea.partner_term}</span>
-                    <span>Equity Offered: {idea.equity_term}%</span>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-semibold text-foreground">{idea.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          idea.status === "open"
+                            ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
+                            : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
+                        }`}
+                      >
+                        {idea.status === "open" ? (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Open
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Closed
+                          </>
+                        )}
+                      </span>
+                      <span className="flex items-center text-xs text-muted-foreground">
+                        {new Date(idea.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className='flex justify-between items-center w-full'>
-                  {/* Left Group (View Details + Stop) */}
-                  <div className="flex gap-x-4">
+                  <div className="flex items-center gap-2">
+                    <Tooltip id={`view-tooltip-${idea.id}`} place="top" effect="solid">
+                      View received applications
+                    </Tooltip>
                     <button 
-                      data-tooltip-id="view-tooltip"
+                      data-tooltip-id={`view-tooltip-${idea.id}`}
                       onClick={() => viewDetails(idea.id)}
-                      className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                      className="p-2 text-muted-foreground hover:text-primary transition-colors"
                     >
-                      <GrView className="w-4 h-4 mr-2" />
-                      View Details
+                      <GrView className="w-5 h-5" />
                     </button>
-                    
+
+                    <Tooltip id={`status-tooltip-${idea.id}`} place="top" effect="solid">
+                      {idea.status === "open" ? "Stop receiving applications" : "Start receiving applications"}
+                    </Tooltip>
                     <button 
-                      data-tooltip-id="stop-tooltip"
+                      data-tooltip-id={`status-tooltip-${idea.id}`}
                       onClick={() => handleToggleApplications(idea.id)}
-                      className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
+                      className={`p-2 transition-colors ${
+                        idea.status === "open"
+                          ? "text-orange-500 hover:text-orange-600"
+                          : "text-green-500 hover:text-green-600"
+                      }`}
                     >
-                      <AiOutlineStop className="w-4 h-4 mr-2" />
-                      Stop
+                      {idea.status === "open" ? (
+                        <AiOutlineStop className="w-5 h-5" />
+                      ) : (
+                        <PlayCircle className="w-5 h-5" />
+                      )}
+                    </button>
+
+                    <Tooltip id={`delete-tooltip-${idea.id}`} place="top" effect="solid">
+                      Delete post
+                    </Tooltip>
+                    <button 
+                      data-tooltip-id={`delete-tooltip-${idea.id}`}
+                      onClick={() => handleToggleApplications(idea.id)}
+                      className="p-2 text-destructive hover:text-destructive/90 transition-colors"
+                    >
+                      <RiDeleteBin6Line className="w-5 h-5"/>
                     </button>
                   </div>
-
-                  {/* Right (Delete Button) */}
-                  <button 
-                    data-tooltip-id="delete-tooltip"
-                    onClick={() => handleToggleApplications(idea.id)} // Change function for deleting the post
-                    className="inline-flex items-center justify-center w-10 h-10 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-colors"
-                  >
-                    <RiDeleteBin6Line className="w-5 h-5"/>
-                  </button>
-
-                  {/* Tooltips */}
-                  <Tooltip id="view-tooltip" place="bottom" effect="solid">
-                    View received applications
-                  </Tooltip>
-                  
-                  <Tooltip id="stop-tooltip" place="bottom" effect="solid">
-                    Stop receiving applications 
-                  </Tooltip>
-
-                  <Tooltip id="delete-tooltip" place="bottom" effect="solid">
-                    Delete post
-                  </Tooltip>
                 </div>
 
+                <div className="space-y-2">
+                  <p className="text-muted-foreground">{idea.idea_desc}</p>
+                  {idea.dev_req && (
+                    <div className="mt-4">
+                        <div className="flex flex-wrap gap-2">
+                          {idea.dev_req.split(',').map((skill, index) => (
+                              <span 
+                                key={index} 
+                                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+                              >
+                                {skill.trim()}
+                              </span>
+                            ))}
+                        </div>
+                    </div>
+                   )}
+
+                  {/* Additional Details Section */}
+                  <div className="mt-4">
+                    <p className="text-muted-foreground text-sm">
+                      {idea.additional_details || "No additional details set"}
+                    </p>
+                  </div>
+                </div>
               </div>
             ))}
             {ideas.length === 0 && (
               <p className="text-muted-foreground text-center py-4">No ideas posted yet</p>
             )}
           </div>
-        )}
       </div>
 
       {/* edit profile overlay */}
