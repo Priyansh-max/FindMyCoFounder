@@ -5,7 +5,7 @@ const { createIdea, updateIdea, getIdeabyUser, getIdeas } = require('../controll
 
 router.post('/create', authenticateUser, createIdea);
 router.put('/update', authenticateUser, updateIdea);
-router.get('/:id', authenticateUser, getIdeabyUser);
+router.get('/user', authenticateUser, getIdeabyUser);
 router.get('/', authenticateUser, getIdeas);
 
 module.exports = router;    
