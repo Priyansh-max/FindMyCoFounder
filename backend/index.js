@@ -6,6 +6,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const emailValidation = require('./validate/emailValidation');
 const ideaValidation = require('./validate/ideaValidation');
 const profileValidation = require('./validate/profileValidation');
+const ideaRoutes = require('./routes/ideaRoutes');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/validate', emailValidation);
 app.use('/api/validate', ideaValidation);
 app.use('/api/validate', profileValidation);
+app.use('/api/idea', ideaRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
