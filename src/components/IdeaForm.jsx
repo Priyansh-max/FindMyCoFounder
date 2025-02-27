@@ -13,6 +13,7 @@ import ideadark from '../assets/ideadark.png'
 import SkillSelect from '@/components/ui/SkillSelect';
 import axios from 'axios';
 import { useTheme } from '../context/ThemeContext';
+import { toast } from 'react-hot-toast';
 
 function IdeaForm() {
   const navigate = useNavigate();
@@ -105,7 +106,7 @@ function IdeaForm() {
         additionalDetails: { ...prev.additionalDetails, loading: true }
       }));
 
-      const response = await axios.post('http://localhost:5000/validate', {
+      const response = await axios.post('http://localhost:5000/api/validate/idea', {
         title : formRecord.title,
         description : formRecord.ideaDescription,
         devReq : formRecord.developerNeeds,
@@ -113,6 +114,8 @@ function IdeaForm() {
       });
       
       console.log('Response:', response.data);
+
+      const { data: { session } } = await supabase.auth.getSession();
 
       // Update field status based on validation results
       setFieldStatus({
@@ -123,7 +126,37 @@ function IdeaForm() {
       });
 
       if(response.data.success){
-        console.log("posted successfully");
+
+        const ideaData = {
+          ...formData,
+          developerNeeds: selectedSkills.join(', ')
+        };
+        console.log(ideaData);
+
+        try{
+          const ideaResponse = await axios.post('http://localhost:5000/api/idea/create', ideaData, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+          }});
+
+          if(ideaResponse.status === 200){
+            toast.success('Idea created successfully!');
+            navigate('/idealist');
+          }
+          else{
+            throw new Error('Failed to publish idea');
+          } 
+            console.log(ideaResponse);
+            console.log("listed successfully");
+          }
+          catch(error){
+            console.error('Error:', error);
+            setError(error.message);
+            toast.error(error.message);
+            resetFieldStatus();
+          }
+        console.log("idea posted successfully");
       }
       else{
         const invalidFields = [];
