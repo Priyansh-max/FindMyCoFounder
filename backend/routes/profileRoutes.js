@@ -22,16 +22,9 @@ const upload = multer({
 // Profile Routes
 router.post('/create', authenticateUser, createProfile);
 router.put('/update', authenticateUser, updateProfile);
-router.get('/:userId', authenticateUser, getProfile);
-
-// Skills Routes
-router.put('/skills', authenticateUser, updateSkills);
+router.get('/details', authenticateUser, getProfile); //imp
 
 // Resume Upload Route
 router.post('/resume', authenticateUser, upload.single('resume'), uploadResume);
-
-// Verification Routes
-router.post('/verify-email', authenticateUser, verifyEmail);
-router.post('/verify-phone', authenticateUser, verifyPhone);
 
 module.exports = router; 
