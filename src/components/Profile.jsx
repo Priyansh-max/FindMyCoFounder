@@ -347,6 +347,22 @@ function Profile() {
             <p className='text-muted-foreground'>{profile.description}</p>
           </div>
 
+          {/* Skills Section */}
+          {profile.skills && (
+            <div className="mt-4">
+              <div className="flex flex-wrap gap-2">
+                {profile.skills.split(',').map((skill, index) => (
+                  <span 
+                    key={index} 
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+                  >
+                    {skill.trim()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Edit Profile Button */}
           <button 
             className="w-full mt-4 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 rounded-md transition-colors"
@@ -358,6 +374,7 @@ function Profile() {
           {/* Location & Github */}
           <div className="mt-4 space-y-2 text-muted-foreground">
           {profile.github_url && (
+            <div className='flex'>
             <a 
               href={profile.github_url}
               target="_blank"
@@ -367,8 +384,10 @@ function Profile() {
               <Github className="w-5 h-5" />
               <span>{new URL(profile.github_url).pathname.substring(1)}</span>
             </a>
+            </div>
           )}
           {profile.portfolio_url && (
+            <div className='flex'>
             <a 
               href={profile.portfolio_url}
               target="_blank"
@@ -378,8 +397,10 @@ function Profile() {
               <GoLink className="w-5 h-5" />
               <span>{new URL(profile.portfolio_url).hostname}</span>
             </a>
+            </div>
           )}
           {profile.resume_url && (
+            <div className='flex'>
             <a 
               href={profile.resume_url}
               target="_blank"
@@ -389,6 +410,7 @@ function Profile() {
               <IoDocumentTextOutline className="w-5 h-5" />
               <span>Resume</span>
             </a>
+            </div>
           )}
           </div>
         </div>
