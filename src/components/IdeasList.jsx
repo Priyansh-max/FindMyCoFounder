@@ -3,6 +3,7 @@ import supabase from '../lib/supabase';
 import { Rocket, Users, Calendar, ArrowRight, Search, RefreshCcw, Filter, AlertTriangle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import axios from 'axios';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -79,37 +80,28 @@ function IdeasList() {
         console.log("User not signed in");
         return;
       }
-  
-      const userId = session.user.id;
-  
-      // Query ideas, excluding those posted by the current user
-      // const { data, error } = await supabase.rpc('get_ideas_with_metadata');
 
-      const { data, error } = await supabase
-      .from('ideas')
-      .select(`
-        *,
-        profiles:founder_id (
-          full_name,
-          github_url
-        )
-      `)
-      .eq('status', 'open')
-      .not('founder_id', 'eq', userId)
-      .order('created_at', { ascending: false });
-  
-      if (error) {
-        console.error("Supabase Query Error:", error);
-        return;
+      const response = await axios.get('http://localhost:5000/api/idea', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      const { success, data } = response.data;
+      
+      if (success) {
+        setIdeas(data || []);
+        console.log('Fetched ideas:', data);
+      } else {
+        console.error("Failed to fetch ideas");
+        toast.error("Failed to fetch ideas");
       }
-      console.log(data)
-  
-      setIdeas(data || []);
 
-      console.log(ideas);
       setLoading(false);
     } catch (error) {
       console.error('Unexpected Error:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch ideas');
+      setLoading(false);
     }
   }
   
@@ -182,7 +174,7 @@ function IdeasList() {
   const filteredIdeas = useMemo(() => {
     return ideas.filter(idea => {
       // Text search match
-      const matchesSearch = idea.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesSearch = idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           idea.idea_desc.toLowerCase().includes(searchQuery.toLowerCase());
       
       // Status filter match
@@ -289,27 +281,43 @@ function IdeasList() {
               <div className="p-6">
                 <div className="flex items-center mb-4">
                   <img
-                    src={idea.profiles.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(idea.profiles.full_name)}`}
-                    alt={idea.profiles.full_name}
+                    src={idea.founder.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(idea.founder.full_name || 'Founder')}`}
+                    alt={idea.founder.full_name || 'Founder'}
                     className="w-10 h-10 rounded-full mr-4"
                   />
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">{idea.company_name}</h3>
-                    <p className="text-sm text-muted-foreground">by {idea.profiles.full_name}</p>
+                    <h3 className="text-lg font-semibold text-foreground">{idea.title}</h3>
+                    <p className="text-sm text-muted-foreground">by {idea.founder.full_name || 'Founder'}</p>
                   </div>
+                </div>
+
+                <div className="flex items-center text-sm text-muted-foreground">
+                    <Rocket className="w-4 h-4 mr-2 text-primary" />
+                    <span>Description</span>
                 </div>
                 
                 <p className="text-muted-foreground mb-4 line-clamp-3">{idea.idea_desc}</p>
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <Users className="w-4 h-4 mr-2 text-primary" />
-                    <span>Equity Share: {idea.equity_term}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
                     <Rocket className="w-4 h-4 mr-2 text-primary" />
-                    <span>Requirements: {idea.dev_req}</span>
+                    <span>Requirements</span>
                   </div>
+                    
+                  {idea.dev_req && (
+                      <div className="mt-4">
+                          <div className="flex flex-wrap gap-2">
+                            {idea.dev_req.split(',').map((skill, index) => (
+                                <span 
+                                  key={index} 
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+                                >
+                                  {skill.trim()}
+                                </span>
+                              ))}
+                          </div>
+                      </div>
+                   )}
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4 mr-2 text-primary" />
                     <span>Posted {new Date(idea.created_at).toLocaleDateString()}</span>
