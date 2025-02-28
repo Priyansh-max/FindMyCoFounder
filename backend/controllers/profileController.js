@@ -53,25 +53,24 @@ const createProfile = async (req, res) => {
 // Update profile
 const updateProfile = async (req, res) => {
   try {
-    const { fullName, email, phone, githubUrl, portfolioUrl, description } = req.body;
+    const { fullName, portfolioUrl, description , skills , resumeUrl } = req.body;
     const userId = req.user.id;
 
     const { data, error } = await supabase
       .from('profiles')
       .update({
         full_name: fullName,
-        email,
-        phone,
-        github_url: githubUrl,
         portfolio_url: portfolioUrl,
         description,
+        skills,
+        resume_url: resumeUrl,
         updated_at: new Date()
       })
       .eq('id', userId);
 
     if (error) throw error;
 
-    res.json({ message: 'Profile updated successfully', data });
+    res.json({ success: true , message: 'Profile updated successfully'});
   } catch (error) {
     console.error('Profile update error:', error);
     res.status(500).json({ error: error.message });
@@ -91,31 +90,16 @@ const getProfile = async (req, res) => {
 
     if (error) throw error;
 
-    res.json(data);
+    res.json({
+      success: true,
+      data: data
+    });
   } catch (error) {
     console.error('Profile fetch error:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Update skills
-//no use
-const updateSkills = async (req, res) => {
-  try {
-    const { skills } = req.body;
-    const userId = req.user.id;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ skills })
-      .eq('id', userId);
-
-    if (error) throw error;
-
-    res.json({ message: 'Skills updated successfully', data });
-  } catch (error) {
-    console.error('Skills update error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };
 
@@ -226,5 +210,4 @@ module.exports = {
   uploadResume,
   verifyEmail,
   verifyPhone,
-  updateSkills
 }; 

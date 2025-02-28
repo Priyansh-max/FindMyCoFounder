@@ -6,9 +6,6 @@ const {
   updateProfile, 
   getProfile, 
   uploadResume,
-  verifyEmail,
-  verifyPhone,
-  updateSkills
 } = require('../controllers/profileController');
 
 const multer = require('multer');
@@ -23,7 +20,6 @@ const upload = multer({
 router.post('/create', authenticateUser, createProfile);
 router.put('/update', authenticateUser, updateProfile);
 router.get('/details', authenticateUser, getProfile); //imp
-
 // Resume Upload Route
 router.post('/resume', authenticateUser, upload.single('resume'), uploadResume);
 
