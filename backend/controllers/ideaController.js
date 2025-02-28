@@ -114,9 +114,7 @@ const createIdea = async (req, res) => {
   
       if (error) throw error;
       res.json({
-
         success: true,
-
         data: data
 
       });
