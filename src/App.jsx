@@ -15,37 +15,38 @@ import { toast } from 'react-hot-toast';
 function App() {
   console.log("app rendered")
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   console.log(user);
 
   return (
     <ThemeProvider>
       <Router>
-        <AuthHandler user={user} setUser={setUser} />
+        <AuthHandler user={user} setUser={setUser} setIsLoading={setIsLoading} />
         <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
           <Navbar user={user} />
           <main className="container mx-auto px-4 py-8">
             <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/idealist" element={<IdeasList />} />
-              {/* <Route 
-                path="/idealist" 
-                element={user ? <IdeasList /> : <Navigate to="/" />}/> */}
+              <Route path="/" element={user ? <Navigate to="/idealist" /> : <LandingPage />} />
+              <Route
+                path="/idealist"
+                element={isLoading ? null : user ? <IdeasList /> : <Navigate to="/" />}
+              />
               <Route
                 path="/post-idea"
-                element={user ? <IdeaForm /> : <Navigate to="/" />}
+                element={isLoading ? null : user ? <IdeaForm /> : <Navigate to="/" />}
               />
               <Route
                 path="/onboarding"
-                element={user ? <OnboardingForm /> : <Navigate to="/" />}
+                element={isLoading ? null : user ? <OnboardingForm /> : <Navigate to="/" />}
               />
               <Route
                 path="/profile"
-                element={user ? <Profile /> : <Navigate to="/" />}
+                element={isLoading ? null : user ? <Profile /> : <Navigate to="/" />}
               />
               <Route
                 path="/details/:id"
-                element={user ? <IdeaDetails /> : <Navigate to="/" />}
+                element={isLoading ? null : user ? <IdeaDetails /> : <Navigate to="/" />}
               />
             </Routes>
           </main>
@@ -57,7 +58,7 @@ function App() {
 }
 
 // New component to handle auth and navigation
-function AuthHandler({ user, setUser }) {
+function AuthHandler({ user, setUser, setIsLoading }) {
   const navigate = useNavigate();
   const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
@@ -65,10 +66,7 @@ function AuthHandler({ user, setUser }) {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      // Only redirect from landing page to idealist if user is logged in
-      if (session?.user && window.location.pathname === '/') {
-        navigate('/idealist');
-      }
+      setIsLoading(false);
     });
 
     // Listen for auth changes
@@ -77,19 +75,17 @@ function AuthHandler({ user, setUser }) {
       
       if (event === 'INITIAL_SESSION') {
         setUser(session?.user ?? null);
-        return;
+        setIsLoading(false);
+        // Don't return here, allow the code to continue checking for SIGNED_IN
       }
 
-      if (event === 'SIGNED_IN' && !hasShownWelcome) {
+      if (event === 'SIGNED_IN') {
         setUser(session?.user ?? null);
-        setHasShownWelcome(true);
-        
-        setTimeout(() => {
-          toast.success('Signed in successfully!');
-        }, 1000);
-        
+        // Show welcome message only on fresh sign in from landing page
         if (window.location.pathname === '/') {
-          navigate('/idealist', { replace: true });
+          setHasShownWelcome(true);
+          toast.success('Signed in successfully!');
+          navigate('/idealist');
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -97,10 +93,11 @@ function AuthHandler({ user, setUser }) {
         navigate('/');
         toast.success('Signed out successfully');
       }
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, setUser, hasShownWelcome]);
+  }, [navigate, setUser, setIsLoading]);
 
   return null;
 }
