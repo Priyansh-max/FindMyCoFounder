@@ -10,7 +10,7 @@ import { Tooltip } from "react-tooltip";
 import CircularProgress from '@/components/ui/CircularProgress';
 import { IoDocumentTextOutline } from "react-icons/io5";
 import { GoLink } from "react-icons/go";
-import EditProfile from '../props/EditProfile';
+import EditProfile from '@/props/EditProfile';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
@@ -65,9 +65,9 @@ function Profile() {
       }
 
       setUser(session.user);
-      await fetchProfile(session.user.id);
-      await fetchApplications();
-      await fetchIdeas(session.user.id);
+      await fetchProfile(session);
+      await fetchApplications(session);
+      await fetchIdeas(session);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -75,40 +75,28 @@ function Profile() {
     }
   }
 
-  async function fetchProfile(userId) {
+  async function fetchProfile(session) {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const response = await axios.get('http://localhost:5000/api/profile/details', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      console.log(response);
+      console.log('Profile Response:', response.data); // Debug log
 
-      if (error) throw error;
+      setProfile(response.data.data);
 
-      if (data) {
-        setProfile(data);
-        setFormData({
-          full_name: data.full_name || '',
-          whatsapp_number: data.whatsapp_number || '',
-          is_founder: data.is_founder || false
-        });
-      }
-
-      console.log(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch profile');
+      setProfile(null);
     }
   }
 
   //done
-  async function fetchApplications() {
+  async function fetchApplications(session) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-  
-      if (!session?.user) {
-        console.log("User not signed in");
-        return;
-      }
 
       const response = await axios.get('http://localhost:5000/api/application/user', {
         headers: {
@@ -141,71 +129,10 @@ function Profile() {
       setError("Error viewing details");
     }
   }
-
-  // const handleToggleApplications = async (ideaId) => {
-  //   try {
-  //     setIdeas(prevIdeas =>
-  //       prevIdeas.map(idea =>
-  //         idea.id === ideaId
-  //           ? { ...idea, showApplications: !idea.showApplications }
-  //           : idea
-  //       )
-  //     );
-
-  //     // Fetch applications when opening
-  //     const ideaToUpdate = ideas.find(idea => idea.id === ideaId);
-  //     if (!ideaToUpdate?.showApplications) {
-  //       await fetchApplicationsForIdea(ideaId);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error toggling applications:', error);
-  //     setError('Error toggling applications');
-  //   }
-  // };
-
-  // const fetchApplicationsForIdea = async (ideaId) => {
-  //   try {
-  //     setLoading(true);
-  //     const { data, error } = await supabase
-  //       .from('applications')
-  //       .select(`
-  //         *,
-  //         profiles (
-  //           full_name,
-  //           github_url,
-  //           whatsapp_number
-  //         )
-  //       `)
-  //       .eq('idea_id', ideaId);
-
-  //     if (error) throw error;
-
-  //     // Update the specific idea with its applications
-  //     setIdeas(prevIdeas =>
-  //       prevIdeas.map(idea =>
-  //         idea.id === ideaId
-  //           ? { ...idea, applications: data }
-  //           : idea
-  //       )
-  //     );
-  //   } catch (error) {
-  //     console.error('Error fetching applications:', error);
-  //     setError('Error fetching applications');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   
-  
-  async function fetchIdeas(userId) {
+  //done
+  async function fetchIdeas(session) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-  
-      if (!session?.user) {
-        console.log("User not signed in");
-        return;
-      }
-
       const response = await axios.get('http://localhost:5000/api/idea/user', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
@@ -764,7 +691,7 @@ function Profile() {
       {EditprofileOverlay && (
       <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000] p-10">
         <div
-          className="bg-card text-card-foreground my-20 p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[500px] max-h-[90vh] relative overflow-y-auto modern-scrollbar border border-border"
+          className="bg-card text-card-foreground my-20 p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[650px] max-h-[90vh] relative overflow-y-auto modern-scrollbar border border-border"
           onClick={(e) => e.stopPropagation()}
         >
           <button
