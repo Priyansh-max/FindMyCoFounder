@@ -24,6 +24,21 @@ function Profile() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
   const [EditprofileOverlay , setEditprofileOverlay] = useState(false);
+  const [stats, setStats] = useState({
+    applications_sent: {
+      total: 0,
+      accepted: 0,
+      pending: 0,
+      rejected: 0
+    },
+    applications_received: {
+      total: 0,
+      accepted: 0,
+      pending: 0,
+      rejected: 0
+    },
+    ideas_posted: 0
+  });
   const [formData, setFormData] = useState({
     full_name: '',
     whatsapp_number: '',
@@ -34,26 +49,32 @@ function Profile() {
     is_founder: false
   });
 
-  const data = {
-    total: 150,
-    accepted: 50,
-    pending: 50,
-    rejected: 50,
-  };
-
-  const datareceived = {
-    total: 0,
-    accepted: 30,
-    pending: 10,
-    rejected: 40,
-  };
-
   useEffect(() => {
     checkUser();
   }, []);
 
   function handleOverlay(){
     setEditprofileOverlay(true);
+  }
+
+  async function fetchStats(session) {
+    try {
+      const response = await axios.get('http://localhost:5000/api/data/stats', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (response.data.success) {
+        setStats(response.data.data);
+        console.log('Fetched stats:', response.data.data);
+      } else {
+        throw new Error('Failed to fetch statistics');
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch statistics');
+    }
   }
 
   async function checkUser() {
@@ -68,6 +89,7 @@ function Profile() {
       await fetchProfile(session);
       await fetchApplications(session);
       await fetchIdeas(session);
+      await fetchStats(session);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -152,97 +174,6 @@ function Profile() {
       toast.error(error.response?.data?.message || 'Failed to fetch ideas');
     }
   }
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          ...formData,
-          updated_at: new Date()
-        });
-
-      if (error) throw error;
-      alert('Profile updated successfully!');
-      await fetchProfile(user.id);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Error updating profile');
-    }
-  };
-
-  const handleApplicationStatus = async (ideaId, applicationId, status) => {
-    try {
-      setLoading(true);
-      
-      // Fetch the full application data first
-      const { data: applicationData, error: fetchError } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            github_url,
-            whatsapp_number
-          )
-        `)
-        .eq('id', applicationId)
-        .single();
-  
-      if (fetchError) throw fetchError;
-  
-      // Update status in database
-      const { error: updateError } = await supabase
-        .from('applications')
-        .update({ status })
-        .eq('id', applicationId);
-  
-      if (updateError) throw updateError;
-  
-      // Update ideas state with full application data
-      setIdeas(prevIdeas =>
-        prevIdeas.map(idea => {
-          if (idea.id === ideaId) {
-            return {
-              ...idea,
-              applications: idea.applications.map(app =>
-                app.id === applicationId 
-                  ? { ...applicationData, status } 
-                  : app
-              )
-            };
-          }
-          return idea;
-        })
-      );
-  
-      // Update applications state
-      setApplications(prevApplications =>
-        prevApplications.map(app =>
-          app.id === applicationId 
-            ? { ...applicationData, status }
-            : app
-        )
-      );
-  
-      alert(`Application ${status} successfully!`);
-    } catch (error) {
-      console.error('Error updating application:', error);
-      alert('Error updating application status');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredApplications = filter === "all"
   ? applications
@@ -359,27 +290,27 @@ function Profile() {
           <div className='flex flex-col items-center'>
             <div className="relative group">
               <CircularProgress
-                total={data.total}
-                accepted={data.accepted}
-                pending={data.pending}
-                rejected={data.rejected}
+                total={stats.applications_sent.total}
+                accepted={stats.applications_sent.accepted}
+                pending={stats.applications_sent.pending}
+                rejected={stats.applications_sent.rejected}
                 content="Applications Sent"
               />
               {/* Hover Stats */}
               <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <div className="absolute top-1/4 left-full ml-2">
                   <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                    Accepted: {data.accepted}
+                    Accepted: {stats.applications_sent.accepted}
                   </div>
                 </div>
                 <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
                   <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                    Pending: {data.pending}
+                    Pending: {stats.applications_sent.pending}
                   </div>
                 </div>
                 <div className="absolute bottom-1/4 left-full ml-2">
                   <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                    Rejected: {data.rejected}
+                    Rejected: {stats.applications_sent.rejected}
                   </div>
                 </div>
               </div>
@@ -392,27 +323,27 @@ function Profile() {
           <div className='flex flex-col items-center mt-4'>
             <div className="relative group">
               <CircularProgress
-                total={datareceived.total}
-                accepted={datareceived.accepted}
-                pending={datareceived.pending}
-                rejected={datareceived.rejected}
+                total={stats.applications_received.total}
+                accepted={stats.applications_received.accepted}
+                pending={stats.applications_received.pending}
+                rejected={stats.applications_received.rejected}
                 content="Applications Received"
               />
               {/* Hover Stats */}
               <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <div className="absolute top-1/4 left-full ml-2">
                   <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                    Accepted: {datareceived.accepted}
+                    Accepted: {stats.applications_received.accepted}
                   </div>
                 </div>
                 <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
                   <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                    Pending: {datareceived.pending}
+                    Pending: {stats.applications_received.pending}
                   </div>
                 </div>
                 <div className="absolute bottom-1/4 left-full ml-2">
                   <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                    Rejected: {datareceived.rejected}
+                    Rejected: {stats.applications_received.rejected}
                   </div>
                 </div>
               </div>
@@ -428,7 +359,7 @@ function Profile() {
                 <Lightbulb className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-primary" />
                 <span className="font-medium text-xs md:text-sm text-foreground">Ideas</span>
               </div>
-              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{data.accepted}</span>
+              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{stats.ideas_posted}</span>
             </div>
 
             <div className="flex flex-col items-center p-2 md:p-3 bg-accent rounded shadow-md dark:shadow-primary/5 w-full">
@@ -436,7 +367,7 @@ function Profile() {
                 <Users className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-primary" />
                 <span className="font-medium text-xs md:text-sm text-foreground">Contacts</span>
               </div>
-              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{data.pending}</span>
+              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{stats.applications_sent.pending}</span>
             </div>
 
             <div className="flex flex-col items-center p-2 md:p-3 bg-accent rounded shadow-md dark:shadow-primary/5 w-full">
@@ -444,7 +375,7 @@ function Profile() {
                 <Heart className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0 text-primary" />
                 <span className="font-medium text-xs md:text-sm text-foreground">Likes</span>
               </div>
-              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{data.rejected}</span>
+              <span className="text-lg md:text-xl font-bold mt-1 text-foreground">{stats.applications_received.rejected}</span>
             </div>
           </div>
         </div>
