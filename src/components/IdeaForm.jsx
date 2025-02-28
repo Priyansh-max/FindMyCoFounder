@@ -18,7 +18,7 @@ import { toast } from 'react-hot-toast';
 function IdeaForm() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     title: '',
@@ -38,6 +38,13 @@ function IdeaForm() {
     devReq: { loading: false, valid: null },
     additionalDetails: { loading: false, valid: null }
   });
+
+  useEffect(() => {
+    // Set loading to false after component mounts
+    setTimeout(() => {
+      setLoading(false);
+    }, 500);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -191,92 +198,7 @@ function IdeaForm() {
       setLoading(false);
     }
   }
-
-  //not used currently
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate skills
-    if (selectedSkills.length === 0) {
-      setError('Please select at least one required skill');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
   
-    try {
-      const { data: userData, error: UserError } = await supabase.auth.getUser();
-      if (UserError) throw new Error('Error fetching user');
-  
-      const user = userData.user;
-      if (!user) throw new Error('User is not authenticated');
-  
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, is_founder')
-        .eq('id', user.id)
-        .single();
-  
-      if (profileError || !profile) throw new Error('Profile not found');
-      if (!profile.is_founder) throw new Error('You must be a founder to post an idea');
-
-      // First, insert the idea
-      const { data: ideaData, error: ideaError } = await supabase
-        .from('ideas')
-        .insert([
-          {
-            created_at: new Date(),
-            founder_id: profile.id,
-            company_name: formData.title,
-            idea_desc: formData.ideaDescription,
-            partner_term: formData.additionalDetails,
-            equity_term: formData.equityTerms,
-            status: 'open',
-          },
-        ])
-        .select()
-        .single();
-
-      if (ideaError) throw ideaError;
-
-      // Then, handle skills
-      if (selectedSkills.length > 0) {
-        // Upsert skills to ensure they exist
-        const { data: skillsData, error: skillsError } = await supabase
-          .from('skills')
-          .upsert(
-            selectedSkills.map(name => ({ name })),
-            { onConflict: 'name' }
-          )
-          .select('id, name');
-
-        if (skillsError) throw skillsError;
-
-        // Create skill associations
-        const skillAssociations = skillsData.map(skill => ({
-          idea_id: ideaData.id,
-          skill_id: skill.id
-        }));
-
-        const { error: associationError } = await supabase
-          .from('idea_skills')
-          .insert(skillAssociations);
-
-        if (associationError) throw associationError;
-      }
-  
-      navigate('/');
-  
-    } catch (err) {
-      setError(err.message || 'Failed to submit idea. Please try again.');
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-
   const StatusIndicator = ({ status }) => {
     if (status.loading) {
       return <Loader2 className="w-4 h-4 animate-spin text-primary" />;
@@ -289,6 +211,16 @@ function IdeaForm() {
     }
     return null;
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="flex min-h-screen bg-background pt-8 justify-between px-20 transition-colors duration-200">
