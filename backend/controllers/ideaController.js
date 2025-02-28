@@ -125,9 +125,52 @@ const createIdea = async (req, res) => {
     }
   };
 
+  const updateIdeaStatus = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const { data, error } = await supabase.from('ideas').update({ status }).eq('id', id);
+      if (error) throw error;
+      res.json({ message: 'Idea status updated successfully', data });
+    } catch (error) {
+      console.error('Idea status update error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  //testing later
+  const deleteIdea = async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // First, delete all applications associated with this idea
+      const { error: applicationsError } = await supabase
+        .from('applications')
+        .delete()
+        .eq('idea_id', id);
+
+      if (applicationsError) throw applicationsError;
+
+      // Then delete the idea itself
+      const { data, error } = await supabase
+        .from('ideas')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      res.json({ message: 'Idea and associated applications deleted successfully', data });
+    } catch (error) {
+      console.error('Idea deletion error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
   module.exports = {
     createIdea,
     updateIdea,
     getIdeas,
-    getIdeabyUser
+    getIdeabyUser,
+    updateIdeaStatus,
+    deleteIdea
   }; 
