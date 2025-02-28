@@ -57,6 +57,39 @@ function Profile() {
     setEditprofileOverlay(true);
   }
 
+  async function checkUser() {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/');
+        setLoading(false);
+        return;
+      }
+
+      setUser(session.user);
+      
+      // Create an array of promises for parallel fetching
+      const fetchPromises = [
+        fetchProfile(session),
+        fetchApplications(session),
+        fetchIdeas(session),
+        fetchStats(session)
+      ];
+
+      // Wait for all fetch operations to complete
+      await Promise.all(fetchPromises);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load profile data');
+    } finally {
+      // Small delay to ensure state updates have propagated
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
+    }
+  }
+
   async function fetchStats(session) {
     try {
       const response = await axios.get('http://localhost:5000/api/data/stats', {
@@ -77,26 +110,6 @@ function Profile() {
     }
   }
 
-  async function checkUser() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/');
-        return;
-      }
-
-      setUser(session.user);
-      await fetchProfile(session);
-      await fetchApplications(session);
-      await fetchIdeas(session);
-      await fetchStats(session);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function fetchProfile(session) {
     try {
       const response = await axios.get('http://localhost:5000/api/profile/details', {
@@ -104,11 +117,13 @@ function Profile() {
           'Authorization': `Bearer ${session.access_token}`
         }
       });
-      console.log(response);
-      console.log('Profile Response:', response.data); // Debug log
-
-      setProfile(response.data.data);
-
+      
+      if (response.data.success) {
+        setProfile(response.data.data);
+        console.log('Profile Response:', response.data);
+      } else {
+        throw new Error('Failed to fetch profile');
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast.error(error.response?.data?.message || 'Failed to fetch profile');
@@ -175,14 +190,44 @@ function Profile() {
     }
   }
 
+  const handleIdeaStatus = async (ideaId) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession(); 
+      await axios.put(`http://localhost:5000/api/idea/status/${ideaId}`, { status: "open" }, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      toast.success('Idea status updated successfully');
+    } catch (error) {
+      console.error('Error updating idea status:', error);
+      toast.error('Failed to update idea status');
+    }
+  };
+
+  const handleDeleteIdea = async (ideaId) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await axios.delete(`http://localhost:5000/api/idea/${ideaId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      toast.success('Idea deleted successfully');
+    } catch (error) {
+      console.error('Error deleting idea:', error);
+      toast.error('Failed to delete idea');
+    }
+  };  
+
   const filteredApplications = filter === "all"
   ? applications
   : applications.filter((app) => app.status === filter);
 
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -521,12 +566,12 @@ function Profile() {
                       >
                         {idea.status === "open" ? (
                           <>
-                            <CheckCircle className="w-4 h-4 mr-1" />
+                            <CheckCircle className="w-3 h-3 mr-1" />
                             Open
                           </>
                         ) : (
                           <>
-                            <XCircle className="w-4 h-4 mr-1" />
+                            <XCircle className="w-3 h-3 mr-1" />
                             Closed
                           </>
                         )}
@@ -548,7 +593,7 @@ function Profile() {
                     <button 
                       data-tooltip-id={`view-tooltip-${idea.id}`}
                       onClick={() => viewDetails(idea.id)}
-                      className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                      className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
                     >
                       <GrView className="w-5 h-5" />
                     </button>
@@ -558,7 +603,7 @@ function Profile() {
                     </Tooltip>
                     <button 
                       data-tooltip-id={`status-tooltip-${idea.id}`}
-                      onClick={() => handleToggleApplications(idea.id)}
+                      onClick={() => handleIdeaStatus(idea.id)}
                       className={`p-2 transition-colors ${
                         idea.status === "open"
                           ? "text-orange-500 hover:text-orange-600"
@@ -577,7 +622,7 @@ function Profile() {
                     </Tooltip>
                     <button 
                       data-tooltip-id={`delete-tooltip-${idea.id}`}
-                      onClick={() => handleToggleApplications(idea.id)}
+                      onClick={() => handleDeleteIdea(idea.id)}
                       className="p-2 text-destructive hover:text-destructive/90 transition-colors"
                     >
                       <RiDeleteBin6Line className="w-5 h-5"/>
