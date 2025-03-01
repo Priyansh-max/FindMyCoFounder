@@ -114,9 +114,39 @@ const createApplication = async (req, res) => {
   const getApplicationbyIdea = async (req, res) => {
     try {
       const ideaId = req.params.id;
-      const { data, error } = await supabase.from('applications').select('*').eq('idea_id', ideaId);
+      console.log(ideaId);
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          profile:profile_id (
+            id,
+            full_name,
+            email,
+            avatar_url,
+            github_url,
+            portfolio_url,
+            resume_url,
+            description,
+            skills
+          )
+        `)
+        .eq('idea_id', ideaId)
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
-      res.json(data);
+
+      // Transform the data to include profile details directly
+      const formattedData = data.map(app => ({
+        ...app,
+        profile: app.profile,
+        profiles: undefined // Remove nested profiles object
+      }));
+
+      res.json({
+        success: true,
+        data: formattedData
+      });
     } catch (error) {
       console.error('Application fetch error:', error);
       res.status(500).json({ error: error.message });
