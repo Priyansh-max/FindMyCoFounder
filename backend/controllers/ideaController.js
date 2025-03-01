@@ -138,6 +138,28 @@ const createIdea = async (req, res) => {
     }
   };
 
+  const getideabyID = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { data, error } = await supabase
+      .from('ideas')
+      .select('*')
+      .eq('id', id)
+      .single(); // Get a single row
+
+      if (error) throw error;
+
+      res.json({ 
+        success: true,
+        data: data
+      });
+
+    } catch (error) {
+      console.error('Idea fetch error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  };
+
   //testing later
   const deleteIdea = async (req, res) => {
     try {
@@ -171,6 +193,7 @@ const createIdea = async (req, res) => {
     updateIdea,
     getIdeas,
     getIdeabyUser,
+    getideabyID,
     updateIdeaStatus,
     deleteIdea
   }; 
