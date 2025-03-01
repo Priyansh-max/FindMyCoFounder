@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import supabase from '../lib/supabase'; // Ensure you import your Supabase instance
-import { Users, Phone, ClipboardList, XCircle, Clock, CheckCircle, Undo, X,ArrowRight } from "lucide-react";
+import { Users, Phone, ClipboardList, XCircle, Clock, CheckCircle, Undo, X,ArrowRight, Check } from "lucide-react";
 import CircularProgress from '@/components/ui/CircularProgress';
 import ViewMyTeam from '../props/ViewMyTeam';
 import EditIdea from '../props/EditIdea';
+import axios from 'axios';
+import { cn } from '@/lib/utils';
 
 const IdeaDetails = () => {
   const { id } = useParams(); // Extracts idea ID from URL
   const [applications, setApplications] = useState([]);
-  const [idea, setIdea] = useState("");
+  const [idea, setIdea] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
-  const [editIdeaOverlay , setEditIdeaOverlay] = useState(false);
-  const [viewMyTeamOverlay , setViewMyTeamOverlay] = useState(false);
+  const [editIdeaOverlay, setEditIdeaOverlay] = useState(false);
+  const [viewMyTeamOverlay, setViewMyTeamOverlay] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [selectedApplication, setSelectedApplication] = useState(null);
 
   const data = {
     total: 150,
@@ -24,9 +28,37 @@ const IdeaDetails = () => {
   };
 
   useEffect(() => {
-    fetchApplicationsForIdea();
-    fetchIdeaDetails();
+    fetchSession();
   }, [id]); // Runs when `id` changes
+
+  async function fetchSession(){
+    try{
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/');
+      setLoading(false);
+      return;
+    }
+
+    const fetchPromises = [
+      fetchApplicationsForIdea(session),
+      fetchIdeaDetails(session)
+    ];
+
+    // Wait for all fetch operations to complete
+    await Promise.all(fetchPromises);
+  } catch (error) {
+    console.error('Error:', error);
+    toast.error('Failed to load profile data');
+  } finally {
+    // Small delay to ensure state updates have propagated
+    setTimeout(() => {
+      setLoading(false);
+    }, 100);
+  }
+    
+
+  }
 
   function handleOverlayEditIdea(){
     setEditIdeaOverlay(true);
@@ -37,25 +69,23 @@ const IdeaDetails = () => {
   }
 
 
-  const fetchApplicationsForIdea = async () => {
+  const fetchApplicationsForIdea = async (session) => {
     try {
       setLoading(true);
-
-      const { data, error } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            github_url,
-            whatsapp_number
-          )
-        `)
-        .eq('idea_id', id); // Fetch applications related to this idea ID
-
-      if (error) throw error;
-
-      setApplications(data); // Store fetched applications in state
+      console.log(session);
+      console.log(id);
+      const response = await axios.get(`http://localhost:5000/api/application/details/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      console.log(response);
+      if (response.data.success) {
+        setApplications(response.data.data);
+        console.log(applications);
+      } else {
+        throw new Error('Failed to fetch applications');
+      }
       console.log(applications);
     } catch (error) {
       console.error('Error fetching applications:', error);
@@ -65,36 +95,19 @@ const IdeaDetails = () => {
     }
   };
 
-  const fetchIdeaDetails = async () => {
+  const fetchIdeaDetails = async (session) => {
     try {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from('ideas') // Replace with your actual table name
-        .select('*')
-        .eq('id', id)
-        .single(); // Fetch only one row
-
-      if (error) throw error;
-
-      setIdea(data); // Store idea details in state
-
-      if(data.founder_id){
-        const { data: founderData, error: founderError } = await supabase
-        .from('profiles') // Assuming 'profiles' is the table storing user details
-        .select('*')
-        .eq('id', data.founder_id)
-        .single();
-
-        if (founderError) throw founderError;
-
-        setIdea((prevIdea) => ({
-            ...prevIdea,
-            founder: founderData, // Attach founder details to the idea
-        }));
-
+      const response = await axios.get(`http://localhost:5000/api/idea/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      console.log(response);
+      if (response.data.success) {
+        setIdea(response.data.data);
         console.log(idea);
-
+      } else {
+        throw new Error('Failed to fetch idea details');
       }
     } catch (error) {
       console.error('Error fetching idea details:', error);
@@ -143,14 +156,6 @@ const IdeaDetails = () => {
     );
   }
   
-  // Ensure `founder` exists before accessing its properties
-  if (!idea.founder) {
-    return (
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-    );
-  }
 
   return (
     <div className="max-w-8xl mx-auto px-4 py-8 flex gap-8">
@@ -164,8 +169,8 @@ const IdeaDetails = () => {
                 {/* Header with Company Name and Status */}
                 <div className="mb-2">
                     <div className="flex items-center justify-between mt-2 mb-2">
-                        <p className="text-lg font-semibold text-foreground">
-                            {idea.company_name}
+                        <p className="text-xl font-semibold text-foreground">
+                            {idea.title}
                         </p>
                         <div className="flex gap-4 items-center">
                                 <span className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium 
@@ -188,19 +193,30 @@ const IdeaDetails = () => {
 
                     </div>
 
+                    {idea.dev_req && (
+                      <div className='mt-1 mb-2'>
+                        <div className="flex flex-wrap gap-2">
+                          {idea.dev_req.split(',').map((skill, index) => (
+                            <span 
+                              key={index} 
+                              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+                            >
+                              {skill.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Posted Date */}
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <Clock className="w-4 h-4" />
-                        <span>Posted on {new Intl.DateTimeFormat("en-US", {
+                        <span>Posted on {idea.created_at ? new Intl.DateTimeFormat("en-US", {
                             dateStyle: "medium",
-                        }).format(new Date(idea.created_at))}</span>
+                        }).format(new Date(idea.created_at)) : 'Date not available'}</span>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Users className="w-4 h-4 " />
-                    <h3>Posted by {idea.founder?.full_name || "Unknown"}</h3>
-                </div>
                 <div className='w-full mt-4'>
                     <button 
                         className='p-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg w-full transition-colors'
@@ -277,97 +293,111 @@ const IdeaDetails = () => {
                 </select>
             </div>
 
-            <div className="space-y-4"> 
-                {filteredApplications.map((app) => (
-                <div key={app.id} className="border border-border rounded-lg p-4 bg-card text-card-foreground shadow-md dark:shadow-primary/10">
-                    <div className='flex justify-between'>
-                        <div>
-                            {/* Company Name & Founder */}
-
-                            <h4 className="font-semibold text-xl text-foreground mb-1">{app.profiles?.full_name || "Unkown"}</h4>
-
-                            <p className="text-sm text-muted-foreground">
-                                <span className="font-bold">Applied on:</span>{" "}
-                                {new Intl.DateTimeFormat("en-US", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                    hour12: true, // For 12-hour format
-                                }).format(new Date(app.created_at))}
-                            </p>
-
-                    
-                            {/* Idea Description */}
-                            <div className='flex flex-col'>
-                            <p className="text-sm text-muted-foreground">
-                                <span className="font-bold">Github url :</span> {app.profiles?.github_url || "Unknown github url"}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                <span className="font-bold">Portfolio link :</span> {app.profiles?.portfolio || "No portfolio link provided"}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                <span className="font-bold">Resume link :</span> {app.profiles?.resume || "No portfolio link provided"}
-                            </p>
-                            </div> 
-                        </div> 
-
-                        <div className="flex space-y-4">
-                            <div className='flex flex-col items-end justify-between'>
-                                {/* Status Badge with Icon */}
-                                <div>
-                                    <span
-                                        className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                        app.status === "pending"
-                                            ? "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100"
-                                            : app.status === "accepted"
-                                            ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
-                                            : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
-                                        }`}
-                                    >
-                                        {app.status === "pending" && <Clock className="w-4 h-4 mr-1" />}
-                                        {app.status === "accepted" && <CheckCircle className="w-4 h-4 mr-1" />}
-                                        {app.status === "rejected" && <XCircle className="w-4 h-4 mr-1" />}
-                                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                                    </span>
-                                </div>
-                                <div>
-                                    {/* Accept/Reject Buttons for Pending Applications */}
-                                    {app.status === "pending" && (
-                                        <div className="flex gap-2">
-                                            <button 
-                                                className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                                                onClick={() => handleStatusUpdate(app.id, "accepted")}
-                                            >
-                                                <CheckCircle className="w-4 h-4" />
-                                                Accept
-                                            </button>
-                                            <button 
-                                                className="flex items-center gap-1 px-3 py-1.5 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-colors"
-                                                onClick={() => handleStatusUpdate(app.id, "rejected")}
-                                            >
-                                                <X className="w-4 h-4" />
-                                                Reject
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+            {/* Applications List */}
+            <div className="space-y-4">
+                {filteredApplications.map((app, index) => (
+                    <div key={app.id} className="bg-card border border-border rounded-lg overflow-hidden">
+                        <div className="flex items-center gap-4 p-3">
+                            {/* Index */}
+                            <span className="w-6 text-sm text-muted-foreground">{index + 1}.</span>
+                            
+                            {/* Profile Info */}
+                            <div className="flex items-center gap-3 w-[250px]">
+                                <img
+                                    src={app.profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.profile?.full_name || 'User')}`}
+                                    alt={app.profile?.full_name}
+                                    className="w-8 h-8 rounded-full border border-border"
+                                />
+                                <button
+                                    onClick={() => setSelectedProfile(app.profile)}
+                                    className="font-medium truncate hover:text-primary transition-colors text-left"
+                                >
+                                    {app.profile?.full_name || "Unknown"}
+                                </button>
                             </div>
+
+                            {/* Links */}
+                            <div className="flex items-center gap-2">
+                                {app.profile?.github_url && (
+                                    <a
+                                        href={app.profile.github_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                        title="GitHub Profile"
+                                    >
+                                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                        </svg>
+                                    </a>
+                                )}
+                                {app.profile?.resume_url && (
+                                    <a
+                                        href={app.profile.resume_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Resume"
+                                    >
+                                        <ClipboardList className="w-5 h-5" />
+                                    </a>
+                                )}
+                                {app.profile?.portfolio_url && (
+                                    <a
+                                        href={app.profile.portfolio_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Portfolio"
+                                    >
+                                        <Users className="w-5 h-5" />
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* View Application Button */}
+                            <button
+                                onClick={() => setSelectedApplication(app)}
+                                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                            >
+                                View Application
+                            </button>
+
+                            {/* Spacer */}
+                            <div className="flex-1" />
+
+                            {/* Status Badge */}
+                            <div className={cn(
+                                "px-2 py-1 rounded-full text-xs font-medium",
+                                app.status === "pending" && "bg-yellow-500/20 text-yellow-500",
+                                app.status === "accepted" && "bg-green-500/20 text-green-500",
+                                app.status === "rejected" && "bg-red-500/20 text-red-500"
+                            )}>
+                                {app.status}
+                            </div>
+
+                            {/* Action Buttons */}
+                            {app.status === "pending" && (
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleStatusUpdate(app.id, "accepted")}
+                                        className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/20 transition-colors"
+                                        title="Accept Application"
+                                    >
+                                        <Check className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleStatusUpdate(app.id, "rejected")}
+                                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/20 transition-colors"
+                                        title="Reject Application"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    <div className="mt-3 p-3 bg-accent rounded-lg">
-                        <h5 className="font-bold text-foreground">
-                            Pitch : <span className="font-normal">{app.pitch}</span>
-                        </h5>
-                    </div>
-                </div>
                 ))}
-                {filteredApplications.length === 0 && (
-                <p className="text-muted-foreground border border-border rounded-md text-center py-4">No applications yet</p>
-                )}
             </div>
         </div>
     </div>
@@ -395,6 +425,112 @@ const IdeaDetails = () => {
             ✖
           </button>
           <ViewMyTeam></ViewMyTeam>
+        </div>
+      </div>
+    )}
+
+    {/* Profile Overlay */}
+    {selectedProfile && (
+      <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000]">
+        <div className="bg-card text-card-foreground p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[400px] relative border border-border">
+          <button
+            onClick={() => setSelectedProfile(null)}
+            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ✖
+          </button>
+          <div className="space-y-4">
+            {/* Profile Header */}
+            <div className="flex items-center gap-4">
+              <img
+                src={selectedProfile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProfile.full_name || 'User')}`}
+                alt={selectedProfile.full_name}
+                className="w-16 h-16 rounded-full border-2 border-border"
+              />
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">{selectedProfile.full_name}</h3>
+              </div>
+            </div>
+
+            {/* Skills Section */}
+            {selectedProfile.skills && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-foreground mb-2">Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedProfile.skills.split(',').map((skill, index) => (
+                    <span 
+                      key={index} 
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+                    >
+                      {skill.trim()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Profile Description */}
+            {selectedProfile.description && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-foreground mb-2">About</h4>
+                <p className="text-sm text-muted-foreground">{selectedProfile.description}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Application Overlay */}
+    {selectedApplication && (
+      <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000]">
+        <div className="bg-card text-card-foreground p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[600px] relative border border-border">
+          <button
+            onClick={() => setSelectedApplication(null)}
+            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ✖
+          </button>
+          <div className="space-y-4">
+            {/* Application Header */}
+            <div className="flex items-center gap-4 pb-4 border-b border-border">
+              <img
+                src={selectedApplication.profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedApplication.profile?.full_name || 'User')}`}
+                alt={selectedApplication.profile?.full_name}
+                className="w-12 h-12 rounded-full border-2 border-border"
+              />
+              <div>
+                <button
+                  onClick={() => {
+                    setSelectedProfile(selectedApplication.profile);
+                    setSelectedApplication(null);
+                  }}
+                  className="text-lg font-semibold text-foreground hover:text-primary transition-colors text-left"
+                >
+                  {selectedApplication.profile?.full_name}
+                </button>
+                <p className="text-sm text-muted-foreground">Application Details</p>
+              </div>
+              <div className="ml-auto">
+                <div className={cn(
+                  "px-2 py-1 rounded-full text-xs font-medium",
+                  selectedApplication.status === "pending" && "bg-yellow-500/20 text-yellow-500",
+                  selectedApplication.status === "accepted" && "bg-green-500/20 text-green-500",
+                  selectedApplication.status === "rejected" && "bg-red-500/20 text-red-500"
+                )}>
+                  {selectedApplication.status}
+                </div>
+              </div>
+            </div>
+
+            {/* Application Content */}
+            <div>
+              <h4 className="text-sm font-medium text-foreground mb-2">Pitch</h4>
+              <div className="bg-accent/50 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedApplication.pitch}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )}
