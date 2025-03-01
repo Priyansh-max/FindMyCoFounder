@@ -39,15 +39,6 @@ function Profile() {
     },
     ideas_posted: 0
   });
-  const [formData, setFormData] = useState({
-    full_name: '',
-    whatsapp_number: '',
-    github_url : '',
-    portfolio_url : '',
-    resume_url : '',
-    description : '',
-    is_founder: false
-  });
 
   useEffect(() => {
     checkUser();
@@ -192,13 +183,22 @@ function Profile() {
 
   const handleIdeaStatus = async (ideaId) => {
     try {
+      const ideaToUpdate = ideas.find(idea => idea.id === ideaId);
+      const newStatus = ideaToUpdate.status === "open" ? "closed" : "open";
+      
       const { data: { session } } = await supabase.auth.getSession(); 
-      await axios.put(`http://localhost:5000/api/idea/status/${ideaId}`, { status: "open" }, {
+      await axios.put(`http://localhost:5000/api/idea/status/${ideaId}`, { status: newStatus }, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
       });
-      toast.success('Idea status updated successfully');
+      
+      // Update local state
+      setIdeas(ideas.map(idea => 
+        idea.id === ideaId ? { ...idea, status: newStatus } : idea
+      ));
+      
+      toast.success(`Idea ${newStatus === 'open' ? 'reopened' : 'closed'} successfully`);
     } catch (error) {
       console.error('Error updating idea status:', error);
       toast.error('Failed to update idea status');
@@ -552,106 +552,92 @@ function Profile() {
         <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
             <h2 className="text-2xl font-bold mb-6 text-foreground">Your Posted Ideas</h2>
             {ideas.map((idea) => (
-              <div key={idea.id} className="border border-border rounded-lg p-6">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-semibold text-foreground">{idea.title}</h3>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          idea.status === "open"
-                            ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
-                            : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
-                        }`}
-                      >
-                        {idea.status === "open" ? (
-                          <>
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Open
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="w-3 h-3 mr-1" />
-                            Closed
-                          </>
-                        )}
-                      </span>
-                      <span className="flex items-center text-xs text-muted-foreground">
-                        {new Date(idea.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
+              <div key={idea.id} className="mb-6 last:mb-0 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${
+                      idea.status === 'open' 
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
+                    }`}>
+                      <Lightbulb className="w-5 h-5 transition-transform duration-300 group-hover:rotate-12 group-hover:animate-pulse" />
                     </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-foreground truncate pr-4 mb-1">{idea.title}</h3>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(idea.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Tooltip id={`view-tooltip-${idea.id}`} place="top" effect="solid">
-                      View received applications
-                    </Tooltip>
-                    <button 
-                      data-tooltip-id={`view-tooltip-${idea.id}`}
-                      onClick={() => viewDetails(idea.id)}
-                      className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
-                    >
-                      <GrView className="w-5 h-5" />
-                    </button>
-
-                    <Tooltip id={`status-tooltip-${idea.id}`} place="top" effect="solid">
-                      {idea.status === "open" ? "Stop receiving applications" : "Start receiving applications"}
-                    </Tooltip>
-                    <button 
-                      data-tooltip-id={`status-tooltip-${idea.id}`}
-                      onClick={() => handleIdeaStatus(idea.id)}
-                      className={`p-2 transition-colors ${
+                    <span
+                      className={`flex-shrink-0 flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                         idea.status === "open"
-                          ? "text-orange-500 hover:text-orange-600"
-                          : "text-green-500 hover:text-green-600"
+                          ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
+                          : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
                       }`}
                     >
                       {idea.status === "open" ? (
-                        <AiOutlineStop className="w-5 h-5" />
+                        <>
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Open
+                        </>
                       ) : (
-                        <PlayCircle className="w-5 h-5" />
+                        <>
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Closed
+                        </>
                       )}
-                    </button>
+                    </span>
 
-                    <Tooltip id={`delete-tooltip-${idea.id}`} place="top" effect="solid">
-                      Delete post
-                    </Tooltip>
-                    <button 
-                      data-tooltip-id={`delete-tooltip-${idea.id}`}
-                      onClick={() => handleDeleteIdea(idea.id)}
-                      className="p-2 text-destructive hover:text-destructive/90 transition-colors"
-                    >
-                      <RiDeleteBin6Line className="w-5 h-5"/>
-                    </button>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      <Tooltip id={`view-tooltip-${idea.id}`} place="top" effect="solid">
+                        View received applications
+                      </Tooltip>
+                      <button 
+                        data-tooltip-id={`view-tooltip-${idea.id}`}
+                        onClick={() => viewDetails(idea.id)}
+                        className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
+                      >
+                        <GrView className="w-5 h-5" />
+                      </button>
 
-                <div className="space-y-2">
-                  <p className="text-muted-foreground">{idea.idea_desc}</p>
-                  {idea.dev_req && (
-                    <div className="mt-4">
-                        <div className="flex flex-wrap gap-2">
-                          {idea.dev_req.split(',').map((skill, index) => (
-                              <span 
-                                key={index} 
-                                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
-                              >
-                                {skill.trim()}
-                              </span>
-                            ))}
-                        </div>
+                      <Tooltip id={`status-tooltip-${idea.id}`} place="top" effect="solid">
+                        {idea.status === "open" ? "Close applications" : "Reopen applications"}
+                      </Tooltip>
+                      <button 
+                        data-tooltip-id={`status-tooltip-${idea.id}`}
+                        onClick={() => handleIdeaStatus(idea.id)}
+                        className={`p-2 transition-colors ${
+                          idea.status === "open"
+                            ? "text-orange-500 hover:text-orange-600"
+                            : "text-green-500 hover:text-green-600"
+                        }`}
+                      >
+                        {idea.status === "open" ? (
+                          <AiOutlineStop className="w-5 h-5" />
+                        ) : (
+                          <PlayCircle className="w-5 h-5" />
+                        )}
+                      </button>
+
+                      <Tooltip id={`delete-tooltip-${idea.id}`} place="top" effect="solid">
+                        Delete post
+                      </Tooltip>
+                      <button 
+                        data-tooltip-id={`delete-tooltip-${idea.id}`}
+                        onClick={() => handleDeleteIdea(idea.id)}
+                        className="p-2 text-destructive hover:text-destructive/90 transition-colors"
+                      >
+                        <RiDeleteBin6Line className="w-5 h-5"/>
+                      </button>
                     </div>
-                   )}
-
-                  {/* Additional Details Section */}
-                  <div className="mt-4">
-                    <p className="text-muted-foreground text-sm">
-                      {idea.additional_details || "No additional details set"}
-                    </p>
                   </div>
                 </div>
               </div>
