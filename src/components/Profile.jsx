@@ -11,6 +11,7 @@ import CircularProgress from '@/components/ui/CircularProgress';
 import { IoDocumentTextOutline } from "react-icons/io5";
 import { GoLink } from "react-icons/go";
 import EditProfile from '@/props/EditProfile';
+import ErrorPage from './ErrorPage';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
@@ -23,7 +24,7 @@ function Profile() {
   const [ideas, setIdeas] = useState([]);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
-  const [EditprofileOverlay , setEditprofileOverlay] = useState(false);
+  const [EditprofileOverlay, setEditprofileOverlay] = useState(false);
   const [stats, setStats] = useState({
     applications_sent: {
       total: 0,
@@ -39,6 +40,11 @@ function Profile() {
     },
     ideas_posted: 0
   });
+
+  const resetError = () => {
+    setError(null);
+    checkUser();
+  };
 
   useEffect(() => {
     checkUser();
@@ -72,12 +78,9 @@ function Profile() {
       await Promise.all(fetchPromises);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Failed to load profile data');
+      setError(error);
     } finally {
-      // Small delay to ensure state updates have propagated
-      setTimeout(() => {
-        setLoading(false);
-      }, 100);
+      setLoading(false);
     }
   }
 
@@ -97,7 +100,7 @@ function Profile() {
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch statistics');
+      throw new Error(error.response?.data?.message || 'Failed to fetch statistics');
     }
   }
 
@@ -117,15 +120,12 @@ function Profile() {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch profile');
-      setProfile(null);
+      throw new Error(error.response?.data?.message || 'Failed to fetch profile');
     }
   }
 
-  //done
   async function fetchApplications(session) {
     try {
-
       const response = await axios.get('http://localhost:5000/api/application/user', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
@@ -142,7 +142,7 @@ function Profile() {
       console.log('Fetched applications:', data);
     } catch (error) {
       console.error('Error fetching applications:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch applications');
+      throw new Error(error.response?.data?.message || 'Failed to fetch applications');
     }
   }
 
@@ -158,7 +158,6 @@ function Profile() {
     }
   }
   
-  //done
   async function fetchIdeas(session) {
     try {
       const response = await axios.get('http://localhost:5000/api/idea/user', {
@@ -177,7 +176,7 @@ function Profile() {
       }
     } catch (error) {
       console.error('Error fetching ideas:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch ideas');
+      throw new Error(error.response?.data?.message || 'Failed to fetch ideas');
     }
   }
 
@@ -223,6 +222,10 @@ function Profile() {
   const filteredApplications = filter === "all"
   ? applications
   : applications.filter((app) => app.status === filter);
+
+  if (error) {
+    return <ErrorPage error={error} resetError={resetError} />;
+  }
 
   if (loading || !profile) {
     return (

@@ -5,6 +5,7 @@ import { Users, Phone, ClipboardList, XCircle, Clock, CheckCircle, Undo, X,Arrow
 import CircularProgress from '@/components/ui/CircularProgress';
 import ViewMyTeam from '../props/ViewMyTeam';
 import EditIdea from '../props/EditIdea';
+import ErrorPage from './ErrorPage';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,11 @@ const IdeaDetails = () => {
     fetchSession();
   }, [id]); // Runs when `id` changes
 
+  const resetError = () => {
+    setError(null);
+    fetchSession();
+  };
+
   async function fetchSession(){
     try{
     const { data: { session } } = await supabase.auth.getSession();
@@ -49,7 +55,7 @@ const IdeaDetails = () => {
     await Promise.all(fetchPromises);
   } catch (error) {
     console.error('Error:', error);
-    toast.error('Failed to load profile data');
+    setError(error);
   } finally {
     // Small delay to ensure state updates have propagated
     setTimeout(() => {
@@ -89,7 +95,7 @@ const IdeaDetails = () => {
       console.log(applications);
     } catch (error) {
       console.error('Error fetching applications:', error);
-      setError('Error fetching applications');
+      throw new Error('Error fetching applications');
     } finally {
       setLoading(false);
     }
@@ -111,7 +117,7 @@ const IdeaDetails = () => {
       }
     } catch (error) {
       console.error('Error fetching idea details:', error);
-      setError('Error fetching idea details');
+      throw new Error('Error fetching idea details');
     } finally {
       setLoading(false);
     }
@@ -138,6 +144,10 @@ const IdeaDetails = () => {
         // You might want to add some error handling UI here
     }
   };
+
+  if (error) {
+    return <ErrorPage error={error} resetError={resetError} />;
+  }
 
   if (loading) {
     return (

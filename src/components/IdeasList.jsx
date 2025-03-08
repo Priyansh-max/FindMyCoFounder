@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SkillSelect from '@/components/ui/SkillSelect';
+import ErrorPage from './ErrorPage';
 
 function IdeasList() {
   const [ideas, setIdeas] = useState([]);
@@ -20,6 +21,7 @@ function IdeasList() {
   const [showOnboardingWarning, setShowOnboardingWarning] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     console.log('Component mounted');
@@ -41,38 +43,31 @@ function IdeasList() {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function checkUser() {
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user || null);
-    if (session?.user) {
-      fetchIdeas();
-    }
-  }
+  const resetError = () => {
+    setError(null);
+    checkUser();
+  };
 
   const checkOnboardingStatus = async () => {
         setShowOnboardingWarning(true);
   };
 
-  // const checkOnboardingStatus = async () => {
-  //   try {
-  //     const { data: { user } } = await supabase.auth.getUser();
-  //     if (user) {
-  //       const { data: profile } = await supabase
-  //         .from('profiles')
-  //         .select('*')
-  //         .eq('id', user.id)
-  //         .single();
-        
-  //       console.log(profile);
-  //       setShowOnboardingWarning(!profile || !profile.full_name);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error checking onboarding status:', error);
-  //   }
-  // };
+  async function checkUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user || null);
+    if (session?.user) {
+      try {
+        await fetchIdeas();
+      } catch (error) {
+        console.error('Error:', error);
+        setError(error);
+      }
+    }
+  }
 
   async function fetchIdeas() {
     try {
+      setLoading(true);
       // Get the current authenticated user
       const { data: { session } } = await supabase.auth.getSession();
   
@@ -93,14 +88,12 @@ function IdeasList() {
         setIdeas(data || []);
         console.log('Fetched ideas:', data);
       } else {
-        console.error("Failed to fetch ideas");
-        toast.error("Failed to fetch ideas");
+        throw new Error("Failed to fetch ideas");
       }
-
-      setLoading(false);
     } catch (error) {
       console.error('Unexpected Error:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch ideas');
+      throw new Error(error.response?.data?.message || 'Failed to fetch ideas');
+    } finally {
       setLoading(false);
     }
   }
@@ -189,6 +182,10 @@ function IdeasList() {
       return matchesSearch && matchesStatus && matchesSkills;
     });
   }, [ideas, searchQuery, filter, selectedSkills]);
+
+  if (error) {
+    return <ErrorPage error={error} resetError={resetError} />;
+  }
 
   if (loading) {
     return (
