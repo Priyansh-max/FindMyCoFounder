@@ -70,6 +70,36 @@ const getStats = async (req, res) => {
   }
 };
 
+//create a backend to fetch the total numbers of applications recived in a particular idea , fetch based on accepted , pending and rejected..
+
+const getApplicationStats = async (req, res) => {
+  try {
+    const ideaId = req.params.ideaId;
+    const { data: applications, error } = await supabase
+      .from('applications')
+      .select('status')
+      .eq('idea_id', ideaId);
+
+    if (error) throw error;
+
+    const receivedStats = {
+      total: applications.length,
+      accepted: applications.filter(app => app.status === 'accepted').length,
+      pending: applications.filter(app => app.status === 'pending').length,
+      rejected: applications.filter(app => app.status === 'rejected').length
+    };
+
+    res.json({
+      success: true,
+      data: receivedStats
+    });
+
+  } catch (error) {
+    console.error('Error fetching application stats:', error);
+  }
+};
+
 module.exports = {
-  getStats
+  getStats,
+  getApplicationStats
 };
