@@ -49,7 +49,7 @@ function IdeasList() {
   };
 
   const checkOnboardingStatus = async () => {
-        setShowOnboardingWarning(true);
+        setShowOnboardingWarning(true); //add later create a backend for this that checks if the users onboarding is completed  
   };
 
   async function checkUser() {
