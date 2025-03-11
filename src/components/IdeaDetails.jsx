@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase'; // Ensure you import your Supabase instance
 import { Users, Phone, ClipboardList, XCircle, Clock, CheckCircle, Undo, X,ArrowRight, Check } from "lucide-react";
 import CircularProgress from '@/components/ui/CircularProgress';
-import ViewMyTeam from '../props/ViewMyTeam';
 import EditIdea from '../props/EditIdea';
 import ErrorPage from './ErrorPage';
 import axios from 'axios';
@@ -11,13 +10,13 @@ import { cn } from '@/lib/utils';
 
 const IdeaDetails = () => {
   const { id } = useParams(); // Extracts idea ID from URL
+  const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [idea, setIdea] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
   const [editIdeaOverlay, setEditIdeaOverlay] = useState(false);
-  const [viewMyTeamOverlay, setViewMyTeamOverlay] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [stats, setStats] = useState({
@@ -73,7 +72,7 @@ const IdeaDetails = () => {
   }
 
   function handleOverlayViewMyTeam(){
-    setViewMyTeamOverlay(true);
+    navigate(`/manage-team/${id}`);
   }
 
   const fetchApplicationStats = async (session) => {
@@ -443,20 +442,6 @@ const IdeaDetails = () => {
             ✖
           </button>
           <EditIdea></EditIdea>
-        </div>
-      </div>
-    )}
-
-    {viewMyTeamOverlay && (
-        <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000]">
-        <div className="bg-card text-card-foreground p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-96 relative border border-border">
-          <button
-            onClick={() => setViewMyTeamOverlay(false)}
-            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ✖
-          </button>
-          <ViewMyTeam></ViewMyTeam>
         </div>
       </div>
     )}
