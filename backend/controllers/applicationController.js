@@ -111,6 +111,7 @@ const createApplication = async (req, res) => {
     }
   };
 
+  //get the application in a particular idea....
   const getApplicationbyIdea = async (req, res) => {
     try {
       const ideaId = req.params.id;
