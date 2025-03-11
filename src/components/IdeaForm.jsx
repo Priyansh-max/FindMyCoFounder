@@ -18,7 +18,8 @@ import { toast } from 'react-hot-toast';
 function IdeaForm() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [pageloading, setPageloading] = useState(true);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     title: '',
@@ -42,7 +43,7 @@ function IdeaForm() {
   useEffect(() => {
     // Set loading to false after component mounts
     setTimeout(() => {
-      setLoading(false);
+      setPageloading(false);
     }, 500);
   }, []);
 
@@ -212,7 +213,7 @@ function IdeaForm() {
     return null;
   };
 
-  if (loading) {
+  if (pageloading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
