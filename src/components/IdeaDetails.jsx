@@ -20,13 +20,14 @@ const IdeaDetails = () => {
   const [viewMyTeamOverlay, setViewMyTeamOverlay] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [selectedApplication, setSelectedApplication] = useState(null);
-
-  const data = {
-    total: 150,
-    accepted: 50,
-    pending: 50,
-    rejected: 50,
-  };
+  const [stats, setStats] = useState({
+    applications_received: {
+      total: 0,
+      accepted: 0,
+      pending: 0,
+      rejected: 0
+    }
+  });
 
   useEffect(() => {
     fetchSession();
@@ -48,7 +49,8 @@ const IdeaDetails = () => {
 
     const fetchPromises = [
       fetchApplicationsForIdea(session),
-      fetchIdeaDetails(session)
+      fetchIdeaDetails(session),
+      fetchApplicationStats(session),
     ];
 
     // Wait for all fetch operations to complete
@@ -74,6 +76,26 @@ const IdeaDetails = () => {
     setViewMyTeamOverlay(true);
   }
 
+  const fetchApplicationStats = async (session) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/data/application-stats/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (response.data.success) {
+        setStats(response.data.data);
+        console.log('Fetched stats:', response.data.data);
+      } else {
+        throw new Error('Failed to fetch application stats');
+      }
+
+    } catch (error) {
+      console.error('Error fetching application stats:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch statistics');
+    }
+  };
 
   const fetchApplicationsForIdea = async (session) => {
     try {
@@ -238,27 +260,27 @@ const IdeaDetails = () => {
                 <div className='flex flex-col items-center mt-8'>
                     <div className="relative group">
                         <CircularProgress
-                        total={data.total}
-                        accepted={data.accepted}
-                        pending={data.pending}
-                        rejected={data.rejected}
+                        total={stats.total}
+                        accepted={stats.accepted}
+                        pending={stats.pending}
+                        rejected={stats.rejected}
                         content="Applications received"
                         />
                         {/* Hover Stats */}
                         <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity         duration-200">
                             <div className="absolute top-1/4 left-full ml-2">
                                 <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                                    Accepted: {data.accepted}
+                                    Accepted: {stats.accepted}
                                 </div>
                             </div>
                             <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
                                 <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                                    Pending: {data.pending}
+                                    Pending: {stats.pending}
                                 </div>
                             </div>
                             <div className="absolute bottom-1/4 left-full ml-2">
                                 <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                                    Rejected: {data.rejected}
+                                    Rejected: {stats.rejected}
                                 </div>
                             </div>
                         </div>
