@@ -274,67 +274,72 @@ function IdeasList() {
       {user && filteredIdeas.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filteredIdeas.map((idea) => (
-            <div key={idea.id} className="bg-card text-card-foreground rounded-xl shadow-md dark:shadow-primary/10 overflow-hidden hover:shadow-lg transition-all border border-border">
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <img
-                    src={idea.founder.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(idea.founder.full_name || 'Founder')}`}
-                    alt={idea.founder.full_name || 'Founder'}
-                    className="w-10 h-10 rounded-full mr-4"
-                  />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">{idea.title}</h3>
-                    <p className="text-sm text-muted-foreground">by {idea.founder.full_name || 'Founder'}</p>
+            <div key={idea.id} className="bg-card text-card-foreground rounded-xl shadow-md dark:shadow-primary/10 overflow-hidden hover:shadow-lg transition-all border border-border flex flex-col h-full">
+              <div className="p-6 flex flex-col flex-grow">
+                <div className='flex flex-col flex-grow'>
+                  <div className="flex items-center mb-4">
+                    <img
+                      src={idea.founder.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(idea.founder.full_name || 'Founder')}`}
+                      alt={idea.founder.full_name || 'Founder'}
+                      className="w-10 h-10 rounded-full mr-4"
+                    />
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">{idea.title}</h3>
+                      <p className="text-sm text-muted-foreground">by {idea.founder.full_name || 'Founder'}</p>
+                    </div>
                   </div>
+
+                  <div className="flex items-center text-sm text-muted-foreground">
+                      <Rocket className="w-4 h-4 mr-2 text-primary" />
+                      <span>Description</span>
+                  </div>
+                  
+                  <p className="text-muted-foreground mb-4 line-clamp-3">{idea.idea_desc}</p>
+                  
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Rocket className="w-4 h-4 mr-2 text-primary" />
+                      <span>Requirements</span>
+                    </div>
+                      
+                    {idea.dev_req && (
+                        <div className="mt-4">
+                            <div className="flex flex-wrap gap-2">
+                              {idea.dev_req.split(',').map((skill, index) => (
+                                  <span 
+                                    key={index} 
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+                                  >
+                                    {skill.trim()}
+                                  </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4 mr-2 text-primary" />
+                      <span>Posted {new Date(idea.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
                 </div>
 
-                <div className="flex items-center text-sm text-muted-foreground">
-                    <Rocket className="w-4 h-4 mr-2 text-primary" />
-                    <span>Description</span>
+                <div className='mt-auto pt-4'>
+                  <button
+                    onClick={() => handleApply(idea.id)}
+                    disabled={submitting}
+                    className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md 
+                      bg-primary text-primary-foreground hover:bg-primary/90 
+                      focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 
+                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {submitting ? 'Applying...' : (
+                      <>
+                        Apply Now <ArrowRight className="ml-2 w-4 h-4" />
+                      </>
+                    )}
+                  </button>
                 </div>
-                
-                <p className="text-muted-foreground mb-4 line-clamp-3">{idea.idea_desc}</p>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Rocket className="w-4 h-4 mr-2 text-primary" />
-                    <span>Requirements</span>
-                  </div>
-                    
-                  {idea.dev_req && (
-                      <div className="mt-4">
-                          <div className="flex flex-wrap gap-2">
-                            {idea.dev_req.split(',').map((skill, index) => (
-                                <span 
-                                  key={index} 
-                                  className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
-                                >
-                                  {skill.trim()}
-                                </span>
-                              ))}
-                          </div>
-                      </div>
-                   )}
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4 mr-2 text-primary" />
-                    <span>Posted {new Date(idea.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleApply(idea.id)}
-                  disabled={submitting}
-                  className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md 
-                    bg-primary text-primary-foreground hover:bg-primary/90 
-                    focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 
-                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {submitting ? 'Applying...' : (
-                    <>
-                      Apply Now <ArrowRight className="ml-2 w-4 h-4" />
-                    </>
-                  )}
-                </button>
               </div>
             </div>
           ))}
