@@ -9,6 +9,7 @@ const profileValidation = require('./validate/profileValidation');
 const ideaRoutes = require('./routes/ideaRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const NumberRoutes = require('./routes/numberRoutes');
+const manageTeamRoutes = require('./routes/manageTeamRoutes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/validate', profileValidation);
 app.use('/api/idea', ideaRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/data', NumberRoutes);
+app.use('/api/manage-team', manageTeamRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
