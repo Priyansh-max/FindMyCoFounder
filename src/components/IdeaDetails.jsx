@@ -7,11 +7,14 @@ import EditIdea from '../props/EditIdea';
 import ErrorPage from './ErrorPage';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
+import Initializing from '../props/Initializing'; // Import the Initializing component
+import { toast } from 'react-hot-toast';
 
 const IdeaDetails = () => {
   const { id } = useParams(); // Extracts idea ID from URL
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
+  const [teamCreation, setTeamCreation] = useState(false);
   const [idea, setIdea] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,6 +22,7 @@ const IdeaDetails = () => {
   const [editIdeaOverlay, setEditIdeaOverlay] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [showInitializing, setShowInitializing] = useState(false);
   const [stats, setStats] = useState({
     applications_received: {
       total: 0,
@@ -50,6 +54,7 @@ const IdeaDetails = () => {
       fetchApplicationsForIdea(session),
       fetchIdeaDetails(session),
       fetchApplicationStats(session),
+      checkTeamCreation(session)
     ];
 
     // Wait for all fetch operations to complete
@@ -71,8 +76,57 @@ const IdeaDetails = () => {
     setEditIdeaOverlay(true);
   }
 
-  function handleOverlayViewMyTeam(){
-    navigate(`/manage-team/${id}`);
+  async function handleOverlayViewMyTeam(){
+    if(teamCreation){
+      navigate(`/manage-team/${id}`);
+    } else {
+      // Show initializing animation
+      setShowInitializing(true);
+      
+      try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Call backend to create team
+        const response = await axios.post(`http://localhost:5000/api/manage-team/create-team/${id}`, {}, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+        
+        if (response.data.success) {
+          // Team creation was successful, update state
+          setTeamCreation(true);
+          
+          // The initializing component will navigate to the manage-team page when animation completes
+        
+        } else {
+          throw new Error('Failed to create team');
+        }
+      } catch (error) {
+        console.error('Error creating team:', error);
+        setShowInitializing(false); // Hide initializing on error
+        // Show error to user
+        toast.error('Failed to create team. Please try again.');
+      }
+    }
+  }
+
+  const checkTeamCreation = async (session) => {
+    try{
+      const response = await axios.get(`http://localhost:5000/api/manage-team/check-team/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if(response.data.success === true){
+        setTeamCreation(true);
+      }
+    } catch (error) {
+      console.error('Error checking team creation:', error);
+      throw new Error('Error checking team creation');
+    }
   }
 
   const fetchApplicationStats = async (session) => {
@@ -290,7 +344,7 @@ const IdeaDetails = () => {
                         className='w-full flex items-center justify-center p-1 text-lg rounded-md text-primary-foreground bg-primary hover:bg-primary/90 transition-colors'
                         onClick={handleOverlayViewMyTeam}
                     >
-                        View My Team
+                        {teamCreation ? "Manage Team" : "Create Dashboard"}
                     </button>
                 </div>
             </div>
@@ -550,6 +604,16 @@ const IdeaDetails = () => {
           </div>
         </div>
       </div>
+    )}
+
+    {/* Add Initializing overlay */}
+    {showInitializing && (
+      <Initializing 
+        onComplete={() => {
+          setShowInitializing(false);
+          navigate(`/manage-team/${id}`);
+        }} 
+      />
     )}
 </div>
   );
