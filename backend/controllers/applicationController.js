@@ -154,9 +154,104 @@ const createApplication = async (req, res) => {
     }
   };
 
+  const acceptApplication = async (req, res) => {
+    const applicationId = req.params.id;
+
+    try {
+        // Step 1: Update the application status to 'accepted'
+        const { error: updateError } = await supabase
+            .from('applications')
+            .update({ status: 'accepted' })
+            .eq('id', applicationId);
+        
+        if (updateError) {
+            throw new Error('Failed to update application status');
+        }
+
+        // Step 2: Fetch the profile_id and idea_id of the accepted user
+        const { data: application, error: fetchError } = await supabase
+            .from('applications')
+            .select('profile_id, idea_id')
+            .eq('id', applicationId)
+            .single(); // Ensures we get only one record
+        
+        if (fetchError || !application) {
+            throw new Error('Profile ID not found');
+        }
+
+        const profileId = application.profile_id;
+        const ideaId = application.idea_id;
+
+        // Step 3: First get the current team data
+        const { data: teamData, error: teamFetchError } = await supabase
+            .from('manage_team')
+            .select('members')
+            .eq('idea_id', ideaId)
+            .single();
+            
+        if (teamFetchError) {
+            throw new Error('Failed to fetch team data');
+        }
+        
+        // Step 4: Append to the members array
+        let updatedMembers = teamData.members || [];
+        if (!updatedMembers.includes(profileId)) {
+            updatedMembers.push(profileId);
+        }
+        
+        // Step 5: Update the members array
+        const { error: updateMembersError } = await supabase
+            .from('manage_team')
+            .update({ members: updatedMembers })
+            .eq('idea_id', ideaId);
+            
+        if (updateMembersError) {
+            throw new Error('Failed to add user to team');
+        }
+
+        return res.json({ 
+          success: true, 
+          message: 'Application accepted and user added to team', 
+          profile_id: profileId 
+        });
+
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+const rejectApplication = async (req, res) => {
+  const applicationId = req.params.id;
+  try { 
+    const { error: updateError } = await supabase
+        .from('applications')
+        .update({ status: 'rejected' })
+        .eq('id', applicationId);
+
+    if (updateError) {
+        throw new Error('Failed to update application status');
+    }
+    
+    return res.json({
+        success: true,
+        message: 'Application rejected successfully'
+    });
+    
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+
+
   module.exports = {
     createApplication,
     updateApplication,
     getApplicationbyUser,
-    getApplicationbyIdea
+    getApplicationbyIdea,
+    acceptApplication,
+    rejectApplication
   }; 
