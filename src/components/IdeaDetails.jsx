@@ -436,6 +436,21 @@ const IdeaDetails = () => {
                 {/* Applications List */}
                 {teamCreation && (
                   <div className="space-y-4">
+                    {filteredApplications.length === 0 && (
+                      <div className="text-center py-8 bg-muted/50 rounded-lg">
+                        <div className="flex flex-col items-center justify-center">
+                          <svg className="h-12 w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path>
+                            <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"></path>
+                            <path d="M9.5 9.5 14 5"></path>
+                          </svg>
+                          <h3 className="text-lg font-medium text-foreground mb-1">No Applications Yet</h3>
+                          <p className="text-sm text-muted-foreground max-w-md">
+                            You haven't received any applications yet. Hold tight!
+                          </p>
+                        </div>
+                      </div>
+                      )}
                       {filteredApplications.map((app, index) => (
                           <div key={app.id} className="bg-card border border-border rounded-lg overflow-hidden">
                               <div className="flex items-center gap-4 p-3">
