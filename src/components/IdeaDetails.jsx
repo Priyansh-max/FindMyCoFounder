@@ -23,6 +23,7 @@ const IdeaDetails = () => {
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showInitializing, setShowInitializing] = useState(false);
+  const [authSession, setAuthSession] = useState(null); // Store auth session
   const [stats, setStats] = useState({
     applications_received: {
       total: 0,
@@ -43,33 +44,34 @@ const IdeaDetails = () => {
 
   async function fetchSession(){
     try{
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/');
-      setLoading(false);
-      return;
+      setLoading(true);
+      // Get session only once
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/');
+        setLoading(false);
+        return;
+      }
+      
+      // Store session in state
+      setAuthSession(session);
+
+      // Use the same session for all API calls
+      await Promise.all([
+        fetchApplicationsForIdea(session),
+        fetchIdeaDetails(session),
+        fetchApplicationStats(session),
+        checkTeamCreation(session)
+      ]);
+    } catch (error) {
+      console.error('Error:', error);
+      setError(error);
+    } finally {
+      // Small delay to ensure state updates have propagated
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
     }
-
-    const fetchPromises = [
-      fetchApplicationsForIdea(session),
-      fetchIdeaDetails(session),
-      fetchApplicationStats(session),
-      checkTeamCreation(session)
-    ];
-
-    // Wait for all fetch operations to complete
-    await Promise.all(fetchPromises);
-  } catch (error) {
-    console.error('Error:', error);
-    setError(error);
-  } finally {
-    // Small delay to ensure state updates have propagated
-    setTimeout(() => {
-      setLoading(false);
-    }, 100);
-  }
-    
-
   }
 
   function handleOverlayEditIdea(){
@@ -84,22 +86,27 @@ const IdeaDetails = () => {
       setShowInitializing(true);
       
       try {
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
+        // Use stored session instead of fetching a new one
+        if (!authSession) {
+          throw new Error('Authentication session not available');
+        }
         
         // Call backend to create team
-        const response = await axios.post(`http://localhost:5000/api/manage-team/create-team/${id}`, {}, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
+        const response = await axios.post(
+          `http://localhost:5000/api/manage-team/create-team/${id}`, 
+          {}, 
+          {
+            headers: {
+              'Authorization': `Bearer ${authSession.access_token}`
+            }
           }
-        });
+        );
         
         if (response.data.success) {
           // Team creation was successful, update state
           setTeamCreation(true);
           
           // The initializing component will navigate to the manage-team page when animation completes
-        
         } else {
           throw new Error('Failed to create team');
         }
@@ -139,7 +146,6 @@ const IdeaDetails = () => {
 
       if (response.data.success) {
         setStats(response.data.data);
-        console.log('Fetched stats:', response.data.data);
       } else {
         throw new Error('Failed to fetch application stats');
       }
@@ -152,27 +158,20 @@ const IdeaDetails = () => {
 
   const fetchApplicationsForIdea = async (session) => {
     try {
-      setLoading(true);
-      console.log(session);
-      console.log(id);
       const response = await axios.get(`http://localhost:5000/api/application/details/${id}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
       });
-      console.log(response);
+      
       if (response.data.success) {
         setApplications(response.data.data);
-        console.log(applications);
       } else {
         throw new Error('Failed to fetch applications');
       }
-      console.log(applications);
     } catch (error) {
       console.error('Error fetching applications:', error);
       throw new Error('Error fetching applications');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -183,40 +182,53 @@ const IdeaDetails = () => {
           'Authorization': `Bearer ${session.access_token}`
         }
       });
-      console.log(response);
+      
       if (response.data.success) {
         setIdea(response.data.data);
-        console.log(idea);
       } else {
         throw new Error('Failed to fetch idea details');
       }
     } catch (error) {
       console.error('Error fetching idea details:', error);
       throw new Error('Error fetching idea details');
-    } finally {
-      setLoading(false);
     }
   };
 
   const filteredApplications = filter === "all"
-  ? applications
-  : applications.filter((app) => app.status === filter);
+    ? applications
+    : applications.filter((app) => app.status === filter);
 
   const handleStatusUpdate = async (applicationId, newStatus) => {
     try {
-        const { error } = await supabase
-            .from('applications')
-            .update({ status: newStatus })
-            .eq('id', applicationId);
-
-        if (error) throw error;
-
-        // Refresh the applications list
-        fetchApplicationsForIdea();
-
+      // Use stored session instead of fetching a new one
+      if (!authSession) {
+        throw new Error('Authentication session not available');
+      }
+      
+      const endpoint = newStatus === "accepted" 
+        ? `http://localhost:5000/api/application/accept/${applicationId}`
+        : `http://localhost:5000/api/application/reject/${applicationId}`;
+        
+      const response = await axios.put(
+        endpoint, 
+        {}, // Empty object for request body
+        {  // Third parameter is for config including headers
+          headers: {
+            'Authorization': `Bearer ${authSession.access_token}`
+          }
+        }
+      );
+      
+      if (response.data.success) {
+        toast.success(`Developer ${newStatus} successfully`);
+        
+        // Refresh data using stored session
+        await fetchApplicationsForIdea(authSession);
+        await fetchApplicationStats(authSession);
+      }
     } catch (error) {
-        console.error('Error updating application status:', error);
-        // You might want to add some error handling UI here
+      console.error(`Error ${newStatus} application:`, error);
+      toast.error(`Failed to ${newStatus} application. Please try again.`);
     }
   };
 
@@ -235,9 +247,9 @@ const IdeaDetails = () => {
   // Ensure `idea` exists before accessing its properties
   if (!idea) {
     return (
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
     );
   }
   
