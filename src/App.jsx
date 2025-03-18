@@ -9,6 +9,7 @@ import IdeaDetails from './components/IdeaDetails'
 import OnboardingForm from "./components/OnboardingForm";
 import LandingPage from "./components/LandingPage";
 import Manage from './components/Manage';
+import CreatorsLab from './components/CreatorsLab';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { toast } from 'react-hot-toast';
@@ -52,6 +53,10 @@ function App() {
               <Route
                 path="/manage-team/:ideaId"
                 element={isLoading ? null : user ? <Manage /> : <Navigate to="/" />}
+              />
+              <Route
+                path="/creators-lab/:ideaId"
+                element={isLoading ? null : user ? <CreatorsLab /> : <Navigate to="/" />}
               />
             </Routes>
           </main>
