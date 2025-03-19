@@ -23,6 +23,7 @@ import {
 import { toast } from "react-hot-toast";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import axios from "axios";
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -33,6 +34,10 @@ document.title = "Team Management | CoFoundry";
 export default function Manage() {
   const navigate = useNavigate();
   const { ideaId } = useParams();
+  const chartRef = useRef(null);
+
+  // State Management
+  const [session, setSession] = useState(null);
   const [idea, setIdea] = useState(null);
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,14 +45,27 @@ export default function Manage() {
   const [commitData, setCommitData] = useState([]);
   const [dailyCommitData, setDailyCommitData] = useState({ labels: [], datasets: [] });
   const [recentMembers, setRecentMembers] = useState([]);
-  const chartRef = useRef(null);
+  const [repo, setRepo] = useState([]);
+  const [showRepoDropdown, setShowRepoDropdown] = useState(false);
+  const [selectedRepo, setSelectedRepo] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
+  // Fetch all data in a single useEffect
   useEffect(() => {
-    const fetchIdeaAndTeam = async () => {
+    const fetchAllData = async () => {
       try {
         setLoading(true);
         
+        // Get session
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (!currentSession) {
+          navigate('/');
+          return;
+        }
+        setSession(currentSession);
+
         // Fetch idea details
+        //no need in future
         const { data: ideaData, error: ideaError } = await supabase
           .from('ideas')
           .select('*')
@@ -58,6 +76,7 @@ export default function Manage() {
         setIdea(ideaData);
         
         // Fetch team members
+        //this needs improvement
         const { data: teamData, error: teamError } = await supabase
           .from('applications')
           .select(`
@@ -79,10 +98,13 @@ export default function Manage() {
           
         if (teamError) throw teamError;
         setTeam(teamData);
-
-        // Set recent members (last 5 joined)
         setRecentMembers(teamData.slice(0, 5));
-        
+
+        // Check if this is a redirect from OAuth
+        if (window.location.hash.includes('access_token')) {
+          await getRepo();
+        }
+
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load team data');
@@ -91,40 +113,107 @@ export default function Manage() {
       }
     };
     
-    fetchIdeaAndTeam();
+    fetchAllData();
     generateDailyCommitData();
     generateMockCommitData();
-  }, [ideaId]);
+  }, [ideaId, navigate]);
 
-  // Generate mock commit data for demonstration
+  // GitHub Repository Functions
+  const getRepo = async () => {
+    try {
+      if (!session?.provider_token) {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: window.location.origin + window.location.pathname,
+          }
+        });
+
+        if (error) throw error;
+        return;
+      }
+
+      const response = await axios.get('https://api.github.com/user/repos', {
+        headers: {
+          Authorization: `Bearer ${session.provider_token}`
+        }
+      });
+
+      const repositories = response.data.map(({ id, name, private: isPrivate, html_url }) => ({
+        id,
+        name,
+        isPrivate,
+        url: html_url
+      }));
+
+      setRepo(repositories);
+    } catch (error) {
+      console.error('Error fetching repositories:', error);
+      toast.error('Failed to fetch GitHub repositories');
+    }
+  };
+
+  const handleConnectRepo = async (repo) => {
+    setIsConnecting(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
+      setSelectedRepo(repo);
+
+      const response = await axios.put(`http://localhost:5000/api/manage-team/update-team/${ideaId}`, {
+        repo_name: repo.name,
+        repo_url: repo.url,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
+
+      if (response.data.success) {
+        toast.success('Repository connected successfully!');
+      } else {
+        toast.error('Failed to connect repository');
+      }
+
+      const { error } = await supabase
+        .from('ideas')
+        .update({ github_repo: repo.name })
+        .eq('id', ideaId);
+      
+      if (error) throw error;
+      
+    } catch (error) {
+      console.error('Error connecting repository:', error);
+      toast.error('Failed to connect repository');
+    } finally {
+      setIsConnecting(false);
+      setShowRepoDropdown(false);
+    }
+  };
+
+  // Mock Data Generation Functions
   const generateMockCommitData = () => {
     const data = [];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     
-    // Generate data for all 12 months
     for (let i = 0; i < 12; i++) {
       data.push({
         month: months[i],
-        count: Math.floor(Math.random() * 5000) + 1000, // Random number between 1000-6000
+        count: Math.floor(Math.random() * 5000) + 1000,
       });
     }
     
     setCommitData(data);
   };
 
-  // Generate mock daily commit data for the last 7 days
   const generateDailyCommitData = () => {
     const labels = [];
     const data = [];
     
-    // Generate dates for the last 7 days
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       labels.push(formattedDate);
-      
-      // Random commit count between 10 and 100
       data.push(Math.floor(Math.random() * 90) + 10);
     }
     
@@ -143,7 +232,6 @@ export default function Manage() {
     });
   };
 
-  // Mock data for details section
   const generateDetailsMockData = () => {
     // Sample data for demonstration
     const mockTeamMembers = [
@@ -237,7 +325,7 @@ export default function Manage() {
     return mockTeamMembers;
   };
 
-  // Card component to reuse styling
+  // UI Components
   const Card = ({ title, value, description, icon }) => (
     <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
       <div className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -249,7 +337,51 @@ export default function Manage() {
     </div>
   );
 
-  // Chart.js options
+  const RecentMembersList = ({ members }) => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Recent Team Members</h3>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        You have {team.length} team members this month.
+      </p>
+
+      <div className="space-y-4 mt-6">
+        {members.length > 0 ? (
+          members.map((member) => (
+            <div key={member.id} className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  {member.profiles?.avatar_url ? (
+                    <img 
+                      src={member.profiles.avatar_url} 
+                      alt={member.profiles.full_name} 
+                      className="h-10 w-10 rounded-full"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{member.profiles?.full_name || 'Team Member'}</p>
+                  <p className="text-xs text-muted-foreground">{member.profiles?.email || 'No email provided'}</p>
+                </div>
+              </div>
+              <div className="text-sm font-medium text-primary">
+                +{Math.floor(Math.random() * 2000) + 39}.00
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">No team members yet.</p>
+        )}
+      </div>
+    </div>
+  );
+
+  // Chart Configuration
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -339,54 +471,7 @@ export default function Manage() {
     categoryPercentage: 0.8
   };
 
-  // Recent members component
-  const RecentMembersList = ({ members }) => {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Recent Team Members</h3>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          You have {team.length} team members this month.
-        </p>
-
-        <div className="space-y-4 mt-6">
-          {members.length > 0 ? (
-            members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {member.profiles?.avatar_url ? (
-                      <img 
-                        src={member.profiles.avatar_url} 
-                        alt={member.profiles.full_name} 
-                        className="h-10 w-10 rounded-full"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{member.profiles?.full_name || 'Team Member'}</p>
-                    <p className="text-xs text-muted-foreground">{member.profiles?.email || 'No email provided'}</p>
-                  </div>
-                </div>
-                <div className="text-sm font-medium text-primary">
-                  +{Math.floor(Math.random() * 2000) + 39}.00
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No team members yet.</p>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Render tab content based on active tab
+  // Tab Content Rendering
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -614,27 +699,83 @@ export default function Manage() {
             >
               Back to Idea
             </button>
-            {!idea?.github_repo ? (
-              <button 
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
-                onClick={() => {
-                  // This would be replaced with actual GitHub connection logic
-                  toast.success("GitHub connection feature will be implemented soon!");
-                }}
-              >
-                <Github className="h-4 w-4" />
-                <span>Connect GitHub Repo</span>
-              </button>
+            
+            {!selectedRepo ? (
+              <div className="relative">
+                <button 
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
+                  onClick={() => {
+                    if (repo.length === 0) {
+                      getRepo();
+                    }
+                    setShowRepoDropdown(!showRepoDropdown);
+                  }}
+                >
+                  <Github className="h-4 w-4" />
+                  <span>Connect GitHub Repo</span>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showRepoDropdown && (
+                  <div className="absolute right-0 mt-2 w-72 bg-card border border-border rounded-md shadow-lg z-50">
+                    <div className="p-2 border-b border-border">
+                      <input
+                        type="text"
+                        placeholder="Search repositories..."
+                        className="w-full px-3 py-1.5 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        onChange={(e) => {
+                          // Add search functionality if needed
+                        }}
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                      {repo.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">
+                          <Github className="h-8 w-8 mx-auto mb-2 animate-pulse" />
+                          Loading repositories...
+                        </div>
+                      ) : (
+                        repo.map((repository) => (
+                          <button
+                            key={repository.id}
+                            className="w-full px-4 py-2 text-left hover:bg-muted/50 flex items-center justify-between group"
+                            onClick={() => handleConnectRepo(repository)}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Github className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{repository.name}</span>
+                              {repository.isPrivate && (
+                                <span className="text-xs bg-yellow-500/20 text-yellow-700 px-1.5 py-0.5 rounded-full">
+                                  Private
+                                </span>
+                              )}
+                            </div>
+                            <span className="opacity-0 group-hover:opacity-100 text-primary text-sm">
+                              Connect →
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
-              <a 
-                href={`https://github.com/${idea.github_repo}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
-              >
-                <Github className="h-4 w-4" />
-                <span>View GitHub Repo</span>
-              </a>
+              <div className="flex items-center space-x-3">
+                <div className="bg-card border border-border px-4 py-2 rounded-md flex items-center space-x-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                  <span className="text-sm text-muted-foreground">{selectedRepo.name}</span>
+                </div>
+                <a 
+                  href={selectedRepo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
+                >
+                  <Github className="h-4 w-4" />
+                  <span>View Repo</span>
+                </a>
+              </div>
             )}
           </div>
         </div>
@@ -661,6 +802,33 @@ export default function Manage() {
         {/* Tab Content */}
         {renderTabContent()}
       </div>
+
+      {/* Add global styles for custom scrollbar */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgb(var(--primary) / 0.2);
+          border-radius: 20px;
+          border: 2px solid transparent;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgb(var(--primary) / 0.3);
+        }
+        
+        /* For Firefox */
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgb(var(--primary) / 0.2) transparent;
+        }
+      `}</style>
     </div>
   );
 }
