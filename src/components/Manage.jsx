@@ -39,7 +39,8 @@ export default function Manage() {
   // State Management
   const [session, setSession] = useState(null);
   const [idea, setIdea] = useState(null);
-  const [team, setTeam] = useState([]);
+  const [team, setTeam] = useState(null);
+  const [roomInfo, setRoomInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [commitData, setCommitData] = useState([]);
@@ -50,55 +51,53 @@ export default function Manage() {
   const [selectedRepo, setSelectedRepo] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Fetch all data in a single useEffect
+  // Main data fetching effect
   useEffect(() => {
     const fetchAllData = async () => {
       try {
         setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Get session
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession) {
+        if (!session) {
           navigate('/');
           return;
         }
-        setSession(currentSession);
 
-        // Fetch idea details
-        //no need in future
-        const { data: ideaData, error: ideaError } = await supabase
-          .from('ideas')
-          .select('*')
-          .eq('id', ideaId)
-          .single();
-          
-        if (ideaError) throw ideaError;
-        setIdea(ideaData);
-        
-        // Fetch team members
-        //this needs improvement
-        const { data: teamData, error: teamError } = await supabase
-          .from('applications')
-          .select(`
-            id,
-            status,
-            created_at,
-            profiles:user_id (
-              id,
-              full_name,
-              avatar_url,
-              title,
-              skills,
-              email
-            )
-          `)
-          .eq('idea_id', ideaId)
-          .eq('status', 'accepted')
-          .order('created_at', { ascending: false });
-          
-        if (teamError) throw teamError;
-        setTeam(teamData);
-        setRecentMembers(teamData.slice(0, 5));
+        // Store session in state
+        setSession(session);
+
+        // Fetch all data in parallel
+        const [ideaResponse, teamResponse] = await Promise.all([
+          axios.get(`http://localhost:5000/api/idea/${ideaId}`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          }),
+          axios.get(`http://localhost:5000/api/manage-team/get-team/${ideaId}`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          })
+        ]);
+
+        if (ideaResponse.data.success) {
+          setIdea(ideaResponse.data.data);
+        } else {
+          throw new Error('Failed to fetch idea details');
+        }
+
+        if (teamResponse.data.success) {
+          setTeam(teamResponse.data.data);
+          setRoomInfo(teamResponse.data.data);
+          setRecentMembers(teamResponse.data.data.slice(0, 5));
+        } else {
+          throw new Error('Failed to fetch team data');
+        }
+
+        // Generate mock data
+        generateDailyCommitData();
+        generateMockCommitData();
+        generateDetailsMockData();
 
         // Check if this is a redirect from OAuth
         if (window.location.hash.includes('access_token')) {
@@ -107,49 +106,48 @@ export default function Manage() {
 
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('Failed to load team data');
+        toast.error('Failed to load data');
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchAllData();
-    generateDailyCommitData();
-    generateMockCommitData();
   }, [ideaId, navigate]);
 
   // GitHub Repository Functions
   const getRepo = async () => {
     try {
-      if (!session?.provider_token) {
+      if (!session.provider_token) {
+        // Try to refresh the session first
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: {
             redirectTo: window.location.origin + window.location.pathname,
           }
         });
-
+  
         if (error) throw error;
-        return;
+
+        setSession(session);
       }
 
+      const token = session?.provider_token || (await supabase.auth.getSession()).data.session.provider_token;
       const response = await axios.get('https://api.github.com/user/repos', {
         headers: {
-          Authorization: `Bearer ${session.provider_token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
       });
 
-      const repositories = response.data.map(({ id, name, private: isPrivate, html_url }) => ({
-        id,
-        name,
-        isPrivate,
-        url: html_url
-      }));
-
-      setRepo(repositories);
+      setRepo(response.data);
     } catch (error) {
       console.error('Error fetching repositories:', error);
-      toast.error('Failed to fetch GitHub repositories');
+      if (error.message.includes('401')) {
+        toast.error('GitHub token expired. Please reconnect your GitHub account.');
+      } else {
+        toast.error('Failed to fetch GitHub repositories');
+      }
     }
   };
 
