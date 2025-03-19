@@ -52,7 +52,34 @@ const createTeam = async (req, res) => {
     
 }       
 
+//update team record when view team is pressed..
+const updateTeam = async (req, res) => {
+    const idea_id = req.params.id;
+
+    const repo_name = req.body.repo_name;
+    const repo_url = req.body.repo_url;
+
+    try{
+        const { data , error } = await supabase
+        .from('manage_team')
+        .update({
+            repo_name: repo_name,
+            repo_url: repo_url,
+            updated_at: new Date(),
+        })
+        .eq('idea_id', idea_id);
+
+        if (error) throw error;
+
+        res.status(200).json({success : true , data : data});
+    }catch(error){
+        res.status(500).json({ error: error.message });
+    }
+
+}
+
 module.exports = {
     createTeam,
-    checkTeam
+    checkTeam,
+    updateTeam
 };
