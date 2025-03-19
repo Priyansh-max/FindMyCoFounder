@@ -78,8 +78,25 @@ const updateTeam = async (req, res) => {
 
 }
 
+const getTeam = async (req, res) => {   
+    const idea_id = req.params.id;      
+    try{
+        const {data , error} = await supabase
+        .from('manage_team')
+        .select('*')
+        .eq('idea_id', idea_id);
+
+        if (error) throw error;
+        res.status(200).json({success : true , data : data});
+
+    }catch(error){
+        res.status(500).json({ error: error.message });
+    }
+}
+
 module.exports = {
     createTeam,
     checkTeam,
-    updateTeam
+    updateTeam,
+    getTeam
 };
