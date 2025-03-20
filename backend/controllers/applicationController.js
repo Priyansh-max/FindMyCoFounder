@@ -193,10 +193,22 @@ const createApplication = async (req, res) => {
             throw new Error('Failed to fetch team data');
         }
         
-        // Step 4: Append to the members array
+        // Step 4: Append to the members array with timestamp
         let updatedMembers = teamData.members || [];
-        if (!updatedMembers.includes(profileId)) {
-            updatedMembers.push(profileId);
+        const memberExists = updatedMembers.some(member => 
+            typeof member === 'object' ? member.id === profileId : member === profileId
+        );
+        
+        if (!memberExists) {
+            // Create new member object with ID and timestamp
+            const newMember = {
+                id: profileId,
+                joined_at: new Date().toISOString()
+            };
+            updatedMembers = updatedMembers.map(member => 
+                typeof member === 'string' ? { id: member, joined_at: new Date().toISOString() } : member
+            );
+            updatedMembers.push(newMember);
         }
         
         // Step 5: Update the members array
@@ -210,9 +222,9 @@ const createApplication = async (req, res) => {
         }
 
         return res.json({ 
-          success: true, 
-          message: 'Application accepted and user added to team', 
-          profile_id: profileId 
+            success: true, 
+            message: 'Application accepted and user added to team', 
+            profile_id: profileId 
         });
 
     } catch (error) {
