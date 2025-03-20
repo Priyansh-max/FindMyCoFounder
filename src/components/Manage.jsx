@@ -42,6 +42,7 @@ export default function Manage() {
   const [idea, setIdea] = useState(null);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [repostats, setRepoStats] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [commitData, setCommitData] = useState([]);
   const [dailyCommitData, setDailyCommitData] = useState({ labels: [], datasets: [] });
@@ -56,17 +57,29 @@ export default function Manage() {
     const fetchAllData = async () => {
       try {
         setLoading(true);
+
+        // 1. First ensure we have a valid session
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (!session) {
           navigate('/');
           return;
         }
 
-        // Store session in state
+        // 2. Check if we need to refresh GitHub token
+        if (!session.provider_token) {
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname,
+            }
+          });
+          if (error) throw error;
+        }
+
+        // 3. Store session in state
         setSession(session);
 
-        // Fetch all data in parallel
+        // 4. Fetch team and idea data
         const [ideaResponse, teamResponse] = await Promise.all([
           axios.get(`http://localhost:5000/api/idea/${ideaId}`, {
             headers: {
@@ -80,28 +93,28 @@ export default function Manage() {
           })
         ]);
 
-        if (ideaResponse.data.success) {
-          setIdea(ideaResponse.data.data);
-        } else {
+        // 5. Process idea data
+        if (!ideaResponse.data.success) {
           throw new Error('Failed to fetch idea details');
         }
+        setIdea(ideaResponse.data.data);
 
-        if (teamResponse.data.success) {
-          console.log(teamResponse.data.data);
-          setTeam(teamResponse.data.data);
-          setSelectedRepo(teamResponse.data.data);
-        } else {
+        // 6. Process team data
+        if (!teamResponse.data.success) {
           throw new Error('Failed to fetch team data');
         }
+        const teamData = teamResponse.data.data;
+        setTeam(teamData);
+        setSelectedRepo(teamData);
 
-        // Generate mock data
-        generateDailyCommitData();
-        generateMockCommitData();
-        generateDetailsMockData();
+        // 7. If there's a connected repository, fetch its stats
+        if (teamData.repo_name) {
+          await getRepoStats(session, teamData);
+        }
 
-        // Check if this is a redirect from OAuth
+        // 8. If this is a redirect from OAuth, fetch repositories
         if (window.location.hash.includes('access_token')) {
-          await getRepo();
+          await getRepo(session);
         }
 
       } catch (error) {
@@ -115,23 +128,188 @@ export default function Manage() {
     fetchAllData();
   }, [ideaId, navigate]);
 
-  // GitHub Repository Functions
-  const getRepo = async () => {
+  const getRepoStats = async (currentSession, currentTeam) => {
     try {
-      if (!session.provider_token) {
-        // Try to refresh the session first
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'github',
-          options: {
-            redirectTo: window.location.origin + window.location.pathname,
-          }
-        });
-  
-        if (error) throw error;
-
-        setSession(session);
+      // 1. Validate session and required data
+      if (!currentSession?.provider_token) {
+        throw new Error('No valid GitHub token found');
       }
 
+      const username = currentSession.user.user_metadata.user_name;
+      if (!username) {
+        throw new Error('GitHub username not found');
+      }
+
+      if (!currentTeam?.repo_name) {
+        throw new Error('No repository selected');
+      }
+
+      // 2. Set up date range for commit history
+      const today = new Date();
+      const lastWeek = new Date(today);
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      const since = lastWeek.toISOString();
+      const until = today.toISOString();
+
+      // 3. Fetch all data in parallel
+      const [allCommitsResponse, issuesResponse, pullsResponse, weeklyCommitsResponse] = await Promise.all([
+        fetchAllCommits(username, currentTeam.repo_name, currentSession.provider_token),
+        axios.get(`https://api.github.com/repos/${username}/${currentTeam.repo_name}/issues?state=all`, {
+          headers: {
+            'Authorization': `Bearer ${currentSession.provider_token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }),
+        axios.get(`https://api.github.com/repos/${username}/${currentTeam.repo_name}/pulls`, {
+          headers: {
+            'Authorization': `Bearer ${currentSession.provider_token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }),
+        axios.get(`https://api.github.com/repos/${username}/${currentTeam.repo_name}/commits`, {
+          headers: {
+            'Authorization': `Bearer ${currentSession.provider_token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          params: { since, until }
+        })
+      ]);
+
+      // 4. Process commit data for chart
+      const dailyCommits = processCommitData(weeklyCommitsResponse.data, today);
+      setDailyCommitData(dailyCommits);
+
+      // 5. Update repository statistics
+      setRepoStats({
+        commitCount: allCommitsResponse.length,
+        issueCount: issuesResponse.data.length,
+        pullCount: pullsResponse.data.length
+      });
+
+    } catch (error) {
+      console.error('Error fetching repository data:', error);
+      toast.error(error.message || 'Failed to load repository statistics');
+    }
+  };
+
+  const fetchAllCommits = async (username, repoName, token, perPage = 100) => {
+    let page = 1;
+    let allCommits = [];
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await axios.get(
+        `https://api.github.com/repos/${username}/${repoName}/commits`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          params: { per_page: perPage, page }
+        }
+      );
+
+      const commits = response.data;
+      allCommits.push(...commits);
+
+      hasMore = commits.length === perPage;
+      page++;
+    }
+
+    return allCommits;
+  };
+
+  const processCommitData = (commits, today) => {
+    const dailyCommits = {};
+    const labels = [];
+    const commitCounts = [];
+
+    // Initialize all days with 0 commits
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric'
+      });
+      dailyCommits[dateStr] = 0;
+      labels.push(formattedDate);
+    }
+
+    // Count commits for each day
+    commits.forEach(commit => {
+      const commitDate = new Date(commit.commit.author.date);
+      const dateStr = commitDate.toISOString().split('T')[0];
+      if (dailyCommits.hasOwnProperty(dateStr)) {
+        dailyCommits[dateStr]++;
+      }
+    });
+
+    // Convert to chart format
+    Object.values(dailyCommits).forEach(count => {
+      commitCounts.push(count);
+    });
+
+    return {
+      labels,
+      datasets: [{
+        label: 'Total Commits',
+        data: commitCounts,
+        backgroundColor: '#9AE65C',
+        hoverBackgroundColor: '#8BD84D',
+        borderRadius: 4,
+        borderWidth: 0,
+      }]
+    };
+  };
+
+  const handleConnectRepo = async (repo) => {
+    setIsConnecting(true);
+    try {
+      // 1. Update team data in the backend
+      const response = await axios.put(
+        `http://localhost:5000/api/manage-team/update-team/${ideaId}`,
+        {
+          repo_name: repo.name,
+          repo_url: repo.html_url,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error('Failed to connect repository');
+      }
+
+      // 2. Update local state
+      const updatedTeam = {
+        ...team,
+        repo_name: repo.name,
+        repo_url: repo.html_url
+      };
+      setTeam(updatedTeam);
+      setSelectedRepo(updatedTeam);
+
+      // 3. Fetch repository statistics
+      await getRepoStats(session, updatedTeam);
+      
+      toast.success('Repository connected successfully!');
+    } catch (error) {
+      console.error('Error connecting repository:', error);
+      toast.error(error.message || 'Failed to connect repository');
+    } finally {
+      setIsConnecting(false);
+      setShowRepoDropdown(false);
+    }
+  };
+
+  // GitHub Repository Functions
+  const getRepo = async (session) => {
+    try {
       const token = session?.provider_token || (await supabase.auth.getSession()).data.session.provider_token;
       const response = await axios.get('https://api.github.com/user/repos', {
         headers: {
@@ -148,36 +326,6 @@ export default function Manage() {
       } else {
         toast.error('Failed to fetch GitHub repositories');
       }
-    }
-  };
-
-  const handleConnectRepo = async (repo) => {
-    setIsConnecting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
-      setSelectedRepo(repo);
-
-      const response = await axios.put(`http://localhost:5000/api/manage-team/update-team/${ideaId}`, {
-        repo_name: repo.name,
-        repo_url: repo.html_url,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
-      });
-
-      if (response.data.success) {
-        toast.success('Repository connected successfully!');
-      } else {
-        toast.error('Failed to connect repository');
-      }
-      
-    } catch (error) {
-      console.error('Error connecting repository:', error);
-      toast.error('Failed to connect repository');
-    } finally {
-      setIsConnecting(false);
-      setShowRepoDropdown(false);
     }
   };
 
@@ -480,24 +628,43 @@ export default function Manage() {
                 description="Active contributors" 
                 icon={<Users className="h-4 w-4 text-muted-foreground" />} 
               />
-              <Card 
-                title="Total Commits" 
-                value={idea?.team_size - team.length || 0} 
-                description="Commits till now" 
-                icon={<UserPlus className="h-4 w-4 text-muted-foreground" />} 
-              />
-              <Card 
-                title="Total Issues" 
-                value={idea?.total_issues - team.length || 0} 
-                description="Open and fixed issues" 
-                icon={<Github className="h-4 w-4 text-muted-foreground" />} 
-              />
-              <Card 
-                title="Total Pull Requests" 
-                value="12" 
-                description="Open and Closed PRs" 
-                icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />} 
-              />
+              {!selectedRepo.repo_name ? (
+                <>
+                  <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm flex flex-col items-center justify-center">
+                    <Github className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center">Connect a repository to view commit statistics</p>
+                  </div>
+                  <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm flex flex-col items-center justify-center">
+                    <Github className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center">Connect a repository to view issue statistics</p>
+                  </div>
+                  <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm flex flex-col items-center justify-center">
+                    <Github className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center">Connect a repository to view PR statistics</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Card 
+                    title="Total Commits" 
+                    value={repostats?.commitCount || 0} 
+                    description="Commits till now" 
+                    icon={<UserPlus className="h-4 w-4 text-muted-foreground" />} 
+                  />
+                  <Card 
+                    title="Total Issues" 
+                    value={repostats?.issueCount || 0} 
+                    description="Open and fixed issues" 
+                    icon={<Github className="h-4 w-4 text-muted-foreground" />} 
+                  />
+                  <Card 
+                    title="Total Pull Requests" 
+                    value={repostats?.pullCount || 0} 
+                    description="Open and Closed PRs" 
+                    icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />} 
+                  />
+                </>
+              )}
             </div>
             
             {/* Charts and Recent Members - Side by Side */}
@@ -506,9 +673,19 @@ export default function Manage() {
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Commit History</h3>
                 </div>
-                <div className="h-80">
-                  <Bar options={chartOptions} data={dailyCommitData} ref={chartRef} />
-                </div>
+                {!selectedRepo.repo_name ? (
+                  <div className="h-80 flex flex-col items-center justify-center">
+                    <Github className="h-16 w-16 text-muted-foreground mb-4" />
+                    <p className="text-lg text-muted-foreground text-center mb-2">No Repository Connected</p>
+                    <p className="text-sm text-muted-foreground text-center max-w-md">
+                      Connect a GitHub repository to view commit history and other statistics
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-80">
+                    <Bar options={chartOptions} data={dailyCommitData} ref={chartRef} />
+                  </div>
+                )}
               </div>
               
               <div className="md:col-span-3 bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
@@ -703,7 +880,7 @@ export default function Manage() {
                   className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
                   onClick={() => {
                     if (repo.length === 0) {
-                      getRepo();
+                      getRepo(session);
                     }
                     setShowRepoDropdown(!showRepoDropdown);
                   }}
