@@ -18,7 +18,8 @@ import {
   UserX,
   Mail,
   CheckCircle2,
-  Clock
+  Clock,
+  ArrowLeft
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -40,7 +41,6 @@ export default function Manage() {
   const [session, setSession] = useState(null);
   const [idea, setIdea] = useState(null);
   const [team, setTeam] = useState(null);
-  const [roomInfo, setRoomInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [commitData, setCommitData] = useState([]);
@@ -87,9 +87,9 @@ export default function Manage() {
         }
 
         if (teamResponse.data.success) {
+          console.log(teamResponse.data.data);
           setTeam(teamResponse.data.data);
-          setRoomInfo(teamResponse.data.data);
-          setRecentMembers(teamResponse.data.data.slice(0, 5));
+          setSelectedRepo(teamResponse.data.data);
         } else {
           throw new Error('Failed to fetch team data');
         }
@@ -159,7 +159,7 @@ export default function Manage() {
 
       const response = await axios.put(`http://localhost:5000/api/manage-team/update-team/${ideaId}`, {
         repo_name: repo.name,
-        repo_url: repo.url,
+        repo_url: repo.html_url,
       }, {
         headers: {
           'Authorization': `Bearer ${session?.access_token}`
@@ -171,13 +171,6 @@ export default function Manage() {
       } else {
         toast.error('Failed to connect repository');
       }
-
-      const { error } = await supabase
-        .from('ideas')
-        .update({ github_repo: repo.name })
-        .eq('id', ideaId);
-      
-      if (error) throw error;
       
     } catch (error) {
       console.error('Error connecting repository:', error);
@@ -341,19 +334,19 @@ export default function Manage() {
         <h3 className="text-lg font-semibold">Recent Team Members</h3>
       </div>
       <p className="text-sm text-muted-foreground">
-        You have {team.length} team members this month.
+        Showing {Math.min(5, members.length)} of {members.length} team members.
       </p>
 
       <div className="space-y-4 mt-6">
         {members.length > 0 ? (
-          members.map((member) => (
+          members.slice(0, 5).map((member) => (
             <div key={member.id} className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0">
-                  {member.profiles?.avatar_url ? (
+                  {member.avatar_url ? (
                     <img 
-                      src={member.profiles.avatar_url} 
-                      alt={member.profiles.full_name} 
+                      src={member.avatar_url} 
+                      alt={member.full_name} 
                       className="h-10 w-10 rounded-full"
                     />
                   ) : (
@@ -363,12 +356,16 @@ export default function Manage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{member.profiles?.full_name || 'Team Member'}</p>
-                  <p className="text-xs text-muted-foreground">{member.profiles?.email || 'No email provided'}</p>
+                  <p className="text-sm font-medium">{member.full_name || 'Team Member'}</p>
+                  <p className="text-xs text-muted-foreground">{member.email || 'No email provided'}</p>
                 </div>
               </div>
               <div className="text-sm font-medium text-primary">
-                +{Math.floor(Math.random() * 2000) + 39}.00
+                {new Date(member.joined_at).toLocaleDateString('en-US', { 
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
               </div>
             </div>
           ))
@@ -479,7 +476,7 @@ export default function Manage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <Card 
                 title="Team Members" 
-                value={team.length} 
+                value={team.member_profiles.length} 
                 description="Active contributors" 
                 icon={<Users className="h-4 w-4 text-muted-foreground" />} 
               />
@@ -515,7 +512,7 @@ export default function Manage() {
               </div>
               
               <div className="md:col-span-3 bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
-                <RecentMembersList members={recentMembers} />
+                <RecentMembersList members={team.member_profiles} />
               </div>
             </div>
           </div>
@@ -680,25 +677,27 @@ export default function Manage() {
   }
 
   return (
-    <div className="max-w-8xl mx-auto px-4">
+    <div className="max-w-8xl mx-auto px-4 py-8">
       <div className="flex flex-col space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between py-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
-            <p className="text-muted-foreground">
-              Manage your team for {idea?.title || 'your idea'}
-            </p>
-          </div>
-          <div className="flex space-x-3">
-            <button 
-              onClick={() => navigate(`/details/${ideaId}`)}
-              className="bg-muted text-muted-foreground hover:bg-muted/80 px-4 py-2 rounded-md"
-            >
-              Back to Idea
-            </button>
-            
-            {!selectedRepo ? (
+        <div>
+          <button 
+            onClick={() => navigate(`/details/${ideaId}`)}
+            className="flex items-center text-muted-foreground hover:text-primary transition-colors w-fit mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            <span>Back to Idea</span>
+          </button>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">Team Management</h1>
+              <p className="text-muted-foreground">
+                {idea?.title || 'your idea'}
+              </p>
+            </div>
+
+            {!selectedRepo.repo_name ? (
               <div className="relative">
                 <button 
                   className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
@@ -760,19 +759,38 @@ export default function Manage() {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <div className="bg-card border border-border px-4 py-2 rounded-md flex items-center space-x-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                  <span className="text-sm text-muted-foreground">{selectedRepo.name}</span>
+                <div className="relative group">
+                  <div className="absolute -inset-[1px] rounded-md bg-gradient-to-r from-primary via-purple-500 to-primary opacity-75 blur-[2px] group-hover:opacity-100 transition-all duration-300 animate-border-glow"></div>
+                  <div className="relative flex items-center space-x-2 px-4 py-2 bg-background rounded-md border border-transparent">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <a 
+                      href={selectedRepo.repo_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-foreground text-sm hover:text-primary transition-colors"
+                    >
+                      {selectedRepo.repo_name}
+                    </a>
+                  </div>
                 </div>
-                <a 
-                  href={selectedRepo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button 
+                  onClick={() => {
+                    if (selectedRepo.updated_at) {
+                      const lastUpdate = new Date(selectedRepo.updated_at);
+                      const daysSinceUpdate = Math.floor((new Date() - lastUpdate) / (1000 * 60 * 60 * 24));
+                      
+                      if (daysSinceUpdate < 5) {
+                        toast.error(`You can only update the repository after 5 days. ${5 - daysSinceUpdate} days remaining.`);
+                        return;
+                      }
+                    }
+                    setShowRepoDropdown(!showRepoDropdown);
+                  }}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
                 >
                   <Github className="h-4 w-4" />
-                  <span>View Repo</span>
-                </a>
+                  <span>Change Repo</span>
+                </button>
               </div>
             )}
           </div>
@@ -825,6 +843,69 @@ export default function Manage() {
         .custom-scrollbar {
           scrollbar-width: thin;
           scrollbar-color: rgb(var(--primary) / 0.2) transparent;
+        }
+      `}</style>
+
+      {/* Add global styles for animations */}
+      <style jsx global>{`
+        @keyframes border-glow {
+          0% {
+            background-position: 50% 0%;
+            transform: rotate(0deg) scale(1);
+          }
+          25% {
+            background-position: 100% 50%;
+            transform: rotate(0.5deg)
+          }
+          50% {
+            background-position: 50% 100%;
+            transform: rotate(0deg) scale(1);
+          }
+          75% {
+            background-position: 0% 50%;
+            transform: rotate(-0.5deg)
+          }
+          100% {
+            background-position: 50% 0%;
+            transform: rotate(0deg) scale(1);
+          }
+        }
+
+        .animate-border-glow {
+          animation: border-glow 2s ease infinite;
+          background-size: 250% 250%;
+          transition: all 0.3s ease;
+        }
+
+        .group:hover .animate-border-glow {
+          animation-duration: 10s;
+          background-size: 200%  200%;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(var(--primary-rgb), 0.2);
+          border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(var(--primary-rgb), 0.3);
+        }
+
+        .bg-gradient {
+          background: linear-gradient(to right, 
+            rgba(var(--primary-rgb), 0.8),
+            rgba(147, 51, 234, 0.8),
+            rgba(var(--primary-rgb), 0.8)
+          );
+          background-size: 200% 100%;
         }
       `}</style>
     </div>
