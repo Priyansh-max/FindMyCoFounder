@@ -146,9 +146,62 @@ const getTeam = async (req, res) => {
     }
 }
 
+const contactInfo = async (req, res) => {
+    const idea_id = req.params.id;
+
+    const whatsapp_link = req.body.whatsapp_link;
+    const slack_link = req.body.slack_link;
+    const discord_link = req.body.discord_link;
+
+    if(whatsapp_link === '' && slack_link === '' && discord_link === ''){
+        whatsapp_link = 'not set';
+        slack_link = 'not set';
+        discord_link = 'not set';
+    }
+
+    if(whatsapp_link === 'not set' && slack_link === 'not set' && discord_link === 'not set'){
+        return res.status(200).json({success : false , error : 'Please provide at least one communication channel'});
+    }
+
+    //so now which ever link is url check if it is valid or not...
+    if(whatsapp_link !== 'not set' && !whatsapp_link.includes('https://wa.me/')){
+        return res.status(200).json({success : false , error : 'Whatsapp link is not valid'});
+    }
+    if(slack_link !== 'not set' && !slack_link.includes('https://slack.com/')){
+        return res.status(200).json({success : false , error : 'Slack link is not valid'});
+    }
+    if(discord_link !== 'not set' && !discord_link.includes('https://discord.com/')){
+        return res.status(200).json({success : false , error : 'Discord link is not valid'});
+    }
+
+    try{
+        const { data , error} = await supabase
+        .from('manage_team')
+        .update({
+            whatsapp_link: whatsapp_link,
+            slack_link: slack_link,
+            discord_link: discord_link,
+        })
+        .eq('idea_id', idea_id);
+
+        if(error){
+            throw error;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: data
+        });
+
+    }catch(error){
+        res.status(500).json({ error: error.message });
+    }
+}
+
 module.exports = {
     createTeam,
     checkTeam,
     updateTeam,
-    getTeam
+    getTeam,
+    contactInfo
 };
