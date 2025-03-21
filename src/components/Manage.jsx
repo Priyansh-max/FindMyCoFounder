@@ -19,12 +19,16 @@ import {
   Mail,
   CheckCircle2,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  MessageCircle,
+  Slack,
+  Info
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import axios from "axios";
+import Contact from "./manage-team/Contact";
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -107,6 +111,7 @@ export default function Manage() {
         setTeam(teamData);
         setSelectedRepo(teamData);
 
+        console.log(teamData);
         // 7. If there's a connected repository, fetch its stats
         if (teamData.repo_name) {
           await getRepoStats(session, teamData);
@@ -327,48 +332,6 @@ export default function Manage() {
         toast.error('Failed to fetch GitHub repositories');
       }
     }
-  };
-
-  // Mock Data Generation Functions
-  const generateMockCommitData = () => {
-    const data = [];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    for (let i = 0; i < 12; i++) {
-      data.push({
-        month: months[i],
-        count: Math.floor(Math.random() * 5000) + 1000,
-      });
-    }
-    
-    setCommitData(data);
-  };
-
-  const generateDailyCommitData = () => {
-    const labels = [];
-    const data = [];
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      labels.push(formattedDate);
-      data.push(Math.floor(Math.random() * 90) + 10);
-    }
-    
-    setDailyCommitData({
-      labels,
-      datasets: [
-        {
-          label: 'Total Commits',
-          data,
-          backgroundColor: '#9AE65C',
-          hoverBackgroundColor: '#8BD84D',
-          borderRadius: 4,
-          borderWidth: 0,
-        }
-      ]
-    });
   };
 
   const generateDetailsMockData = () => {
@@ -617,6 +580,8 @@ export default function Manage() {
   // Tab Content Rendering
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'contact': 
+        return <Contact session={session} ideaId={ideaId} team={team} />
       case 'overview':
         return (
           <div className="space-y-6">
@@ -976,7 +941,7 @@ export default function Manage() {
         {/* Tabs */}
         <div className="border-b border-border">
           <div className="flex space-x-8">
-            {['overview', 'details', 'tasks'].map((tab) => (
+            {['overview', 'details', 'tasks', 'contact'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
