@@ -2,14 +2,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "r
 import { useEffect, useState } from "react";
 import supabase from "./lib/supabase"; // Make sure the import path is correct
 import Navbar from "./components/Navbar";
-import IdeasList from "./components/IdeasList";
-import IdeaForm from "./components/IdeaForm";
-import Profile from "./components/Profile";
-import IdeaDetails from './components/IdeaDetails'
-import OnboardingForm from "./components/OnboardingForm";
-import LandingPage from "./components/LandingPage";
-import Manage from './components/Manage';
-import CreatorsLab from './components/CreatorsLab';
+import IdeasList from "./pages/IdeasList";
+import IdeaForm from "./pages/IdeaForm";
+import Profile from "./pages/Profile";
+import IdeaDetails from './pages/IdeaDetails'
+import OnboardingForm from "./pages/OnboardingForm";
+import LandingPage from "./pages/LandingPage";
+import Manage from './pages/Manage';
+import CreatorsLab from './pages/CreatorsLab';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { toast } from 'react-hot-toast';
