@@ -8,7 +8,6 @@ import {
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import Contact from "./manage-team/Contact";
-import Task from "./manage-team/Task";
 import Details from "./manage-team/Details";
 import Overview from "./manage-team/Overview";
 
@@ -441,12 +440,9 @@ export default function Manage() {
       case 'contact': 
         return <Contact session={session} ideaId={ideaId} team={team} />
       case 'overview':
-        return <Overview session={session} repostats={repostats} team={team} dailyCommitData={dailyCommitData}  />
-      
+        return <Overview session={session} repostats={repostats} team={team} dailyCommitData={dailyCommitData}  />     
       case 'details':
-        return <Details session={session} ideaId={ideaId} team={team}/>
-      case 'tasks':
-        return <Task session={session} ideaId={ideaId} />
+        return <Details team={team}/>
       
       default:
         return null;
@@ -584,7 +580,7 @@ export default function Manage() {
         {/* Tabs */}
         <div className="border-b border-border">
           <div className="flex space-x-8">
-            {['overview', 'details', 'tasks', 'contact'].map((tab) => (
+            {['overview', 'details', 'contact'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
