@@ -75,7 +75,22 @@ function AuthHandler({ user, setUser, setIsLoading }) {
   useEffect(() => {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      if (session) {
+        // Check if GitHub token is missing or expired
+        if (!session.provider_token) {
+          toast.error('GitHub session expired. Please reconnect.');
+          supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname,
+            }
+          });
+          return;
+        }
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
       setIsLoading(false);
     });
 
@@ -84,12 +99,39 @@ function AuthHandler({ user, setUser, setIsLoading }) {
       console.log('Auth event:', event); // For debugging
       
       if (event === 'INITIAL_SESSION') {
-        setUser(session?.user ?? null);
+        if (session) {
+          // Check GitHub token on initial session
+          if (!session.provider_token) {
+            toast('GitHub session expired. Please reconnect.',{
+              icon: '🔑',
+            });
+            await supabase.auth.signInWithOAuth({
+              provider: 'github',
+              options: {
+                redirectTo: window.location.origin + window.location.pathname,
+              }
+            });
+            return;
+          }
+          setUser(session.user);
+        } else {
+          setUser(null);
+        }
         setIsLoading(false);
-        // Don't return here, allow the code to continue checking for SIGNED_IN
       }
 
       if (event === 'SIGNED_IN') {
+        // Check GitHub token on sign in
+        if (!session.provider_token) {
+          toast.error('GitHub session expired. Please reconnect.');
+          await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname,
+            }
+          });
+          return;
+        }
         setUser(session?.user ?? null);
         // Show welcome message only on fresh sign in from landing page
         if (window.location.pathname === '/') {
@@ -97,6 +139,19 @@ function AuthHandler({ user, setUser, setIsLoading }) {
           toast.success('Signed in successfully!');
           navigate('/idealist');
         }
+      } else if (event === 'TOKEN_REFRESHED') {
+        // Check GitHub token on refresh
+        if (!session.provider_token) {
+          toast.error('GitHub session expired. Please reconnect.');
+          await supabase.auth.signInWithOAuth({
+            provider: 'github',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname,
+            }
+          });
+          return;
+        }
+        setUser(session?.user ?? null);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setHasShownWelcome(false);
