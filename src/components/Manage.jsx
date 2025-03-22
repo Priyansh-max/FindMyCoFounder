@@ -43,15 +43,16 @@ export default function Manage() {
           return;
         }
 
-        // 2. Check if we need to refresh GitHub token
+        // 2. Check if GitHub token is missing or expired
         if (!session.provider_token) {
-          const { data, error } = await supabase.auth.signInWithOAuth({
+          toast.error('GitHub session expired. Please reconnect.');
+          await supabase.auth.signInWithOAuth({
             provider: 'github',
             options: {
               redirectTo: window.location.origin + window.location.pathname,
             }
           });
-          if (error) throw error;
+          return;
         }
 
         // 3. Store session in state
@@ -88,6 +89,7 @@ export default function Manage() {
         // 7. If there's a connected repository, fetch its stats
         if (teamData.repo_name) {
           await getRepoStats(session, teamData);
+          await getMemberStats(session,teamData);
         }
 
         // 8. If this is a redirect from OAuth, fetch repositories
@@ -304,6 +306,135 @@ export default function Manage() {
       }
     }
   };
+
+  const fetchAllCommitsForMember = async (username, repoName, github_username, token, perPage = 100) => {
+    let page = 1;
+    let allCommits = [];
+    let hasMore = true;
+
+    while (hasMore) {
+      try {
+        const response = await axios.get(
+          `https://api.github.com/repos/${username}/${repoName}/commits`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            params: { 
+              per_page: perPage, 
+              page,
+              author: github_username 
+            }
+          }
+        );
+
+        const commits = response.data;
+        allCommits.push(...commits);
+
+        hasMore = commits.length === perPage;
+        page++;
+      } catch (error) {
+        console.error(`Error fetching commits for ${github_username} on page ${page}:`, error);
+        break;
+      }
+    }
+
+    return allCommits;
+  };
+
+  const getMemberStats = async (session, team) => {
+    if (!team || !session) {
+      console.error('Missing team or session data');
+      return;
+    }
+
+    const username = session.user.user_metadata.user_name;
+    const repoName = team.repo_name;
+
+    if (!username || !repoName) {
+      console.error('Missing username or repository name');
+      return;
+    }
+
+    const memberProfiles = team.member_profiles;
+    if (!memberProfiles || !Array.isArray(memberProfiles)) {
+      console.error('No member profiles found or invalid data');
+      return;
+    }
+
+    console.log('Starting to process member profiles:', memberProfiles);
+
+    try {
+      const updatedProfiles = await Promise.all(memberProfiles.map(async (member) => {
+        try {
+          const github_username = member.github_username;
+          if (!github_username) {
+            console.warn(`GitHub username not found for member: ${member.full_name}`);
+            return member;
+          }
+
+          console.log(`Fetching stats for member: ${github_username}`);
+
+          const [
+            commits,
+            open_pr_response,
+            closed_pr_response,
+            open_issues_response,
+            closed_issues_response
+          ] = await Promise.all([
+            fetchAllCommitsForMember(username, repoName, github_username, session.provider_token),
+            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:pr+state:open`),
+            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:pr+state:closed`),
+            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:issues+state:open`),
+            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:issues+state:closed`)
+          ]);
+
+          const merged_pr_count = closed_pr_response.data.items.filter(item => 
+            item.pull_request && item.pull_request.merged_at
+          ).length;
+
+          const memberStats = {
+            merged_prs: merged_pr_count,
+            open_prs: open_pr_response.data.total_count,
+            closed_prs: closed_pr_response.data.total_count,
+            commits: commits.length,
+            open_issues: open_issues_response.data.total_count,
+            closed_issues: closed_issues_response.data.total_count,
+            last_commit: commits[0]?.commit?.author?.date || null
+          };
+
+          console.log(`Stats fetched for ${github_username}:`, memberStats);
+
+          return {
+            ...member,
+            stats: memberStats
+          };
+        } catch (memberError) {
+          console.error(`Error fetching stats for ${member.github_username}:`, memberError);
+          return member;
+        }
+      }));
+
+      console.log('All member stats fetched:', updatedProfiles);
+
+      // Update team state with new member stats
+      setTeam(prevTeam => {
+        const newTeam = {
+          ...prevTeam,
+          member_profiles: updatedProfiles
+        };
+        console.log('Updated team state:', newTeam);
+        return newTeam;
+      });
+
+
+    } catch (error) {
+      console.error('Error in getMemberStats:', error);
+      toast.error('Failed to fetch member statistics');
+    }
+  };
+
   // Tab Content Rendering
   const renderTabContent = () => {
     switch (activeTab) {
@@ -313,7 +444,7 @@ export default function Manage() {
         return <Overview session={session} repostats={repostats} team={team} dailyCommitData={dailyCommitData}  />
       
       case 'details':
-        return <Details session={session} ideaId={ideaId} />
+        return <Details session={session} ideaId={ideaId} team={team}/>
       case 'tasks':
         return <Task session={session} ideaId={ideaId} />
       
