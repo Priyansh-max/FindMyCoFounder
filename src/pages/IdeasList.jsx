@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SkillSelect from '@/components/ui/SkillSelect';
-import ErrorPage from './ErrorPage';
+import ErrorPage from '../components/ErrorPage';
 
 function IdeasList() {
   const [ideas, setIdeas] = useState([]);

@@ -7,9 +7,9 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-import Contact from "./manage-team/Contact";
-import Details from "./manage-team/Details";
-import Overview from "./manage-team/Overview";
+import Contact from "../components/manage-team/Contact";
+import Details from "../components/manage-team/Details";
+import Overview from "../components/manage-team/Overview";
 
 // Set document title
 document.title = "Team Management | CoFoundry";

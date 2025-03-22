@@ -4,7 +4,7 @@ import supabase from '../lib/supabase'; // Ensure you import your Supabase insta
 import { Users, Phone, ClipboardList, XCircle, Clock, CheckCircle, Undo, X,ArrowRight, Check } from "lucide-react";
 import CircularProgress from '@/components/ui/CircularProgress';
 import EditIdea from '../props/EditIdea';
-import ErrorPage from './ErrorPage';
+import ErrorPage from '../components/ErrorPage';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import Initializing from '../props/Initializing'; // Import the Initializing component

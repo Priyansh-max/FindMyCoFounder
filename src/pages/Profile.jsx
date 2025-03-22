@@ -11,11 +11,10 @@ import CircularProgress from '@/components/ui/CircularProgress';
 import { IoDocumentTextOutline } from "react-icons/io5";
 import { GoLink } from "react-icons/go";
 import EditProfile from '@/props/EditProfile';
-import ErrorPage from './ErrorPage';
+import ErrorPage from '../components/ErrorPage';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
 
 function Profile() {
   const navigate = useNavigate();
