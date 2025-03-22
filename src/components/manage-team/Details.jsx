@@ -1,92 +1,50 @@
 import { useState } from 'react';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Users, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const Details = ({ session, ideaId, team }) => {
     const [loading, setLoading] = useState(false);
-
+    console.log(team);
     const handleRemoveMember = (memberId, memberName) => {
         // In real implementation, this would make an API call
         toast.success(`Removed ${memberName} from the team`);
     };
 
-    const generateDetailsMockData = () => {
-        return [
-          {
-            id: 1,
-            full_name: "Sarah Chen",
-            email: "sarah.chen@example.com",
-            avatar_url: "https://ui-avatars.com/api/?name=Sarah+Chen&background=random",
-            stats: {
-              totalCommits: 342,
-              lastCommit: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-              openIssues: 15,
-              closedIssues: 28,
-              openPRs: 3,
-              closedPRs: 12,
-              mergedPRs: 25
-            },
-            joined_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
-          },
-          {
-            id: 2,
-            full_name: "James Wilson",
-            email: "james.wilson@example.com",
-            avatar_url: "https://ui-avatars.com/api/?name=James+Wilson&background=random",
-            stats: {
-              totalCommits: 289,
-              lastCommit: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-              openIssues: 8,
-              closedIssues: 19,
-              openPRs: 2,
-              closedPRs: 8,
-              mergedPRs: 18
-            },
-            joined_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000) // 45 days ago
-          },
-          {
-            id: 3,
-            full_name: "Emily Rodriguez",
-            email: "emily.r@example.com",
-            avatar_url: "https://ui-avatars.com/api/?name=Emily+Rodriguez&background=random",
-            stats: {
-              totalCommits: 421,
-              lastCommit: new Date(), // today
-              openIssues: 12,
-              closedIssues: 35,
-              openPRs: 5,
-              closedPRs: 15,
-              mergedPRs: 32
-            },
-            joined_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
-          },
-          {
-            id: 4,
-            full_name: "Michael Park",
-            email: "michael.park@example.com",
-            avatar_url: "https://ui-avatars.com/api/?name=Michael+Park&background=random",
-            stats: {
-              totalCommits: 156,
-              lastCommit: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
-              openIssues: 5,
-              closedIssues: 12,
-              openPRs: 1,
-              closedPRs: 6,
-              mergedPRs: 10
-            },
-            joined_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) // 15 days ago
-          }
-        ];
-    };
-
-    const mockTeamData = generateDetailsMockData();
+    // If no team members, show empty state
+    if (!team.member_profiles || team.member_profiles.length === 0) {
+        return (
+            <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="relative mb-6">
+                        {/* Animated background glow */}
+                        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse"></div>
+                        {/* Icon */}
+                        <div className="relative bg-primary/10 p-4 rounded-full">
+                            <Users className="w-12 h-12 text-primary" />
+                        </div>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">No Team Members Yet</h3>
+                    <p className="text-muted-foreground max-w-sm mb-6">
+                        Start building your team by accepting applications or inviting collaborators to join your project.
+                    </p>
+                    <button 
+                        onClick={() => window.location.href = `/details/${ideaId}`}
+                        className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                        View Applications
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Team Members</h2>
             <div className="text-sm text-muted-foreground">
-              Total Members: {mockTeamData.length}
+              Total Members: {team.member_profiles.length}
             </div>
           </div>
 
@@ -121,7 +79,7 @@ const Details = ({ session, ideaId, team }) => {
                 </tr>
               </thead>
               <tbody>
-                {mockTeamData.map((member) => (
+                {team.member_profiles.map((member) => (
                   <tr key={member.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-3">
@@ -139,36 +97,36 @@ const Details = ({ session, ideaId, team }) => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {member.joined_at.toLocaleDateString('en-US', { 
+                      {new Date(member.joined_at).toLocaleDateString('en-US', { 
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
                       })}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {member.stats.lastCommit.toLocaleDateString('en-US', {
+                      {member.stats?.last_commit ? new Date(member.stats.last_commit).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
-                      })}
+                      }) : 'No commits yet'}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="font-medium">{member.stats.totalCommits}</span>
+                      <span className="font-medium">{member.stats?.commits || 0}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center gap-8">
-                        <span className="text-green-500">{member.stats.openIssues}</span>
-                        <span className="text-red-500">{member.stats.closedIssues}</span>
+                        <span className="text-green-500">{member.stats?.open_issues || 0}</span>
+                        <span className="text-red-500">{member.stats?.closed_issues || 0}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center gap-8">
-                        <span className="text-yellow-500">{member.stats.openPRs}</span>
-                        <span className="text-red-500">{member.stats.closedPRs}</span>
+                        <span className="text-yellow-500">{member.stats?.open_prs || 0}</span>
+                        <span className="text-red-500">{member.stats?.closed_prs || 0}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="text-green-500 font-medium">{member.stats.mergedPRs}</span>
+                      <span className="text-green-500 font-medium">{member.stats?.merged_prs || 0}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
@@ -183,12 +141,6 @@ const Details = ({ session, ideaId, team }) => {
                 ))}
               </tbody>
             </table>
-
-            {mockTeamData.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No team members found.</p>
-              </div>
-            )}
           </div>
         </div>
     );
