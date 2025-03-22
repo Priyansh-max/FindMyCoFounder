@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Loader2, Trash2, Users, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const Details = ({ session, ideaId, team }) => {
+const Details = ({ team }) => {
     const [loading, setLoading] = useState(false);
     console.log(team);
     const handleRemoveMember = (memberId, memberName) => {
@@ -27,13 +27,6 @@ const Details = ({ session, ideaId, team }) => {
                     <p className="text-muted-foreground max-w-sm mb-6">
                         Start building your team by accepting applications or inviting collaborators to join your project.
                     </p>
-                    <button 
-                        onClick={() => window.location.href = `/details/${ideaId}`}
-                        className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                    >
-                        View Applications
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
                 </div>
             </div>
         );
