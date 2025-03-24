@@ -399,7 +399,7 @@ const IdeaDetails = () => {
             <div className={`bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border ${!teamCreation ? 'opacity-70 pointer-events-none' : ''}`}>
             {/* Filter Dropdown */}
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-foreground">Applications received</h2>  
+                    <h2 className="text-xl font-bold text-foreground">Applications receiveddd</h2>  
                     <select
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
