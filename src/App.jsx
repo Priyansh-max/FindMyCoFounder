@@ -100,19 +100,6 @@ function AuthHandler({ user, setUser, setIsLoading }) {
       
       if (event === 'INITIAL_SESSION') {
         if (session) {
-          // Check GitHub token on initial session
-          if (!session.provider_token) {
-            toast('GitHub session expired. Please reconnect.',{
-              icon: '🔑',
-            });
-            await supabase.auth.signInWithOAuth({
-              provider: 'github',
-              options: {
-                redirectTo: window.location.origin + window.location.pathname,
-              }
-            });
-            return;
-          }
           setUser(session.user);
         } else {
           setUser(null);
@@ -121,38 +108,25 @@ function AuthHandler({ user, setUser, setIsLoading }) {
       }
 
       if (event === 'SIGNED_IN') {
-        // Check GitHub token on sign in
-        if (!session.provider_token) {
-          toast.error('GitHub session expired. Please reconnect.');
-          await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: {
-              redirectTo: window.location.origin + window.location.pathname,
-            }
-          });
-          return;
+        if (session) {
+          if (!session.provider_token) {
+            setUser(null);
+            setHasShownWelcome(false);
+            navigate('/');
+            toast('Session expired. Please reconnect.',{
+              icon: '🔑',
+            });
+          }
+          setUser(session.user);
         }
-        setUser(session?.user ?? null);
         // Show welcome message only on fresh sign in from landing page
         if (window.location.pathname === '/') {
           setHasShownWelcome(true);
           toast.success('Signed in successfully!');
           navigate('/idealist');
         }
-      } else if (event === 'TOKEN_REFRESHED') {
-        // Check GitHub token on refresh
-        if (!session.provider_token) {
-          toast.error('GitHub session expired. Please reconnect.');
-          await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: {
-              redirectTo: window.location.origin + window.location.pathname,
-            }
-          });
-          return;
-        }
-        setUser(session?.user ?? null);
-      } else if (event === 'SIGNED_OUT') {
+      } 
+      else if (event === 'SIGNED_OUT') {
         setUser(null);
         setHasShownWelcome(false);
         navigate('/');
