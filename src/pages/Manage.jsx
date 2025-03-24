@@ -387,7 +387,12 @@ export default function Manage() {
             axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:pr+state:closed`),
             axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:issues+state:open`),
             axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:issues+state:closed`)
-          ]);
+          ], {
+            headers: {
+              'Authorization': `Bearer ${session.provider_token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          });
 
           const merged_pr_count = closed_pr_response.data.items.filter(item => 
             item.pull_request && item.pull_request.merged_at
