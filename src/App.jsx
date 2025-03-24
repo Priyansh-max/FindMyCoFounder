@@ -76,17 +76,6 @@ function AuthHandler({ user, setUser, setIsLoading }) {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // Check if GitHub token is missing or expired
-        if (!session.provider_token) {
-          toast.error('GitHub session expired. Please reconnect.');
-          supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: {
-              redirectTo: window.location.origin + window.location.pathname,
-            }
-          });
-          return;
-        }
         setUser(session.user);
       } else {
         setUser(null);
