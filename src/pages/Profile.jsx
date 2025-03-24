@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X, Lightbulb, Heart, ScrollText, Github, PlayCircle, Calendar, Info } from "lucide-react";
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X, Lightbulb, Heart, ScrollText, Github, PlayCircle, Calendar, Info, GitPullRequest, AlertTriangle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
@@ -15,6 +15,7 @@ import ErrorPage from '../components/ErrorPage';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { cn } from "@/lib/utils";
+import ProjectStats from '@/components/ui/ProjectStats';
 
 function Profile() {
   const navigate = useNavigate();
@@ -42,6 +43,19 @@ function Profile() {
     ideas_posted: 0
   });
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [projectStats, setProjectStats] = useState({
+    ratings: [
+      { project: "Project A", rating: 150, totalRating: 150, date: "2024-01-15" },
+      { project: "Project B", rating: 280, totalRating: 430, date: "2024-02-01" },
+      { project: "Project C", rating: 420, totalRating: 850, date: "2024-02-15" },
+      { project: "Project D", rating: 520, totalRating: 1370, date: "2024-03-01" },
+    ],
+    totalCommits: 156,
+    totalIssues: 23,
+    totalPRs: 45,
+    mergedPRs: 38
+  });
+  const [activeTab, setActiveTab] = useState('applications');
 
   const resetError = () => {
     setError(null);
@@ -433,92 +447,175 @@ function Profile() {
 
       {/* Right Side Content */}
       <div className="w-4/5 space-y-8">
-        {/* Applications Section */}
-        <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
-          {/* Filter Dropdown */}
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">Your Applications</h2>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="border border-border rounded-md p-2 text-sm transition-all duration-200 
-              focus:outline-none focus:ring-2 focus:ring-primary 
-              hover:shadow-md cursor-pointer bg-background text-foreground"
-            >
-              <option value="all">All</option>
-              <option value="pending">Pending</option>
-              <option value="accepted">Accepted</option>
-              <option value="rejected">Rejected</option>
-            </select>
+        {/* Project Stats at Top */}
+        <ProjectStats stats={projectStats} />
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-card text-card-foreground p-4 rounded-lg border border-border shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <GitPullRequest className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-medium">Total Commits</h3>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{projectStats.totalCommits || 0}</p>
           </div>
 
-          {/* Applications List */}
-          <div className="space-y-3">
-            {filteredApplications.length === 0 ? (
-              <div className="text-center py-8 bg-muted/50 rounded-lg">
-                <div className="flex flex-col items-center justify-center">
-                  <svg className="h-12 w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path>
-                    <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"></path>
-                    <path d="M9.5 9.5 14 5"></path>
-                  </svg>
-                  <h3 className="text-lg font-medium text-foreground mb-1">No Applications Yet</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    You haven't applied to any ideas yet. Start exploring and find your next project!
-                  </p>
-                </div>
+          <div className="bg-card text-card-foreground p-4 rounded-lg border border-border shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-yellow-500/10 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-yellow-500" />
               </div>
-            ) : (
-              filteredApplications.map((app, index) => (
-                <div key={app.id} className="flex items-center gap-4 p-3 bg-card border border-border rounded-lg hover:border-primary/50 transition-all group">
-                  {/* Number */}
-                  <span className="w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
-                    {index + 1}
-                  </span>
-                  
-                  {/* Idea Name - Clickable */}
-                  <div className="flex-1 flex items-center">
-                    <button
-                      onClick={() => setSelectedApplication(app)}
-                      className="text-left font-medium text-foreground hover:text-primary transition-colors w-fit"
-                    >
-                      {app.idea.title}
-                    </button>
-                  </div>
+              <h3 className="font-medium">Total Issues</h3>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{projectStats.totalIssues || 0}</p>
+          </div>
 
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-                      app.status === "pending" && "bg-yellow-500/20 text-yellow-500",
-                      app.status === "accepted" && "bg-green-500/20 text-green-500",
-                      app.status === "rejected" && "bg-red-500/20 text-red-500"
-                    )}>
-                      {app.status === "pending" && <Clock className="w-3 h-3" />}
-                      {app.status === "accepted" && <CheckCircle className="w-3 h-3" />}
-                      {app.status === "rejected" && <XCircle className="w-3 h-3" />}
-                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                    </div>
+          <div className="bg-card text-card-foreground p-4 rounded-lg border border-border shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-blue-500/10 rounded-full">
+                <GitPullRequest className="w-5 h-5 text-blue-500" />
+              </div>
+              <h3 className="font-medium">Total PRs</h3>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{projectStats.totalPRs || 0}</p>
+          </div>
 
-                    {/* Dashboard Button for Accepted Applications */}
-                    {app.status === "accepted" && (
-                      <button
-                        onClick={() => navigate(`/creators-lab/${app.idea.id}`)}
-                        className="px-3 py-1 text-xs font-medium text-primary bg-primary/10 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1"
-                      >
-                        <Users className="w-3 h-3" /> Creators Lab
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="bg-card text-card-foreground p-4 rounded-lg border border-border shadow-sm hover:shadow-md transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-green-500/10 rounded-full">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              </div>
+              <h3 className="font-medium">Merged PRs</h3>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{projectStats.mergedPRs || 0}</p>
           </div>
         </div>
-  
-        {/* Posted Ideas Section */}
 
-        <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
+        {/* Tab Navigation */}
+        <div className="flex gap-4 border-b border-border">
+          <button
+            onClick={() => setActiveTab('applications')}
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+              activeTab === 'applications'
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Your Applications
+          </button>
+          <button
+            onClick={() => setActiveTab('ideas')}
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+              activeTab === 'ideas'
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Your Ideas
+          </button>
+          <button
+            onClick={() => setActiveTab('completed')}
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+              activeTab === 'completed'
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Completed Projects
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'applications' && (
+          <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-foreground">Your Applications</h2>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="border border-border rounded-md p-2 text-sm transition-all duration-200 
+                focus:outline-none focus:ring-2 focus:ring-primary 
+                hover:shadow-md cursor-pointer bg-background text-foreground"
+              >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="accepted">Accepted</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            {/* Applications List */}
+            <div className="space-y-3">
+              {filteredApplications.length === 0 ? (
+                <div className="text-center py-8 bg-muted/50 rounded-lg">
+                  <div className="flex flex-col items-center justify-center">
+                    <svg className="h-12 w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path>
+                      <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"></path>
+                      <path d="M9.5 9.5 14 5"></path>
+                    </svg>
+                    <h3 className="text-lg font-medium text-foreground mb-1">No Applications Yet</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      You haven't applied to any ideas yet. Start exploring and find your next project!
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                filteredApplications.map((app, index) => (
+                  <div key={app.id} className="flex items-center gap-4 p-3 bg-card border border-border rounded-lg hover:border-primary/50 transition-all group">
+                    {/* Number */}
+                    <span className="w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
+                      {index + 1}
+                    </span>
+                    
+                    {/* Idea Name - Clickable */}
+                    <div className="flex-1 flex items-center">
+                      <button
+                        onClick={() => setSelectedApplication(app)}
+                        className="text-left font-medium text-foreground hover:text-primary transition-colors w-fit"
+                      >
+                        {app.idea.title}
+                      </button>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                        app.status === "pending" && "bg-yellow-500/20 text-yellow-500",
+                        app.status === "accepted" && "bg-green-500/20 text-green-500",
+                        app.status === "rejected" && "bg-red-500/20 text-red-500"
+                      )}>
+                        {app.status === "pending" && <Clock className="w-3 h-3" />}
+                        {app.status === "accepted" && <CheckCircle className="w-3 h-3" />}
+                        {app.status === "rejected" && <XCircle className="w-3 h-3" />}
+                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                      </div>
+
+                      {/* Dashboard Button for Accepted Applications */}
+                      {app.status === "accepted" && (
+                        <button
+                          onClick={() => navigate(`/creators-lab/${app.idea.id}`)}
+                          className="px-3 py-1 text-xs font-medium text-primary bg-primary/10 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1"
+                        >
+                          <Users className="w-3 h-3" /> Creators Lab
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ideas' && (
+          <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
             <h2 className="text-2xl font-bold mb-6 text-foreground">Your Posted Ideas</h2>
             {ideas.map((idea) => (
               <div key={idea.id} className="mb-6 last:mb-0 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group">
@@ -615,6 +712,35 @@ function Profile() {
               <p className="text-muted-foreground text-center py-4">No ideas posted yet</p>
             )}
           </div>
+        )}
+
+        {activeTab === 'completed' && (
+          <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Completed Projects</h2>
+            {/* Add completed projects content here */}
+            {projectStats.points.length > 0 ? (
+              <div className="space-y-4">
+                {/* Add your completed projects list here */}
+                {projectStats.points.map((point, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span>{point.project}</span>
+                    <span>{point.points} points</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-muted/50 rounded-lg">
+                <div className="flex flex-col items-center justify-center">
+                  <CheckCircle className="h-12 w-12 text-muted-foreground mb-3" />
+                  <h3 className="text-lg font-medium text-foreground mb-1">No Completed Projects Yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Keep contributing to projects and building your portfolio!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* edit profile overlay */}
