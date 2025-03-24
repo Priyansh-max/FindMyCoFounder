@@ -394,7 +394,7 @@ const IdeaDetails = () => {
             </div>
             )}
         </div>
-        <div className="w-3/4 space-y-8">
+        <div className="w-4/5 space-y-8">
             {/* Applications Section */}
             <div className={`bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border ${!teamCreation ? 'opacity-70 pointer-events-none' : ''}`}>
             {/* Filter Dropdown */}
