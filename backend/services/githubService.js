@@ -45,7 +45,12 @@ class GitHubService {
 
     // Cache the results
     await setCachedData(cacheKey, allCommits);
-    return allCommits;
+    return {
+        data: allCommits,
+        metadata: {
+          timestamp: new Date().toISOString()
+        }
+    };
   }
 
   async fetchIssues(username, repoName) {
@@ -54,9 +59,9 @@ class GitHubService {
     const cacheKey = `github:issues:${username}:${repoName}:${todayDate}`;
     
     // Check cache first
-    const cachedData = await getCachedData(cacheKey);
-    if (cachedData) {
-      return cachedData;
+    const cachedResult = await getCachedData(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
     }
 
     const response = await axios.get(
@@ -66,7 +71,14 @@ class GitHubService {
 
     // Cache the results
     await setCachedData(cacheKey, response.data);
-    return response.data;
+    
+    // Return with metadata for immediate use
+    return {
+      data: response.data,
+      metadata: {
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 
   async fetchPullRequests(username, repoName) {
@@ -75,9 +87,9 @@ class GitHubService {
     const cacheKey = `github:pulls:${username}:${repoName}:${todayDate}`;
     
     // Check cache first
-    const cachedData = await getCachedData(cacheKey);
-    if (cachedData) {
-      return cachedData;
+    const cachedResult = await getCachedData(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
     }
 
     const response = await axios.get(
@@ -87,7 +99,14 @@ class GitHubService {
 
     // Cache the results
     await setCachedData(cacheKey, response.data);
-    return response.data;
+    
+    // Return with metadata for immediate use
+    return {
+      data: response.data,
+      metadata: {
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 
   async fetchWeeklyCommits(username, repoName, since, until) {
@@ -97,9 +116,9 @@ class GitHubService {
     const cacheKey = `github:weekly:${username}:${repoName}:last7days:${todayDate}`;
     
     // Check cache first
-    const cachedData = await getCachedData(cacheKey);
-    if (cachedData) {
-      return cachedData;
+    const cachedResult = await getCachedData(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
     }
 
     const response = await axios.get(
@@ -112,7 +131,14 @@ class GitHubService {
 
     // Cache the results
     await setCachedData(cacheKey, response.data);
-    return response.data;
+    
+    // Return with metadata for immediate use
+    return {
+      data: response.data,
+      metadata: {
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 
   async fetchMemberCommits(username, repoName, githubUsername) {
@@ -121,9 +147,9 @@ class GitHubService {
     const cacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}`;
     
     // Check cache first
-    const cachedData = await getCachedData(cacheKey);
-    if (cachedData) {
-      return cachedData;
+    const cachedResult = await getCachedData(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
     }
 
     let page = 1;
@@ -152,7 +178,14 @@ class GitHubService {
 
     // Cache the results
     await setCachedData(cacheKey, allCommits);
-    return allCommits;
+    
+    // Return with metadata for immediate use
+    return {
+      data: allCommits,
+      metadata: {
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 
   async fetchMemberIssues(username, repoName, githubUsername) {
@@ -161,9 +194,9 @@ class GitHubService {
     const cacheKey = `github:member:issues:${username}:${repoName}:${githubUsername}:${todayDate}`;
     
     // Check cache first
-    const cachedData = await getCachedData(cacheKey);
-    if (cachedData) {
-      return cachedData;
+    const cachedResult = await getCachedData(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
     }
 
     const [openIssues, closedIssues] = await Promise.all([
@@ -184,7 +217,14 @@ class GitHubService {
 
     // Cache the results
     await setCachedData(cacheKey, result);
-    return result;
+    
+    // Return with metadata for immediate use
+    return {
+      data: result,
+      metadata: {
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 
   async fetchMemberPullRequests(username, repoName, githubUsername) {
@@ -193,9 +233,9 @@ class GitHubService {
     const cacheKey = `github:member:prs:${username}:${repoName}:${githubUsername}:${todayDate}`;
     
     // Check cache first
-    const cachedData = await getCachedData(cacheKey);
-    if (cachedData) {
-      return cachedData;
+    const cachedResult = await getCachedData(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
     }
 
     const [openPRs, closedPRs] = await Promise.all([
@@ -219,7 +259,14 @@ class GitHubService {
 
     // Cache the results
     await setCachedData(cacheKey, result);
-    return result;
+    
+    // Return with metadata for immediate use
+    return {
+      data: result,
+      metadata: {
+        timestamp: new Date().toISOString()
+      }
+    };
   }
 }
 
