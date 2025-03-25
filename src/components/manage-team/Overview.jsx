@@ -8,7 +8,17 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const Overview = ({session, repostats, team , dailyCommitData }) => {
     const chartRef = useRef(null);
 
-      // UI Components
+    // Format the last updated time if available
+    const formattedLastUpdate = repostats?.lastUpdated 
+      ? new Date(repostats.lastUpdated).toLocaleString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) 
+      : null;
+
+    // UI Components
     const Card = ({ title, value, description, icon }) => (
         <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -160,6 +170,15 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
 
     return (
     <div className="space-y-6">
+        {formattedLastUpdate && (
+            <div className="text-xs text-muted-foreground flex items-center">
+                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${repostats?.isCached ?'bg-yellow-400' : 'bg-green-400'}`}></span>
+              <span>Data updates every 1 hour</span>
+              {repostats?.isCached && (
+                <span className="ml-1 text-xs italic">(currently you are viewing cached data)</span>
+              )}
+            </div>
+        )}
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card 
@@ -212,6 +231,7 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
         <div className="md:col-span-4 bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Commit History</h3>
+
           </div>
           {!team.repo_name ? (
             <div className="h-80 flex flex-col items-center justify-center">
