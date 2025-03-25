@@ -10,7 +10,7 @@ const ideaRoutes = require('./routes/ideaRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const NumberRoutes = require('./routes/numberRoutes');
 const manageTeamRoutes = require('./routes/manageTeamRoutes');
-
+const githubRoutes = require('./routes/githubRoutes');
 const app = express();
 
 // Middleware
@@ -27,6 +27,7 @@ app.use('/api/idea', ideaRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/data', NumberRoutes);
 app.use('/api/manage-team', manageTeamRoutes);
+app.use('/api/github' , githubRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
