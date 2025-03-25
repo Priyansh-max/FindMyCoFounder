@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, Trash2, Users, ArrowRight } from 'lucide-react';
+import { Loader2, Trash2, Users, ArrowRight, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const Details = ({ team }) => {
@@ -9,6 +9,7 @@ const Details = ({ team }) => {
         // In real implementation, this would make an API call
         toast.success(`Removed ${memberName} from the team`);
     };
+
 
     // If no team members, show empty state
     if (!team.member_profiles || team.member_profiles.length === 0) {
@@ -86,6 +87,7 @@ const Details = ({ team }) => {
                         <div>
                           <div className="font-medium">{member.full_name}</div>
                           <div className="text-xs text-muted-foreground">{member.email}</div>
+  
                         </div>
                       </div>
                     </td>
