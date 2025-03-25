@@ -171,12 +171,13 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
     return (
     <div className="space-y-6">
         {formattedLastUpdate && (
-            <div className="text-xs text-muted-foreground flex items-center">
-                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${repostats?.isCached ?'bg-yellow-400' : 'bg-green-400'}`}></span>
-              <span>Data updates every 1 hour last updated at {formattedLastUpdate}</span>
-              {repostats?.isCached && (
-                <span className="ml-1 text-xs italic">(currently you are viewing cached data)</span>
-              )}
+            <div className="text-xs text-muted-foreground flex items-center p-2 bg-muted/20 rounded-md border border-border">
+                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${repostats?.isCached ? 'bg-yellow-400' : 'bg-green-400'}`}></span>
+                <span>
+                    {repostats?.isCached 
+                        ? `Data was fetched on ${formattedLastUpdate} and is cached for 1 hour` 
+                        : `Data was freshly fetched from GitHub on ${formattedLastUpdate}`}
+                </span>
             </div>
         )}
       {/* Stats Cards */}
