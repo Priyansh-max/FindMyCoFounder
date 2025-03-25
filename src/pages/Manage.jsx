@@ -44,12 +44,11 @@ export default function Manage() {
 
         // 2. Check if GitHub token is missing or expired
         if (!session.provider_token) {
-          toast.error('GitHub session expired. Please reconnect.');
-          await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: {
-              redirectTo: window.location.origin + window.location.pathname,
-            }
+          const { error } = await supabase.auth.signOut();
+          if (error) throw error;
+          navigate('/');
+          toast('Session expired. Please reconnect.',{
+            icon: '🔑',
           });
           return;
         }

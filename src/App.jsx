@@ -98,14 +98,6 @@ function AuthHandler({ user, setUser, setIsLoading }) {
 
       if (event === 'SIGNED_IN') {
         if (session) {
-          if (!session.provider_token) {
-            setUser(null);
-            setHasShownWelcome(false);
-            navigate('/');
-            toast('Session expired. Please reconnect.',{
-              icon: '🔑',
-            });
-          }
           setUser(session.user);
         }
         // Show welcome message only on fresh sign in from landing page
@@ -118,8 +110,6 @@ function AuthHandler({ user, setUser, setIsLoading }) {
       else if (event === 'SIGNED_OUT') {
         setUser(null);
         setHasShownWelcome(false);
-        navigate('/');
-        toast.success('Signed out successfully');
       }
       setIsLoading(false);
     });

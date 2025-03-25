@@ -12,7 +12,7 @@ const Navbar = ({user}) => {
 
   const handleSignIn = async () => {
     try {
-      const loadingToast = toast.loading('Connecting to GitHub...');
+      const loadingToast = toast.loading('Signing you in...');
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
@@ -24,7 +24,9 @@ const Navbar = ({user}) => {
 
       if (error) throw error;
 
-      toast.dismiss(loadingToast);
+      setTimeout(() => {
+        toast.dismiss(loadingToast);
+      }, 2000);
       
     } catch (error) {
       console.error('Error signing in:', error.message);
@@ -43,6 +45,7 @@ const Navbar = ({user}) => {
 
         toast.dismiss(loadingToast);
         navigate('/');
+        toast.success('Signed out successfully');
         
       } catch (error) {
         console.error('Error signing out:', error.message);
