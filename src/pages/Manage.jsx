@@ -123,124 +123,35 @@ export default function Manage() {
         throw new Error('No repository selected');
       }
 
-      // 2. Set up date range for commit history
-      const today = new Date();
-      const lastWeek = new Date(today);
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      const since = lastWeek.toISOString();
-      const until = today.toISOString();
-
-      // 3. Fetch all data in parallel
-      const [allCommitsResponse, issuesResponse, pullsResponse, weeklyCommitsResponse] = await Promise.all([
-        fetchAllCommits(username, currentTeam.repo_name, currentSession.provider_token),
-        axios.get(`https://api.github.com/repos/${username}/${currentTeam.repo_name}/issues?state=all`, {
+      // 2. Fetch repository statistics from our cached backend
+      const response = await axios.get(
+        `http://localhost:5000/api/github/repo-stats/${username}/${currentTeam.repo_name}`,
+        {
           headers: {
-            'Authorization': `Bearer ${currentSession.provider_token}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': `Bearer ${currentSession.provider_token}`
           }
-        }),
-        axios.get(`https://api.github.com/repos/${username}/${currentTeam.repo_name}/pulls`, {
-          headers: {
-            'Authorization': `Bearer ${currentSession.provider_token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        }),
-        axios.get(`https://api.github.com/repos/${username}/${currentTeam.repo_name}/commits`, {
-          headers: {
-            'Authorization': `Bearer ${currentSession.provider_token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          },
-          params: { since, until }
-        })
-      ]);
+        }
+      );
 
-      // 4. Process commit data for chart
-      const dailyCommits = processCommitData(weeklyCommitsResponse.data, today);
-      setDailyCommitData(dailyCommits);
+      if (!response.data.success) {
+        throw new Error('Failed to fetch repository statistics');
+      }
 
-      // 5. Update repository statistics
+      // 3. Update state with the cached data
+      setDailyCommitData(response.data.data.dailyCommits);
       setRepoStats({
-        commitCount: allCommitsResponse.length,
-        issueCount: issuesResponse.data.length,
-        pullCount: pullsResponse.data.length
+        commitCount: response.data.data.commitCount,
+        issueCount: response.data.data.issueCount,
+        pullCount: response.data.data.pullCount,
+        lastUpdated: response.data.data.lastUpdated,
+        isCached: response.data.data.isCached
       });
+
 
     } catch (error) {
       console.error('Error fetching repository data:', error);
       toast.error(error.message || 'Failed to load repository statistics');
     }
-  };
-
-  const fetchAllCommits = async (username, repoName, token, perPage = 100) => {
-    let page = 1;
-    let allCommits = [];
-    let hasMore = true;
-
-    while (hasMore) {
-      const response = await axios.get(
-        `https://api.github.com/repos/${username}/${repoName}/commits`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          },
-          params: { per_page: perPage, page }
-        }
-      );
-
-      const commits = response.data;
-      allCommits.push(...commits);
-
-      hasMore = commits.length === perPage;
-      page++;
-    }
-
-    return allCommits;
-  };
-
-  const processCommitData = (commits, today) => {
-    const dailyCommits = {};
-    const labels = [];
-    const commitCounts = [];
-
-    // Initialize all days with 0 commits
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      const formattedDate = date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric'
-      });
-      dailyCommits[dateStr] = 0;
-      labels.push(formattedDate);
-    }
-
-    // Count commits for each day
-    commits.forEach(commit => {
-      const commitDate = new Date(commit.commit.author.date);
-      const dateStr = commitDate.toISOString().split('T')[0];
-      if (dailyCommits.hasOwnProperty(dateStr)) {
-        dailyCommits[dateStr]++;
-      }
-    });
-
-    // Convert to chart format
-    Object.values(dailyCommits).forEach(count => {
-      commitCounts.push(count);
-    });
-
-    return {
-      labels,
-      datasets: [{
-        label: 'Total Commits',
-        data: commitCounts,
-        backgroundColor: '#9AE65C',
-        hoverBackgroundColor: '#8BD84D',
-        borderRadius: 4,
-        borderWidth: 0,
-      }]
-    };
   };
 
   const handleConnectRepo = async (repo) => {
@@ -306,42 +217,6 @@ export default function Manage() {
     }
   };
 
-  const fetchAllCommitsForMember = async (username, repoName, github_username, token, perPage = 100) => {
-    let page = 1;
-    let allCommits = [];
-    let hasMore = true;
-
-    while (hasMore) {
-      try {
-        const response = await axios.get(
-          `https://api.github.com/repos/${username}/${repoName}/commits`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            },
-            params: { 
-              per_page: perPage, 
-              page,
-              author: github_username 
-            }
-          }
-        );
-
-        const commits = response.data;
-        allCommits.push(...commits);
-
-        hasMore = commits.length === perPage;
-        page++;
-      } catch (error) {
-        console.error(`Error fetching commits for ${github_username} on page ${page}:`, error);
-        break;
-      }
-    }
-
-    return allCommits;
-  };
-
   const getMemberStats = async (session, team) => {
     if (!team || !session) {
       console.error('Missing team or session data');
@@ -362,8 +237,6 @@ export default function Manage() {
       return;
     }
 
-    console.log('Starting to process member profiles:', memberProfiles);
-
     try {
       const updatedProfiles = await Promise.all(memberProfiles.map(async (member) => {
         try {
@@ -373,46 +246,23 @@ export default function Manage() {
             return member;
           }
 
-          console.log(`Fetching stats for member: ${github_username}`);
-
-          const [
-            commits,
-            open_pr_response,
-            closed_pr_response,
-            open_issues_response,
-            closed_issues_response
-          ] = await Promise.all([
-            fetchAllCommitsForMember(username, repoName, github_username, session.provider_token),
-            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:pr+state:open`),
-            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:pr+state:closed`),
-            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:issues+state:open`),
-            axios.get(`https://api.github.com/search/issues?q=repo:${username}/${repoName}+author:${github_username}+type:issues+state:closed`)
-          ], {
-            headers: {
-              'Authorization': `Bearer ${session.provider_token}`,
-              'Accept': 'application/vnd.github.v3+json'
+          // Fetch member statistics from our cached backend
+          const response = await axios.get(
+            `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${session.provider_token}`
+              }
             }
-          });
+          );
 
-          const merged_pr_count = closed_pr_response.data.items.filter(item => 
-            item.pull_request && item.pull_request.merged_at
-          ).length;
-
-          const memberStats = {
-            merged_prs: merged_pr_count,
-            open_prs: open_pr_response.data.total_count,
-            closed_prs: closed_pr_response.data.total_count,
-            commits: commits.length,
-            open_issues: open_issues_response.data.total_count,
-            closed_issues: closed_issues_response.data.total_count,
-            last_commit: commits[0]?.commit?.author?.date || null
-          };
-
-          console.log(`Stats fetched for ${github_username}:`, memberStats);
+          if (!response.data.success) {
+            throw new Error(`Failed to fetch stats for ${github_username}`);
+          }
 
           return {
             ...member,
-            stats: memberStats
+            stats: response.data.data
           };
         } catch (memberError) {
           console.error(`Error fetching stats for ${member.github_username}:`, memberError);
@@ -420,18 +270,11 @@ export default function Manage() {
         }
       }));
 
-      console.log('All member stats fetched:', updatedProfiles);
-
       // Update team state with new member stats
-      setTeam(prevTeam => {
-        const newTeam = {
-          ...prevTeam,
-          member_profiles: updatedProfiles
-        };
-        console.log('Updated team state:', newTeam);
-        return newTeam;
-      });
-
+      setTeam(prevTeam => ({
+        ...prevTeam,
+        member_profiles: updatedProfiles
+      }));
 
     } catch (error) {
       console.error('Error in getMemberStats:', error);
