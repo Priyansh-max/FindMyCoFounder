@@ -7,7 +7,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const Overview = ({session, repostats, team , dailyCommitData }) => {
     const chartRef = useRef(null);
-
+    console.log(repostats);
     // Format the last updated time if available
     const formattedLastUpdate = repostats?.lastUpdated 
       ? new Date(repostats.lastUpdated).toLocaleString('en-US', { 
@@ -173,7 +173,7 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
         {formattedLastUpdate && (
             <div className="text-xs text-muted-foreground flex items-center">
                 <span className={`inline-block w-2 h-2 rounded-full mr-2 ${repostats?.isCached ?'bg-yellow-400' : 'bg-green-400'}`}></span>
-              <span>Data updates every 1 hour</span>
+              <span>Data updates every 1 hour last updated at {formattedLastUpdate}</span>
               {repostats?.isCached && (
                 <span className="ml-1 text-xs italic">(currently you are viewing cached data)</span>
               )}
