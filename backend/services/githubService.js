@@ -121,20 +121,55 @@ class GitHubService {
       return cachedResult;
     }
 
-    const response = await axios.get(
-      `${GITHUB_API_BASE}/repos/${username}/${repoName}/commits`,
-      {
-        headers: this.headers,
-        params: { since, until }
+    // Implement pagination to get all commits in the date range
+    let page = 1;
+    let allCommits = [];
+    let hasMore = true;
+    const perPage = 100; // Maximum allowed by GitHub API
+
+    while (hasMore) {
+      try {
+        const response = await axios.get(
+          `${GITHUB_API_BASE}/repos/${username}/${repoName}/commits`,
+          {
+            headers: this.headers,
+            params: { 
+              since, 
+              until,
+              per_page: perPage,
+              page
+            }
+          }
+        );
+
+        const commits = response.data;
+        if (commits && Array.isArray(commits)) {
+          allCommits.push(...commits);
+        }
+
+        // Check if there are more pages to fetch
+        hasMore = commits.length === perPage;
+        page++;
+        
+        // Add safety mechanism to prevent infinite loops
+        if (page > 10) {
+          console.warn(`Reached maximum page limit (10) for weekly commits of ${username}/${repoName}`);
+          hasMore = false;
+        }
+      } catch (error) {
+        console.error(`Error fetching weekly commits page ${page}:`, error);
+        hasMore = false; // Stop on error
       }
-    );
+    }
+
+    console.log(`Fetched ${allCommits.length} weekly commits for ${username}/${repoName}`);
 
     // Cache the results
-    await setCachedData(cacheKey, response.data);
+    await setCachedData(cacheKey, allCommits);
     
     // Return with metadata for immediate use
     return {
-      data: response.data,
+      data: allCommits,
       metadata: {
         timestamp: new Date().toISOString()
       }

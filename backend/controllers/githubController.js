@@ -150,6 +150,8 @@ const processCommitData = (commits, today) => {
     commits = []; // Default to empty array to avoid errors
   }
 
+  console.log(`Processing ${commits.length} commits for chart`);
+
   const dailyCommits = {};
   const labels = [];
   const commitCounts = [];
@@ -169,14 +171,20 @@ const processCommitData = (commits, today) => {
 
   // Count commits for each day
   commits.forEach(commit => {
-    if (commit && commit.commit && commit.commit.author && commit.commit.author.date) {
-      const commitDate = new Date(commit.commit.author.date);
-      const dateStr = commitDate.toISOString().split('T')[0];
-      if (dailyCommits.hasOwnProperty(dateStr)) {
-        dailyCommits[dateStr]++;
+    try {
+      if (commit && commit.commit && commit.commit.author && commit.commit.author.date) {
+        const commitDate = new Date(commit.commit.author.date);
+        const dateStr = commitDate.toISOString().split('T')[0];
+        if (dailyCommits.hasOwnProperty(dateStr)) {
+          dailyCommits[dateStr]++;
+        }
       }
+    } catch (error) {
+      console.error('Error processing commit:', error);
     }
   });
+
+  console.log('Daily commit counts:', dailyCommits);
 
   // Convert to chart format
   Object.values(dailyCommits).forEach(count => {
