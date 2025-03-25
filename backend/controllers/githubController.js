@@ -19,33 +19,55 @@ const getRepoStats = async (req, res) => {
     const since = lastWeek.toISOString();
     const until = today.toISOString();
 
-    // Fetch all data in parallel
-    const [allCommits, issues, pulls, weeklyCommits] = await Promise.all([
-      githubService.fetchAllCommits(username, repoName),
-      githubService.fetchIssues(username, repoName),
-      githubService.fetchPullRequests(username, repoName),
-      githubService.fetchWeeklyCommits(username, repoName, since, until)
-    ]);
+    try {
+      // Fetch all data in parallel
+      const [allCommitsResult, issuesResult, pullsResult, weeklyCommitsResult] = await Promise.all([
+        githubService.fetchAllCommits(username, repoName),
+        githubService.fetchIssues(username, repoName),
+        githubService.fetchPullRequests(username, repoName),
+        githubService.fetchWeeklyCommits(username, repoName, since, until)
+      ]);
 
-    // Process commit data for chart
-    const dailyCommits = processCommitData(weeklyCommits, today);
+      // Check and extract data and metadata
+      const allCommits = allCommitsResult?.data || [];
+      const issues = issuesResult?.data || [];
+      const pulls = pullsResult?.data || [];
+      const weeklyCommits = weeklyCommitsResult?.data || [];
+      
+      // Get timestamps, with safeguards in case metadata is missing
+      const timestamps = [
+          allCommitsResult?.metadata?.timestamp, 
+          issuesResult?.metadata?.timestamp, 
+          pullsResult?.metadata?.timestamp, 
+          weeklyCommitsResult?.metadata?.timestamp
+      ].filter(Boolean); // Remove any undefined/null values
+      
+      // Use the earliest timestamp as lastUpdated, or current time if no timestamps
+      const lastUpdated = timestamps.length > 0 ? timestamps.sort()[0] : new Date().toISOString();
+      
+      // Process commit data for chart
+      const dailyCommits = processCommitData(weeklyCommits, today);
 
-    // Check if we're using cached data and get the timestamp
-    const todayDate = today.toISOString().split('T')[0];
-    const cacheKey = `github:weekly:${username}:${repoName}:last7days:${todayDate}`;
-    const cacheExists = await getCachedData(cacheKey) !== null;
+      // Check if we're using cached data and get the timestamp
+      const todayDate = today.toISOString().split('T')[0];
+      const cacheKey = `github:weekly:${username}:${repoName}:last7days:${todayDate}`;
+      const cacheExists = await getCachedData(cacheKey) !== null;
 
-    res.json({
-      success: true,
-      data: {
-        commitCount: allCommits.length,
-        issueCount: issues.length,
-        pullCount: pulls.length,
-        dailyCommits,
-        lastUpdated: new Date().toISOString(),
-        isCached: cacheExists
-      }
-    });
+      res.json({
+        success: true,
+        data: {
+          commitCount: Array.isArray(allCommits) ? allCommits.length : 0,
+          issueCount: Array.isArray(issues) ? issues.length : 0,
+          pullCount: Array.isArray(pulls) ? pulls.length : 0,
+          dailyCommits,
+          lastUpdated: lastUpdated,
+          isCached: cacheExists
+        }
+      });
+    } catch (innerError) {
+      console.error('Error processing GitHub data:', innerError);
+      throw new Error(`Failed to process GitHub data: ${innerError.message}`);
+    }
   } catch (error) {
     console.error('Error fetching repository data:', error);
     res.status(500).json({ 
@@ -67,31 +89,50 @@ const getMemberStats = async (req, res) => {
     const githubService = new GitHubService(token);
     const todayDate = new Date().toISOString().split('T')[0];
 
-    // Fetch all member data in parallel
-    const [commits, issues, pullRequests] = await Promise.all([
-      githubService.fetchMemberCommits(username, repoName, githubUsername),
-      githubService.fetchMemberIssues(username, repoName, githubUsername),
-      githubService.fetchMemberPullRequests(username, repoName, githubUsername)
-    ]);
+    try {
+      // Fetch all member data in parallel
+      const [commitsResult, issuesResult, pullRequestsResult] = await Promise.all([
+        githubService.fetchMemberCommits(username, repoName, githubUsername),
+        githubService.fetchMemberIssues(username, repoName, githubUsername),
+        githubService.fetchMemberPullRequests(username, repoName, githubUsername)
+      ]);
 
-    // Check if we're using cached data
-    const commitsCacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}`;
-    const commitsCached = await getCachedData(commitsCacheKey) !== null;
+      // Extract data and metadata with safe fallbacks
+      const commits = commitsResult?.data || [];
+      const issues = issuesResult?.data || { open: 0, closed: 0 };
+      const pullRequests = pullRequestsResult?.data || { open: 0, closed: 0, merged: 0 };
 
-    res.json({
-      success: true,
-      data: {
-        commits: commits.length,
-        last_commit: commits[0]?.commit?.author?.date || null,
-        open_issues: issues.open,
-        closed_issues: issues.closed,
-        open_prs: pullRequests.open,
-        closed_prs: pullRequests.closed,
-        merged_prs: pullRequests.merged,
-        lastUpdated: new Date().toISOString(),
-        isCached: commitsCached
-      }
-    });
+      // Get the earliest timestamp to use as lastUpdated, with fallbacks
+      const timestamps = [
+        commitsResult?.metadata?.timestamp,
+        issuesResult?.metadata?.timestamp, 
+        pullRequestsResult?.metadata?.timestamp
+      ].filter(Boolean); // Remove any undefined/null values
+      
+      const lastUpdated = timestamps.length > 0 ? timestamps.sort()[0] : new Date().toISOString();
+
+      // Check if we're using cached data
+      const commitsCacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}`;
+      const commitsCached = await getCachedData(commitsCacheKey) !== null;
+
+      res.json({
+        success: true,
+        data: {
+          commits: Array.isArray(commits) ? commits.length : 0,
+          last_commit: Array.isArray(commits) && commits[0]?.commit?.author?.date || null,
+          open_issues: issues.open || 0,
+          closed_issues: issues.closed || 0,
+          open_prs: pullRequests.open || 0,
+          closed_prs: pullRequests.closed || 0,
+          merged_prs: pullRequests.merged || 0,
+          lastUpdated: lastUpdated,
+          isCached: commitsCached
+        }
+      });
+    } catch (innerError) {
+      console.error('Error processing member data:', innerError);
+      throw new Error(`Failed to process member data: ${innerError.message}`);
+    }
   } catch (error) {
     console.error('Error fetching member statistics:', error);
     res.status(500).json({ 
@@ -103,6 +144,12 @@ const getMemberStats = async (req, res) => {
 
 // Helper function to process commit data for chart
 const processCommitData = (commits, today) => {
+  // Defensive check to ensure commits is an array
+  if (!commits || !Array.isArray(commits)) {
+    console.warn('processCommitData received invalid data:', commits);
+    commits = []; // Default to empty array to avoid errors
+  }
+
   const dailyCommits = {};
   const labels = [];
   const commitCounts = [];
@@ -122,10 +169,12 @@ const processCommitData = (commits, today) => {
 
   // Count commits for each day
   commits.forEach(commit => {
-    const commitDate = new Date(commit.commit.author.date);
-    const dateStr = commitDate.toISOString().split('T')[0];
-    if (dailyCommits.hasOwnProperty(dateStr)) {
-      dailyCommits[dateStr]++;
+    if (commit && commit.commit && commit.commit.author && commit.commit.author.date) {
+      const commitDate = new Date(commit.commit.author.date);
+      const dateStr = commitDate.toISOString().split('T')[0];
+      if (dailyCommits.hasOwnProperty(dateStr)) {
+        dailyCommits[dateStr]++;
+      }
     }
   });
 
