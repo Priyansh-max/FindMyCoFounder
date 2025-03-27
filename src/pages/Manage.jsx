@@ -10,6 +10,7 @@ import axios from "axios";
 import Contact from "../components/manage-team/Contact";
 import Details from "../components/manage-team/Details";
 import Overview from "../components/manage-team/Overview";
+import Submit from "../components/manage-team/Submit";
 
 // Set document title
 document.title = "Team Management | CoFoundry";
@@ -44,6 +45,7 @@ export default function Manage() {
 
         // 2. Check if GitHub token is missing or expired
         if (!session.provider_token) {
+          //set delay of 2 seconds before signing out
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
           navigate('/');
@@ -290,7 +292,8 @@ export default function Manage() {
         return <Overview session={session} repostats={repostats} team={team} dailyCommitData={dailyCommitData}  />     
       case 'details':
         return <Details team={team}/>
-      
+      case 'submit':
+        return <Submit session={session} ideaId={ideaId} team={team} />
       default:
         return null;
     }
@@ -427,7 +430,7 @@ export default function Manage() {
         {/* Tabs */}
         <div className="border-b border-border">
           <div className="flex space-x-8">
-            {['overview', 'details', 'contact'].map((tab) => (
+            {['overview', 'details', 'contact', 'submit'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
