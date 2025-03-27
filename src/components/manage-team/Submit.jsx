@@ -28,6 +28,8 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
   const [team, setTeam] = useState(initialTeam);
   const [repostats, setRepostats] = useState(initialRepostats);
   const [isFetchingFreshData, setIsFetchingFreshData] = useState(false);
+  const [showSubmissionPreview, setShowSubmissionPreview] = useState(false);
+  const [currentSubmissionStep, setCurrentSubmissionStep] = useState('');
 
   // Update state when props change
   useEffect(() => {
@@ -50,8 +52,6 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         console.error("Missing username or repository name");
         return false;
       }
-
-      toast.loading("Fetching fresh GitHub statistics...");
       
       // Add timestamp to bust cache and set headers
       const timestamp = Date.now();
@@ -64,7 +64,8 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         },
         params: {
           cache: 'false',
-          t: timestamp
+          t: timestamp,
+          disableCache: 'true' // Explicitly disable caching on the server side
         }
       };
       
@@ -80,7 +81,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       
       // Log the response to verify data is fresh
       console.log("Fresh repo stats received:", {
-        isCached: repoStatsResponse.data.data.isCached,
+        fromCache: repoStatsResponse.data.data.fromCache || false,
         lastUpdated: repoStatsResponse.data.data.lastUpdated,
         commitCount: repoStatsResponse.data.data.commitCount
       });
@@ -123,14 +124,17 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
           
           // Log to verify data is fresh
           console.log(`Fresh stats for ${github_username}:`, {
-            isCached: response.data.data.isCached,
+            fromCache: response.data.data.fromCache || false,
             commits: response.data.data.commits,
             lastUpdated: response.data.data.lastUpdated
           });
           
           return {
             ...member,
-            stats: response.data.data
+            stats: {
+              ...response.data.data,
+              isCached: false // Explicitly mark as fresh data
+            }
           };
         } catch (memberError) {
           console.error(`Error fetching stats for ${member.github_username}:`, memberError);
@@ -144,13 +148,10 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         member_profiles: updatedProfiles
       }));
       
-      toast.dismiss();
       console.log("Successfully fetched fresh data for ALL GitHub statistics!");
       return true;
     } catch (error) {
       console.error('Error fetching fresh data:', error);
-      toast.dismiss();
-      toast.error('Failed to get latest project statistics');
       return false;
     } finally {
       setIsFetchingFreshData(false);
@@ -252,28 +253,40 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         return;
       }
 
-      // Fetch fresh data before submission
-      toast.loading("Fetching latest GitHub statistics to ensure accurate submission...", {
-        duration: 4000 // Show this toast for 4 seconds minimum
-      });
+      // Start submission process with visual feedback
+      setCurrentSubmissionStep('starting');
+      toast.loading("Starting project submission process...", { duration: 2000 });
       
+      // Show submission preview
+      setShowSubmissionPreview(true);
+      
+      // Fetch fresh data before submission - automatic without user intervention
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Short pause for visual flow
+      
+      setCurrentSubmissionStep('fetching');
+      toast.loading("Fetching latest GitHub statistics for your project...", { duration: 4000 });
       const freshDataFetched = await fetchFreshData();
-      toast.dismiss();
+      
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause for visual flow
       
       if (!freshDataFetched) {
+        toast.dismiss();
         const wantToContinue = window.confirm(
           "We couldn't fetch the most up-to-date GitHub statistics. Do you want to proceed with potentially outdated data?\n\n" +
           "For the most accurate submission, we recommend trying again to get fresh data."
         );
         
         if (!wantToContinue) {
+          setShowSubmissionPreview(false);
           toast.error("Submission canceled. Please try again when GitHub data can be refreshed.");
           return;
         }
         
         toast.warning("Proceeding with existing data. Some GitHub statistics may not be up-to-date.");
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Let user read warning
       } else {
-        toast.success("Successfully fetched the latest GitHub statistics! Your submission will reflect your most recent work.");
+        toast.success("Successfully fetched the latest GitHub statistics!");
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Short pause to see success message
       }
       
       // Set loading state for all fields
@@ -283,7 +296,9 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         description: { ...prev.description, loading: true }
       }));
 
-      // Validate using backend
+      // Validate user-provided fields
+      setCurrentSubmissionStep('validating');
+      toast.loading("Validating your project details...");
       const response = await axios.post('http://localhost:5000/api/validate/submit-project', {
         projectLink,
         videoLink,
@@ -293,6 +308,8 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
           'Authorization': `Bearer ${session?.access_token}`,
         }
       });
+      
+      toast.dismiss();
 
       // Update field status based on validation
       setFieldStatus({
@@ -321,10 +338,16 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
             ))}
           </div>
         );
+        toast.error("Some fields need your attention.");
+        setShowSubmissionPreview(false);
         return;
       }
+      
+      toast.success("All fields validated successfully!");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause to see success message
 
       //upload logo 
+      setCurrentSubmissionStep('uploading');
       const formData = new FormData();
       formData.append('logo', logo);
 
@@ -360,15 +383,23 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       toast.dismiss();
       
       if (!logoResponse.data.success) {
+        setShowSubmissionPreview(false);
         throw new Error('Failed to upload logo');
       }
 
       const logoUrl = logoResponse.data.logoUrl;
       toast.success("Logo uploaded successfully!");
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause to see success message
 
       // If validation successful, proceed with form submission
       setIsSubmitting(true);
-      toast.loading("Submitting project data...");
+      setCurrentSubmissionStep('preparing');
+      toast.loading("Preparing final submission data...");
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Short pause for visual flow
+      
+      // Visual indication of which data we're submitting
+      setCurrentSubmissionStep('submitting');
+      toast.loading("Submitting project details and GitHub activity stats...");
       
       // Create form data for final submission
       const submitFormData = new FormData();
@@ -383,34 +414,33 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       submitFormData.append('repoStats', JSON.stringify(repostats));
       submitFormData.append('memberStats', JSON.stringify(team.member_profiles));
 
-      // Log form data properly
-      console.log('Form Data Contents:');
-      for (let [key, value] of submitFormData.entries()) {
-        console.log(`${key}:`, typeof value === 'string' && value.length > 100 
-          ? value.substring(0, 100) + '...' 
-          : value);
-      }
-
-      // Log the actual values being submitted (more concise)
-      console.log('Submission Values Summary:', {
-        projectLink,
-        videoLink,
-        description: description.length > 50 ? description.substring(0, 50) + '...' : description,
-        logoUrl,
-        ideaId,
-        repoName: team.repo_name,
-        repoUrl: team.repo_url,
-        start_date: team.updated_at,
-        repoStats: {
-          commitCount: repostats?.commitCount,
-          issueCount: repostats?.issueCount,
-          pullCount: repostats?.pullCount,
-          isCached: repostats?.isCached
+      // Log submission summary to console
+      console.log('Project Submission Summary:', {
+        projectDetails: {
+          link: projectLink,
+          video: videoLink ? "Provided" : "Not provided",
+          description: description.substring(0, 50) + "...",
+          logo: logoUrl
         },
-        memberCount: team.member_profiles?.length
+        repositoryStats: {
+          repo: team.repo_name,
+          commits: repostats?.commitCount || 0,
+          pulls: repostats?.pullCount || 0,
+          issues: repostats?.issueCount || 0
+        },
+        teamStats: {
+          memberCount: team.member_profiles?.length || 0,
+          // Example of first member stats if available
+          firstMember: team.member_profiles?.length > 0 ? {
+            name: team.member_profiles[0].github_username,
+            commits: team.member_profiles[0].stats?.commits || 0
+          } : "No members"
+        }
       });
       
-      // Submit to backend
+      // Submit to backend with a slight delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Short pause for visual flow
+      
       const submitResponse = await axios.post(
         `http://localhost:5000/api/manage-team/submit-project/${ideaId}`,
         submitFormData,
@@ -425,25 +455,46 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       toast.dismiss();
       
       if (submitResponse.data.success) {
-        toast.success('Project submitted successfully! Your submission includes the latest GitHub statistics.');
-        // Reset form
-        setProjectLink('');
-        setVideoLink('');
-        setDocumentLink('');
-        setDescription('');
-        setLogo(null);
-        setLogoPreview(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        setCurrentSubmissionStep('success');
+        // Show success animation
+        toast.success('Project submitted successfully!');
+        
+        setTimeout(() => {
+          toast.success('Your submission includes all GitHub statistics from the entire project duration.', {
+            duration: 5000,
+            icon: '📊'
+          });
+        }, 1500);
+        
+        // Reset form with a slight delay for better UX
+        setTimeout(() => {
+          setProjectLink('');
+          setVideoLink('');
+          setDocumentLink('');
+          setDescription('');
+          setLogo(null);
+          setLogoPreview(null);
+          setShowSubmissionPreview(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }, 3000);
       } else {
+        setCurrentSubmissionStep('error');
         toast.error(submitResponse.data.error || 'Failed to submit project');
+        setTimeout(() => {
+          setShowSubmissionPreview(false);
+        }, 3000);
       }
     } catch (error) {
       console.error('Error submitting project:', error);
       toast.dismiss();
       toast.error('Failed to submit project: ' + (error.message || 'Unknown error'));
       resetFieldStatus();
+      setCurrentSubmissionStep('error');
+      setTimeout(() => {
+        setShowSubmissionPreview(false);
+      }, 3000);
     } finally {
       setIsSubmitting(false);
     }
@@ -460,6 +511,96 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       return <XCircle className="w-4 h-4 text-destructive" />;
     }
     return null;
+  };
+
+  // Submission Preview Component
+  const SubmissionPreview = () => {
+    if (!showSubmissionPreview) return null;
+    
+    // Determine which step is active
+    const isActive = (step) => currentSubmissionStep === step;
+    
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="fixed bottom-6 right-6 bg-card shadow-lg border border-border rounded-lg p-4 w-80 z-50"
+      >
+        <h4 className="font-semibold text-sm mb-3 flex items-center justify-between">
+          <span>Submission Progress</span>
+          {currentSubmissionStep === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
+          {currentSubmissionStep === 'error' && <AlertCircle className="h-4 w-4 text-destructive" />}
+        </h4>
+        
+        <div className="space-y-2 text-xs">
+          <div className={`flex items-center gap-2 ${isActive('starting') ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+            {isActive('starting') ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
+            <span>Initializing submission</span>
+          </div>
+          
+          <div className={`flex items-center gap-2 ${isActive('fetching') ? 'text-primary font-medium' : (currentSubmissionStep === 'starting' ? 'text-muted-foreground/50' : 'text-muted-foreground')}`}>
+            {isActive('fetching') ? <Loader2 className="h-3 w-3 animate-spin" /> : 
+              (currentSubmissionStep === 'starting' ? <div className="h-3 w-3 rounded-full border border-muted-foreground/50" /> : <CheckCircle className="h-3 w-3" />)}
+            <span>Fetching GitHub statistics</span>
+          </div>
+          
+          <div className={`flex items-center gap-2 ${isActive('validating') ? 'text-primary font-medium' : (['starting', 'fetching'].includes(currentSubmissionStep) ? 'text-muted-foreground/50' : 'text-muted-foreground')}`}>
+            {isActive('validating') ? <Loader2 className="h-3 w-3 animate-spin" /> : 
+              (['starting', 'fetching'].includes(currentSubmissionStep) ? <div className="h-3 w-3 rounded-full border border-muted-foreground/50" /> : <CheckCircle className="h-3 w-3" />)}
+            <span>Validating project details</span>
+          </div>
+          
+          <div className={`flex items-center gap-2 ${isActive('uploading') ? 'text-primary font-medium' : (['starting', 'fetching', 'validating'].includes(currentSubmissionStep) ? 'text-muted-foreground/50' : 'text-muted-foreground')}`}>
+            {isActive('uploading') ? <Loader2 className="h-3 w-3 animate-spin" /> : 
+              (['starting', 'fetching', 'validating'].includes(currentSubmissionStep) ? <div className="h-3 w-3 rounded-full border border-muted-foreground/50" /> : <CheckCircle className="h-3 w-3" />)}
+            <span>Uploading project logo</span>
+          </div>
+          
+          <div className={`flex items-center gap-2 ${isActive('preparing') ? 'text-primary font-medium' : (['starting', 'fetching', 'validating', 'uploading'].includes(currentSubmissionStep) ? 'text-muted-foreground/50' : 'text-muted-foreground')}`}>
+            {isActive('preparing') ? <Loader2 className="h-3 w-3 animate-spin" /> : 
+              (['starting', 'fetching', 'validating', 'uploading'].includes(currentSubmissionStep) ? <div className="h-3 w-3 rounded-full border border-muted-foreground/50" /> : <CheckCircle className="h-3 w-3" />)}
+            <span>Preparing submission data</span>
+          </div>
+          
+          <div className={`flex items-center gap-2 ${isActive('submitting') ? 'text-primary font-medium' : (['starting', 'fetching', 'validating', 'uploading', 'preparing'].includes(currentSubmissionStep) ? 'text-muted-foreground/50' : 'text-muted-foreground')}`}>
+            {isActive('submitting') ? <Loader2 className="h-3 w-3 animate-spin" /> : 
+              (['starting', 'fetching', 'validating', 'uploading', 'preparing'].includes(currentSubmissionStep) ? <div className="h-3 w-3 rounded-full border border-muted-foreground/50" /> : <CheckCircle className="h-3 w-3" />)}
+            <span>Submitting to server</span>
+          </div>
+          
+          {isActive('success') && (
+            <div className="flex items-center gap-2 text-green-500 font-medium mt-2">
+              <CheckCircle className="h-3 w-3" />
+              <span>Submission completed successfully!</span>
+            </div>
+          )}
+          
+          {isActive('error') && (
+            <div className="flex items-center gap-2 text-destructive font-medium mt-2">
+              <AlertCircle className="h-3 w-3" />
+              <span>Error during submission. Please try again.</span>
+            </div>
+          )}
+        </div>
+        
+        {(currentSubmissionStep === 'submitting' || currentSubmissionStep === 'success') && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="text-xs font-medium mb-1">Submitting Data Summary:</div>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+              <span className="text-muted-foreground">Repository:</span>
+              <span className="truncate">{team?.repo_name}</span>
+              
+              <span className="text-muted-foreground">Commits:</span>
+              <span>{repostats?.commitCount || 0}</span>
+              
+              <span className="text-muted-foreground">Team Members:</span>
+              <span>{team?.member_profiles?.length || 0}</span>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
   };
 
   return (
@@ -748,7 +889,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         <div className="mt-6 bg-muted/30 border border-border rounded-lg p-4">
           <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
             <Github className="h-5 w-5" /> 
-            GitHub Statistics to be Included
+            GitHub Statistics to be Included in Submission
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -814,35 +955,16 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
             </div>
           </div>
           
-          <div className="mt-4 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={fetchFreshData}
-              disabled={isFetchingFreshData}
-              className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
-            >
-              {isFetchingFreshData ? (
-                <>
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Refreshing data...
-                </>
-              ) : (
-                <>
-                  <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh GitHub Statistics
-                </>
-              )}
-            </button>
-            <span className="text-xs text-muted-foreground">
-              {repostats?.isCached 
-                ? "Using cached data. Click refresh to get the latest stats." 
-                : "Using fresh data from GitHub."}
+          <div className="mt-4 text-center">
+            <span className="text-xs text-muted-foreground px-3 py-1.5 bg-background border border-border rounded-full inline-block">
+              These statistics reflect all activity since the repository was connected on {new Date(team?.updated_at).toLocaleDateString()}
             </span>
           </div>
         </div>
       )}
+
+      {/* Submission Preview Overlay */}
+      <SubmissionPreview />
 
       <style jsx>{`
         @keyframes progress-stripes {
