@@ -1,12 +1,10 @@
-import { useState, useRef } from 'react';
-import { Upload, Video, Text, Image, Info, FileText, AlertCircle, Loader2, CheckCircle, Link as LinkIcon, CheckCircle2, XCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Upload, Video, Text, Image, Info, FileText, AlertCircle, Loader2, CheckCircle, Link as LinkIcon, CheckCircle2, XCircle, Github } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
-const Submit = ({ session, ideaId, team }) => {
-
-  console.log(team);
+const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostats }) => {
   // Form state
   const [projectLink, setProjectLink] = useState('');
   const [videoLink, setVideoLink] = useState('');
@@ -27,6 +25,137 @@ const Submit = ({ session, ideaId, team }) => {
     videoLink: { loading: false, valid: null },
     description: { loading: false, valid: null }
   });
+  const [team, setTeam] = useState(initialTeam);
+  const [repostats, setRepostats] = useState(initialRepostats);
+  const [isFetchingFreshData, setIsFetchingFreshData] = useState(false);
+
+  // Update state when props change
+  useEffect(() => {
+    setTeam(initialTeam);
+    setRepostats(initialRepostats);
+  }, [initialTeam, initialRepostats]);
+
+  // Fetch fresh non-cached data before submission
+  const fetchFreshData = async () => {
+    if (!session || !team) {
+      console.error("Missing session or team data");
+      return false;
+    }
+
+    try {
+      setIsFetchingFreshData(true);
+      const username = session.user.user_metadata.user_name;
+      
+      if (!username || !team.repo_name) {
+        console.error("Missing username or repository name");
+        return false;
+      }
+
+      toast.loading("Fetching fresh GitHub statistics...");
+      
+      // Add timestamp to bust cache and set headers
+      const timestamp = Date.now();
+      const requestConfig = {
+        headers: {
+          'Authorization': `Bearer ${session.provider_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        params: {
+          cache: 'false',
+          t: timestamp
+        }
+      };
+      
+      // Fetch fresh repo stats with cache-busting parameter
+      const repoStatsResponse = await axios.get(
+        `http://localhost:5000/api/github/repo-stats/${username}/${team.repo_name}/${team.updated_at}`,
+        requestConfig
+      );
+      
+      if (!repoStatsResponse.data.success) {
+        throw new Error('Failed to fetch fresh repository statistics');
+      }
+      
+      // Log the response to verify data is fresh
+      console.log("Fresh repo stats received:", {
+        isCached: repoStatsResponse.data.data.isCached,
+        lastUpdated: repoStatsResponse.data.data.lastUpdated,
+        commitCount: repoStatsResponse.data.data.commitCount
+      });
+      
+      // Update repo stats
+      const freshRepoStats = {
+        commitCount: repoStatsResponse.data.data.commitCount,
+        issueCount: repoStatsResponse.data.data.issueCount,
+        pullCount: repoStatsResponse.data.data.pullCount,
+        dailyCommits: repoStatsResponse.data.data.dailyCommits,
+        lastUpdated: repoStatsResponse.data.data.lastUpdated,
+        isCached: false
+      };
+      setRepostats(freshRepoStats);
+      
+      // Fetch fresh member stats for each team member
+      const memberProfiles = team.member_profiles;
+      if (!memberProfiles || !Array.isArray(memberProfiles)) {
+        console.error('No member profiles found or invalid data');
+        return false;
+      }
+      
+      const updatedProfiles = await Promise.all(memberProfiles.map(async (member) => {
+        try {
+          const github_username = member.github_username;
+          if (!github_username) {
+            console.warn(`GitHub username not found for member: ${member.full_name}`);
+            return member;
+          }
+          
+          // Fetch fresh member statistics with cache-busting parameter
+          const response = await axios.get(
+            `http://localhost:5000/api/github/member-stats/${username}/${team.repo_name}/${github_username}/${team.updated_at}`,
+            requestConfig
+          );
+          
+          if (!response.data.success) {
+            throw new Error(`Failed to fetch stats for ${github_username}`);
+          }
+          
+          // Log to verify data is fresh
+          console.log(`Fresh stats for ${github_username}:`, {
+            isCached: response.data.data.isCached,
+            commits: response.data.data.commits,
+            lastUpdated: response.data.data.lastUpdated
+          });
+          
+          return {
+            ...member,
+            stats: response.data.data
+          };
+        } catch (memberError) {
+          console.error(`Error fetching stats for ${member.github_username}:`, memberError);
+          return member;
+        }
+      }));
+      
+      // Update team with fresh data
+      setTeam(prevTeam => ({
+        ...prevTeam,
+        member_profiles: updatedProfiles
+      }));
+      
+      toast.dismiss();
+      console.log("Successfully fetched fresh data for ALL GitHub statistics!");
+      return true;
+    } catch (error) {
+      console.error('Error fetching fresh data:', error);
+      toast.dismiss();
+      toast.error('Failed to get latest project statistics');
+      return false;
+    } finally {
+      setIsFetchingFreshData(false);
+    }
+  };
 
   const resetFieldStatus = () => {
     setFieldStatus({
@@ -80,46 +209,16 @@ const Submit = ({ session, ideaId, team }) => {
     reader.readAsDataURL(file);
   };
 
-  const uploadLogo = async () => {
-    if (!logo) return null;
-
-    try {
-      setUploadProgress(0);
-      setUploadSuccess(false);
-      setUploadComplete(false);
-
-      console.log(session);
-
-      const response = await axios.post(
-        `http://localhost:5000/api/project-submit/logo-upload`, 
-        logo,
-        {
-          headers: {
-            'authorization': `Bearer ${session.access_token}`
-          },
-          onUploadProgress: (progressEvent) => {
-            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(progress);
-          },
-        }
-      );
-
-      setUploadSuccess(true);
-      setUploadComplete(true);
-      return response.data.logoUrl;
-    } catch (error) {
-      console.error('Resume upload error:', error);
-      setUploadSuccess(false);
-      setUploadComplete(false);
-      throw new Error('Failed to upload resume');
-    }
-  };
-
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     try {
+      if (!team) {
+        toast.error("No team data available. Please connect a repository first.");
+        return;
+      }
+      
       setError('');
       resetFieldStatus();
 
@@ -151,6 +250,30 @@ const Submit = ({ session, ideaId, team }) => {
           </div>
         );
         return;
+      }
+
+      // Fetch fresh data before submission
+      toast.loading("Fetching latest GitHub statistics to ensure accurate submission...", {
+        duration: 4000 // Show this toast for 4 seconds minimum
+      });
+      
+      const freshDataFetched = await fetchFreshData();
+      toast.dismiss();
+      
+      if (!freshDataFetched) {
+        const wantToContinue = window.confirm(
+          "We couldn't fetch the most up-to-date GitHub statistics. Do you want to proceed with potentially outdated data?\n\n" +
+          "For the most accurate submission, we recommend trying again to get fresh data."
+        );
+        
+        if (!wantToContinue) {
+          toast.error("Submission canceled. Please try again when GitHub data can be refreshed.");
+          return;
+        }
+        
+        toast.warning("Proceeding with existing data. Some GitHub statistics may not be up-to-date.");
+      } else {
+        toast.success("Successfully fetched the latest GitHub statistics! Your submission will reflect your most recent work.");
       }
       
       // Set loading state for all fields
@@ -201,7 +324,6 @@ const Submit = ({ session, ideaId, team }) => {
         return;
       }
 
-      console.log(logo);
       //upload logo 
       const formData = new FormData();
       formData.append('logo', logo);
@@ -211,6 +333,8 @@ const Submit = ({ session, ideaId, team }) => {
       setUploadSuccess(false);
       setUploadComplete(false);
 
+      toast.loading("Uploading project logo...");
+      
       const logoResponse = await axios.post(
         'http://localhost:5000/api/project-submit/logo-upload', 
         formData, 
@@ -233,24 +357,58 @@ const Submit = ({ session, ideaId, team }) => {
         }
       );
 
+      toast.dismiss();
+      
       if (!logoResponse.data.success) {
         throw new Error('Failed to upload logo');
       }
 
       const logoUrl = logoResponse.data.logoUrl;
-      console.log(logoUrl);
+      toast.success("Logo uploaded successfully!");
 
       // If validation successful, proceed with form submission
       setIsSubmitting(true);
+      toast.loading("Submitting project data...");
       
       // Create form data for final submission
       const submitFormData = new FormData();
       submitFormData.append('projectLink', projectLink);
       submitFormData.append('videoLink', videoLink);
-      submitFormData.append('documentLink', documentLink);
       submitFormData.append('description', description);
       submitFormData.append('logoUrl', logoUrl); // Send the logo URL instead of file
       submitFormData.append('ideaId', ideaId);
+      submitFormData.append('repoName', team.repo_name);
+      submitFormData.append('repoUrl', team.repo_url);
+      submitFormData.append('start_date', team.updated_at);
+      submitFormData.append('repoStats', JSON.stringify(repostats));
+      submitFormData.append('memberStats', JSON.stringify(team.member_profiles));
+
+      // Log form data properly
+      console.log('Form Data Contents:');
+      for (let [key, value] of submitFormData.entries()) {
+        console.log(`${key}:`, typeof value === 'string' && value.length > 100 
+          ? value.substring(0, 100) + '...' 
+          : value);
+      }
+
+      // Log the actual values being submitted (more concise)
+      console.log('Submission Values Summary:', {
+        projectLink,
+        videoLink,
+        description: description.length > 50 ? description.substring(0, 50) + '...' : description,
+        logoUrl,
+        ideaId,
+        repoName: team.repo_name,
+        repoUrl: team.repo_url,
+        start_date: team.updated_at,
+        repoStats: {
+          commitCount: repostats?.commitCount,
+          issueCount: repostats?.issueCount,
+          pullCount: repostats?.pullCount,
+          isCached: repostats?.isCached
+        },
+        memberCount: team.member_profiles?.length
+      });
       
       // Submit to backend
       const submitResponse = await axios.post(
@@ -264,8 +422,10 @@ const Submit = ({ session, ideaId, team }) => {
         }
       );
       
+      toast.dismiss();
+      
       if (submitResponse.data.success) {
-        toast.success('Project submitted successfully');
+        toast.success('Project submitted successfully! Your submission includes the latest GitHub statistics.');
         // Reset form
         setProjectLink('');
         setVideoLink('');
@@ -277,11 +437,12 @@ const Submit = ({ session, ideaId, team }) => {
           fileInputRef.current.value = '';
         }
       } else {
-        toast.error(submitResponse.data.error || 'Failed to submit project1111');
+        toast.error(submitResponse.data.error || 'Failed to submit project');
       }
     } catch (error) {
       console.error('Error submitting project:', error);
-      toast.error('Failed to submit project');
+      toast.dismiss();
+      toast.error('Failed to submit project: ' + (error.message || 'Unknown error'));
       resetFieldStatus();
     } finally {
       setIsSubmitting(false);
@@ -316,6 +477,23 @@ const Submit = ({ session, ideaId, team }) => {
             <span>{showGuidelines ? 'Hide' : 'Show'} Tips</span>
           </button>
         </div>
+
+        {/* Repository Status */}
+        {team && team.repo_name ? (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-md p-3 mb-6">
+            <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-400">
+              <Github className="h-4 w-4" />
+              <span>Connected to repository: <strong>{team.repo_name}</strong></span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 rounded-md p-3 mb-6">
+            <div className="flex items-center gap-2 text-sm text-yellow-800 dark:text-yellow-400">
+              <AlertCircle className="h-4 w-4" />
+              <span>Please connect a GitHub repository before submitting your project.</span>
+            </div>
+          </div>
+        )}
 
         {/* Guidelines section */}
         {showGuidelines && (
@@ -564,6 +742,107 @@ const Submit = ({ session, ideaId, team }) => {
           
         </div>
       </div>
+
+      {/* GitHub Statistics Section */}
+      {team && team.repo_name && (
+        <div className="mt-6 bg-muted/30 border border-border rounded-lg p-4">
+          <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
+            <Github className="h-5 w-5" /> 
+            GitHub Statistics to be Included
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Repository Stats */}
+            <div className="border border-border rounded-md p-3 bg-card">
+              <h4 className="font-medium text-sm mb-2">Repository Activity</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Commits:</span>
+                  <span className="font-medium">{repostats?.commitCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Pull Requests:</span>
+                  <span className="font-medium">{repostats?.pullCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Issues:</span>
+                  <span className="font-medium">{repostats?.issueCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Data Freshness:</span>
+                  <span className={`font-medium ${repostats?.isCached ? 'text-yellow-500' : 'text-green-500'}`}>
+                    {repostats?.isCached ? 'Cached' : 'Fresh'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Last Updated:</span>
+                  <span className="font-medium text-xs">
+                    {repostats?.lastUpdated 
+                      ? new Date(repostats.lastUpdated).toLocaleString() 
+                      : 'Not available'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Team Stats Summary */}
+            <div className="border border-border rounded-md p-3 bg-card">
+              <h4 className="font-medium text-sm mb-2">Team Contributions</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Team Members:</span>
+                  <span className="font-medium">{team?.member_profiles?.length || 0}</span>
+                </div>
+                
+                {team?.member_profiles?.slice(0, 3).map((member, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-muted-foreground truncate max-w-[150px]">
+                      {member.github_username || member.full_name}:
+                    </span>
+                    <span className="font-medium">
+                      {member.stats?.commits || 0} commits
+                    </span>
+                  </div>
+                ))}
+                
+                {team?.member_profiles?.length > 3 && (
+                  <div className="text-xs text-muted-foreground text-center mt-1">
+                    +{team.member_profiles.length - 3} more team members
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={fetchFreshData}
+              disabled={isFetchingFreshData}
+              className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+            >
+              {isFetchingFreshData ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Refreshing data...
+                </>
+              ) : (
+                <>
+                  <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh GitHub Statistics
+                </>
+              )}
+            </button>
+            <span className="text-xs text-muted-foreground">
+              {repostats?.isCached 
+                ? "Using cached data. Click refresh to get the latest stats." 
+                : "Using fresh data from GitHub."}
+            </span>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes progress-stripes {

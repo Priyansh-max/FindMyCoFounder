@@ -290,7 +290,7 @@ export default function Manage() {
       case 'details':
         return <Details team={team}/>
       case 'submit':
-        return <Submit session={session} ideaId={ideaId} team={team} />
+        return <Submit session={session} ideaId={ideaId} team={team} repostats={repostats} />
       default:
         return null;
     }
