@@ -5,15 +5,18 @@ const getRepoStats = async (req, res) => {
   try {
     console.log("Request received for getRepoStats");
     console.log("Route params:", req.params);
+    console.log("Query params:", req.query);
     
     const { username, repoName, repoConnectedAt } = req.params;
     const token = req.headers.authorization?.split(' ')[1];
+    const forceNoCache = req.query.cache === 'false';
 
     console.log("Extracted values:", {
       username,
       repoName,
       repoConnectedAt,
-      hasToken: !!token
+      hasToken: !!token,
+      forceNoCache
     });
 
     if (!token) {
@@ -21,6 +24,10 @@ const getRepoStats = async (req, res) => {
     }
 
     const githubService = new GitHubService(token);
+    if (forceNoCache) {
+      githubService.disableCache = true;
+      console.log("Cache disabled for this request");
+    }
     
     // Set up date ranges
     const today = new Date();
@@ -114,12 +121,22 @@ const getMemberStats = async (req, res) => {
   try {
     const { username, repoName, githubUsername, joinedAt } = req.params;
     const token = req.headers.authorization?.split(' ')[1];
+    const forceNoCache = req.query.cache === 'false';
+
+    console.log("Request received for getMemberStats");
+    console.log("Query params:", req.query);
+    console.log("Force no cache:", forceNoCache);
 
     if (!token) {
       return res.status(401).json({ error: 'GitHub token is required' });
     }
 
     const githubService = new GitHubService(token);
+    if (forceNoCache) {
+      githubService.disableCache = true;
+      console.log("Cache disabled for this request");
+    }
+
     const today = new Date();
     const todayDate = today.toISOString().split('T')[0];
 
