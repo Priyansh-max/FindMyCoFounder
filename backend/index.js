@@ -11,6 +11,9 @@ const applicationRoutes = require('./routes/applicationRoutes');
 const NumberRoutes = require('./routes/numberRoutes');
 const manageTeamRoutes = require('./routes/manageTeamRoutes');
 const githubRoutes = require('./routes/githubRoutes');
+const projectValidation = require('./validate/projectValidation');
+const projectSubmitRoutes = require('./routes/projectSubmitRoutes');
+
 const app = express();
 
 // Middleware
@@ -23,11 +26,13 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/validate', emailValidation);
 app.use('/api/validate', ideaValidation);
 app.use('/api/validate', profileValidation);
+app.use('/api/validate', projectValidation);
 app.use('/api/idea', ideaRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/data', NumberRoutes);
 app.use('/api/manage-team', manageTeamRoutes);
 app.use('/api/github' , githubRoutes);
+app.use('/api/project-submit', projectSubmitRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
