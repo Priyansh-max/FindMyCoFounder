@@ -3,29 +3,60 @@ const { getCachedData } = require('../services/caching');
 
 const getRepoStats = async (req, res) => {
   try {
-    const { username, repoName } = req.params;
+    console.log("Request received for getRepoStats");
+    console.log("Route params:", req.params);
+    
+    const { username, repoName, repoConnectedAt } = req.params;
     const token = req.headers.authorization?.split(' ')[1];
+
+    console.log("Extracted values:", {
+      username,
+      repoName,
+      repoConnectedAt,
+      hasToken: !!token
+    });
 
     if (!token) {
       return res.status(401).json({ error: 'GitHub token is required' });
     }
 
     const githubService = new GitHubService(token);
-
-    // Set up date range for commit history
+    
+    // Set up date ranges
     const today = new Date();
     const lastWeek = new Date(today);
     lastWeek.setDate(lastWeek.getDate() - 7);
-    const since = lastWeek.toISOString();
-    const until = today.toISOString();
+
+    // For fetchAllCommitsSince: use repoConnectedAt - 1 day
+    let connectionDate = null;
+    let useConnectionDate = false;
+    if (repoConnectedAt) {
+      console.log("repoConnectedAt from params:", repoConnectedAt);
+      connectionDate = new Date(repoConnectedAt);
+      if (!isNaN(connectionDate.getTime())) {
+        useConnectionDate = true;
+        connectionDate.setDate(connectionDate.getDate() - 1);
+      }
+    }
+
+    console.log("Original connection date:", repoConnectedAt);
+    console.log("Adjusted connection date for all commits:", connectionDate?.toISOString());
+    console.log("Last week date for weekly commits:", lastWeek.toISOString());
 
     try {
       // Fetch all data in parallel
       const [allCommitsResult, issuesResult, pullsResult, weeklyCommitsResult] = await Promise.all([
-        githubService.fetchAllCommits(username, repoName),
-        githubService.fetchIssues(username, repoName),
-        githubService.fetchPullRequests(username, repoName),
-        githubService.fetchWeeklyCommits(username, repoName, since, until)
+        useConnectionDate 
+          ? githubService.fetchAllCommitsSince(username, repoName, connectionDate.toISOString()) 
+          : githubService.fetchAllCommits(username, repoName),
+        useConnectionDate
+          ? githubService.fetchIssuesSince(username, repoName, connectionDate.toISOString())
+          : githubService.fetchIssues(username, repoName),
+        useConnectionDate
+          ? githubService.fetchPullRequestsSince(username, repoName, connectionDate.toISOString())
+          : githubService.fetchPullRequests(username, repoName),
+        // Always use lastWeek for weekly commits
+        githubService.fetchWeeklyCommits(username, repoName, lastWeek.toISOString(), today.toISOString())
       ]);
 
       // Check and extract data and metadata
@@ -61,7 +92,9 @@ const getRepoStats = async (req, res) => {
           pullCount: Array.isArray(pulls) ? pulls.length : 0,
           dailyCommits,
           lastUpdated: lastUpdated,
-          isCached: cacheExists
+          isCached: cacheExists,
+          since: connectionDate?.toISOString() || lastWeek.toISOString(), // Add the since date to the response
+          useConnectionDate // Flag indicating if we used the connection date
         }
       });
     } catch (innerError) {
@@ -79,7 +112,7 @@ const getRepoStats = async (req, res) => {
 
 const getMemberStats = async (req, res) => {
   try {
-    const { username, repoName, githubUsername } = req.params;
+    const { username, repoName, githubUsername, joinedAt } = req.params;
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -87,14 +120,36 @@ const getMemberStats = async (req, res) => {
     }
 
     const githubService = new GitHubService(token);
-    const todayDate = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayDate = today.toISOString().split('T')[0];
+
+    // Set up join date for fetching stats
+    let joinDate = null;
+    let useJoinDate = false;
+    if (joinedAt) {
+      console.log("joinedAt from params:", joinedAt);
+      joinDate = new Date(joinedAt);
+      if (!isNaN(joinDate.getTime())) {
+        useJoinDate = true;
+        joinDate.setDate(joinDate.getDate() - 1); // Start from one day before join date
+      }
+    }
+
+    console.log("Original join date:", joinedAt);
+    console.log("Adjusted join date for member stats:", joinDate?.toISOString());
 
     try {
       // Fetch all member data in parallel
       const [commitsResult, issuesResult, pullRequestsResult] = await Promise.all([
-        githubService.fetchMemberCommits(username, repoName, githubUsername),
-        githubService.fetchMemberIssues(username, repoName, githubUsername),
-        githubService.fetchMemberPullRequests(username, repoName, githubUsername)
+        useJoinDate
+          ? githubService.fetchMemberCommitsSince(username, repoName, githubUsername, joinDate.toISOString())
+          : githubService.fetchMemberCommits(username, repoName, githubUsername),
+        useJoinDate
+          ? githubService.fetchMemberIssuesSince(username, repoName, githubUsername, joinDate.toISOString())
+          : githubService.fetchMemberIssues(username, repoName, githubUsername),
+        useJoinDate
+          ? githubService.fetchMemberPullRequestsSince(username, repoName, githubUsername, joinDate.toISOString())
+          : githubService.fetchMemberPullRequests(username, repoName, githubUsername)
       ]);
 
       // Extract data and metadata with safe fallbacks
@@ -102,12 +157,50 @@ const getMemberStats = async (req, res) => {
       const issues = issuesResult?.data || { open: 0, closed: 0 };
       const pullRequests = pullRequestsResult?.data || { open: 0, closed: 0, merged: 0 };
 
+      // Calculate inactivity with improved logic
+      let inactivityCount = 0;
+      const lastCommitDate = Array.isArray(commits) && commits[0]?.commit?.author?.date;
+      
+      if (lastCommitDate) {
+        const lastCommit = new Date(lastCommitDate);
+        const daysSinceLastCommit = Math.floor((today - lastCommit) / (1000 * 60 * 60 * 24));
+        
+        // Check for recent activity in PRs or issues
+        const hasRecentActivity = (() => {
+          const recentPRs = pullRequests.items?.some(pr => {
+            const prDate = new Date(pr.created_at);
+            return prDate > lastCommit;
+          });
+
+          const recentIssues = issues.items?.some(issue => {
+            const issueDate = new Date(issue.created_at);
+            return issueDate > lastCommit;
+          });
+
+          return recentPRs || recentIssues;
+        })();
+
+        // Calculate inactivity only if there's no recent activity
+        if (!hasRecentActivity) {
+          if (daysSinceLastCommit > 3) {
+            // Initial inactivity count after 3 days
+            inactivityCount = 1;
+            
+            // Add additional counts for every 2 days after
+            const additionalDays = daysSinceLastCommit - 3;
+            if (additionalDays > 0) {
+              inactivityCount += Math.floor(additionalDays / 2);
+            }
+          }
+        }
+      }
+
       // Get the earliest timestamp to use as lastUpdated, with fallbacks
       const timestamps = [
         commitsResult?.metadata?.timestamp,
         issuesResult?.metadata?.timestamp, 
         pullRequestsResult?.metadata?.timestamp
-      ].filter(Boolean); // Remove any undefined/null values
+      ].filter(Boolean);
       
       const lastUpdated = timestamps.length > 0 ? timestamps.sort()[0] : new Date().toISOString();
 
@@ -119,14 +212,17 @@ const getMemberStats = async (req, res) => {
         success: true,
         data: {
           commits: Array.isArray(commits) ? commits.length : 0,
-          last_commit: Array.isArray(commits) && commits[0]?.commit?.author?.date || null,
+          last_commit: lastCommitDate || null,
           open_issues: issues.open || 0,
           closed_issues: issues.closed || 0,
           open_prs: pullRequests.open || 0,
           closed_prs: pullRequests.closed || 0,
           merged_prs: pullRequests.merged || 0,
+          inactivity_count: inactivityCount,
           lastUpdated: lastUpdated,
-          isCached: commitsCached
+          isCached: commitsCached,
+          since: joinDate?.toISOString(),
+          useJoinDate
         }
       });
     } catch (innerError) {
