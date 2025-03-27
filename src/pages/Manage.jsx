@@ -27,7 +27,6 @@ export default function Manage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [dailyCommitData, setDailyCommitData] = useState({ labels: [], datasets: [] });
   const [repo, setRepo] = useState([]);
-  const [showRepoDropdown, setShowRepoDropdown] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Main data fetching effect
@@ -126,7 +125,7 @@ export default function Manage() {
 
       // 2. Fetch repository statistics from our cached backend
       const response = await axios.get(
-        `http://localhost:5000/api/github/repo-stats/${username}/${currentTeam.repo_name}`,
+        `http://localhost:5000/api/github/repo-stats/${username}/${currentTeam.repo_name}/${currentTeam.updated_at}`,
         {
           headers: {
             'Authorization': `Bearer ${currentSession.provider_token}`
@@ -147,7 +146,6 @@ export default function Manage() {
         lastUpdated: response.data.data.lastUpdated,
         isCached: response.data.data.isCached
       });
-
 
     } catch (error) {
       console.error('Error fetching repository data:', error);
@@ -192,7 +190,6 @@ export default function Manage() {
       toast.error(error.message || 'Failed to connect repository');
     } finally {
       setIsConnecting(false);
-      setShowRepoDropdown(false);
     }
   };
 
@@ -249,7 +246,7 @@ export default function Manage() {
 
           // Fetch member statistics from our cached backend
           const response = await axios.get(
-            `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}`,
+            `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}/${team.updated_at}`,
             {
               headers: {
                 'Authorization': `Bearer ${session.provider_token}`
@@ -336,7 +333,6 @@ export default function Manage() {
                     if (repo.length === 0) {
                       getRepo(session);
                     }
-                    setShowRepoDropdown(!showRepoDropdown);
                   }}
                 >
                   <Github className="h-4 w-4" />
@@ -344,7 +340,7 @@ export default function Manage() {
                 </button>
 
                 {/* Dropdown Menu */}
-                {showRepoDropdown && (
+                {repo.length > 0 && (
                   <div className="absolute right-0 mt-2 w-72 bg-card border border-border rounded-md shadow-lg z-50">
                     <div className="p-2 border-b border-border">
                       <input
@@ -357,33 +353,26 @@ export default function Manage() {
                       />
                     </div>
                     <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                      {repo.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground">
-                          <Github className="h-8 w-8 mx-auto mb-2 animate-pulse" />
-                          Loading repositories...
-                        </div>
-                      ) : (
-                        repo.map((repository) => (
-                          <button
-                            key={repository.id}
-                            className="w-full px-4 py-2 text-left hover:bg-muted/50 flex items-center justify-between group"
-                            onClick={() => handleConnectRepo(repository)}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <Github className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{repository.name}</span>
-                              {repository.isPrivate && (
-                                <span className="text-xs bg-yellow-500/20 text-yellow-700 px-1.5 py-0.5 rounded-full">
-                                  Private
-                                </span>
-                              )}
-                            </div>
-                            <span className="opacity-0 group-hover:opacity-100 text-primary text-sm">
-                              Connect →
-                            </span>
-                          </button>
-                        ))
-                      )}
+                      {repo.map((repository) => (
+                        <button
+                          key={repository.id}
+                          className="w-full px-4 py-2 text-left hover:bg-muted/50 flex items-center justify-between group"
+                          onClick={() => handleConnectRepo(repository)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Github className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{repository.name}</span>
+                            {repository.isPrivate && (
+                              <span className="text-xs bg-yellow-500/20 text-yellow-700 px-1.5 py-0.5 rounded-full">
+                                Private
+                              </span>
+                            )}
+                          </div>
+                          <span className="opacity-0 group-hover:opacity-100 text-primary text-sm">
+                            Connect →
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -404,24 +393,6 @@ export default function Manage() {
                     </a>
                   </div>
                 </div>
-                <button 
-                  onClick={() => {
-                    if (team.updated_at) {
-                      const lastUpdate = new Date(team.updated_at);
-                      const daysSinceUpdate = Math.floor((new Date() - lastUpdate) / (1000 * 60 * 60 * 24));
-                      
-                      if (daysSinceUpdate < 5) {
-                        toast.error(`You can only update the repository after 5 days. ${5 - daysSinceUpdate} days remaining.`);
-                        return;
-                      }
-                    }
-                    setShowRepoDropdown(!showRepoDropdown);
-                  }}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center space-x-2"
-                >
-                  <Github className="h-4 w-4" />
-                  <span>Change Repo</span>
-                </button>
               </div>
             )}
           </div>
