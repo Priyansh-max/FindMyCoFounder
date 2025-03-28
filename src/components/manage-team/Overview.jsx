@@ -5,9 +5,11 @@ import { Users, UserPlus, Github, MessageSquare } from 'lucide-react';
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const Overview = ({session, repostats, team , dailyCommitData }) => {
+const Overview = ({session, repostats, team, dailyCommitData}) => {
     const chartRef = useRef(null);
-    console.log(repostats);
+    console.log("Current repostats:", repostats);
+    console.log("Team data:", team);
+    
     // Format the last updated time if available
     const formattedLastUpdate = repostats?.lastUpdated 
       ? new Date(repostats.lastUpdated).toLocaleString('en-US', { 
@@ -29,7 +31,6 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
         <p className="text-xs text-muted-foreground">{description}</p>
         </div>
     );
-
 
     const RecentMembersList = ({ members }) => (
         <div className="space-y-4">
@@ -170,25 +171,28 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
 
     return (
     <div className="space-y-6">
-        {formattedLastUpdate && (
-            <div className="text-xs text-muted-foreground flex items-center p-2 bg-muted/20 rounded-md border border-border">
+        <div className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground flex items-center p-2 bg-muted/20 rounded-md border border-border w-full">
                 <span className={`inline-block w-2 h-2 rounded-full mr-2 ${repostats?.isCached ? 'bg-yellow-400' : 'bg-green-400'}`}></span>
                 <span>
-                    {repostats?.isCached 
-                        ? `Data was fetched on ${formattedLastUpdate} and is cached for 1 hour` 
-                        : `Data was freshly fetched from GitHub on ${formattedLastUpdate}`}
+                    {formattedLastUpdate ? 
+                        (repostats?.isCached 
+                            ? `Data was fetched on ${formattedLastUpdate} and is cached for 1 hour` 
+                            : `Data was freshly fetched from GitHub on ${formattedLastUpdate}`)
+                        : "No GitHub data available yet"
+                    }
                 </span>
             </div>
-        )}
+        </div>
       {/* Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card 
           title="Team Members" 
-          value={team.member_profiles.length} 
+          value={team?.member_profiles?.length || 0} 
           description="Active contributors" 
           icon={<Users className="h-4 w-4 text-muted-foreground" />} 
         />
-        {!team.repo_name ? (
+        {!team?.repo_name ? (
           <>
             <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm flex flex-col items-center justify-center">
               <Github className="h-8 w-8 text-muted-foreground mb-2" />
@@ -234,7 +238,7 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
               <h3 className="text-lg font-semibold">Commit History</h3>
 
           </div>
-          {!team.repo_name ? (
+          {!team?.repo_name ? (
             <div className="h-80 flex flex-col items-center justify-center">
               <Github className="h-16 w-16 text-muted-foreground mb-4" />
               <p className="text-lg text-muted-foreground text-center mb-2">No Repository Connected</p>
@@ -250,7 +254,7 @@ const Overview = ({session, repostats, team , dailyCommitData }) => {
         </div>
         
         <div className="md:col-span-3 bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
-          <RecentMembersList members={team.member_profiles} />
+          <RecentMembersList members={team?.member_profiles || []} />
         </div>
       </div>
     </div>

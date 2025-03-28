@@ -1,15 +1,30 @@
 import { useState } from 'react';
-import { Loader2, Trash2, Users, ArrowRight, RefreshCw } from 'lucide-react';
+import { Loader2, Trash2, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const Details = ({ team }) => {
     const [loading, setLoading] = useState(false);
-    console.log(team);
+    console.log("Details component team data:", team);
+    
     const handleRemoveMember = (memberId, memberName) => {
         // In real implementation, this would make an API call
         toast.success(`Removed ${memberName} from the team`);
     };
 
+    // Handle case where team data might not be loaded yet
+    if (!team) {
+        return (
+            <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Loading Team Data</h3>
+                    <p className="text-muted-foreground max-w-sm mb-6">
+                        Please wait while we fetch your team information...
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     // If no team members, show empty state
     if (!team.member_profiles || team.member_profiles.length === 0) {
@@ -74,29 +89,35 @@ const Details = ({ team }) => {
               </thead>
               <tbody>
                 {team.member_profiles.map((member) => (
-                  <tr key={member.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                  <tr key={member.id || member.email} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
-                          <img 
-                            src={member.avatar_url}
-                            alt={member.full_name}
-                            className="h-8 w-8 rounded-full"
-                          />
+                          {member.avatar_url ? (
+                            <img 
+                              src={member.avatar_url}
+                              alt={member.full_name}
+                              className="h-8 w-8 rounded-full"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Users className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
                         </div>
                         <div>
-                          <div className="font-medium">{member.full_name}</div>
-                          <div className="text-xs text-muted-foreground">{member.email}</div>
-  
+                          <div className="font-medium">{member.full_name || 'Unknown'}</div>
+                          <div className="text-xs text-muted-foreground">{member.email || 'No email'}</div>
+                          <div className="text-xs text-primary">{member.github_username || 'No GitHub username'}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {new Date(member.joined_at).toLocaleDateString('en-US', { 
+                      {member.joined_at ? new Date(member.joined_at).toLocaleDateString('en-US', { 
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
-                      })}
+                      }) : 'Unknown'}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {member.stats?.last_commit ? new Date(member.stats.last_commit).toLocaleDateString('en-US', {
@@ -137,6 +158,15 @@ const Details = ({ team }) => {
               </tbody>
             </table>
           </div>
+          
+          {/* Debug info if stats are missing */}
+          {team.member_profiles.some(member => !member.stats) && (
+            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-sm">
+              <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                Some team members are missing GitHub statistics. Try refreshing the data.
+              </p>
+            </div>
+          )}
         </div>
     );
 }
