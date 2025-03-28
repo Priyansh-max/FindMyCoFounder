@@ -31,6 +31,9 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
   const [showSubmissionPreview, setShowSubmissionPreview] = useState(false);
   const [currentSubmissionStep, setCurrentSubmissionStep] = useState('');
 
+  // Configure toast position to be on the right side to avoid overlapping with submission progress
+  const toastOptions = { position: 'bottom-right' };
+  
   // Update state when props change
   useEffect(() => {
     setTeam(initialTeam);
@@ -52,6 +55,9 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         console.error("Missing username or repository name");
         return false;
       }
+      
+      // Show loading indicator for repository stats
+      toast.loading("Fetching repository statistics...", { ...toastOptions, id: "repo-stats" });
       
       // Add timestamp to bust cache and set headers
       const timestamp = Date.now();
@@ -76,8 +82,12 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       );
       
       if (!repoStatsResponse.data.success) {
+        toast.error("Failed to fetch repository statistics", toastOptions);
         throw new Error('Failed to fetch fresh repository statistics');
       }
+      
+      // Update repo stats toast
+      toast.success("Repository statistics fetched successfully", { ...toastOptions, id: "repo-stats" });
       
       // Log the response to verify data is fresh
       console.log("Fresh repo stats received:", {
@@ -97,10 +107,17 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       };
       setRepostats(freshRepoStats);
       
+      // Let the user see the success message briefly
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Show loading indicator for member stats
+      toast.loading("Fetching team member statistics...", { ...toastOptions, id: "member-stats" });
+      
       // Fetch fresh member stats for each team member
       const memberProfiles = team.member_profiles;
       if (!memberProfiles || !Array.isArray(memberProfiles)) {
         console.error('No member profiles found or invalid data');
+        toast.error("Team member data is missing", toastOptions);
         return false;
       }
       
@@ -142,6 +159,9 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         }
       }));
       
+      // Update member stats toast
+      toast.success("Team member statistics fetched successfully", { ...toastOptions, id: "member-stats" });
+      
       // Update team with fresh data
       setTeam(prevTeam => ({
         ...prevTeam,
@@ -152,6 +172,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       return true;
     } catch (error) {
       console.error('Error fetching fresh data:', error);
+      toast.error("Failed to fetch fresh GitHub data", toastOptions);
       return false;
     } finally {
       setIsFetchingFreshData(false);
@@ -216,10 +237,10 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
     
     try {
       if (!team) {
-        toast.error("No team data available. Please connect a repository first.");
-        return;
-      }
-      
+        toast.error("No team data available. Please connect a repository first.", toastOptions);
+      return;
+    }
+    
       setError('');
       resetFieldStatus();
 
@@ -250,12 +271,12 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
             ))}
           </div>
         );
-        return;
-      }
-
+      return;
+    }
+    
       // Start submission process with visual feedback
       setCurrentSubmissionStep('starting');
-      toast.loading("Starting project submission process...", { duration: 2000 });
+      toast.loading("Starting project submission process...", { ...toastOptions, duration: 2000 });
       
       // Show submission preview
       setShowSubmissionPreview(true);
@@ -264,7 +285,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       await new Promise(resolve => setTimeout(resolve, 1500)); // Short pause for visual flow
       
       setCurrentSubmissionStep('fetching');
-      toast.loading("Fetching latest GitHub statistics for your project...", { duration: 4000 });
+      toast.loading("Fetching latest GitHub statistics for your project...", { ...toastOptions, duration: 4000 });
       const freshDataFetched = await fetchFreshData();
       
       await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause for visual flow
@@ -278,14 +299,14 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         
         if (!wantToContinue) {
           setShowSubmissionPreview(false);
-          toast.error("Submission canceled. Please try again when GitHub data can be refreshed.");
-          return;
-        }
-        
-        toast.warning("Proceeding with existing data. Some GitHub statistics may not be up-to-date.");
+          toast.error("Submission canceled. Please try again when GitHub data can be refreshed.", toastOptions);
+      return;
+    }
+    
+        toast.warning("Proceeding with existing data. Some GitHub statistics may not be up-to-date.", toastOptions);
         await new Promise(resolve => setTimeout(resolve, 1000)); // Let user read warning
       } else {
-        toast.success("Successfully fetched the latest GitHub statistics!");
+        toast.success("Successfully fetched the latest GitHub statistics!", toastOptions);
         await new Promise(resolve => setTimeout(resolve, 1500)); // Short pause to see success message
       }
       
@@ -298,7 +319,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
 
       // Validate user-provided fields
       setCurrentSubmissionStep('validating');
-      toast.loading("Validating your project details...");
+      toast.loading("Validating your project details...", toastOptions);
       const response = await axios.post('http://localhost:5000/api/validate/submit-project', {
         projectLink,
         videoLink,
@@ -338,14 +359,14 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
             ))}
           </div>
         );
-        toast.error("Some fields need your attention.");
+        toast.error("Some fields need your attention.", toastOptions);
         setShowSubmissionPreview(false);
-        return;
-      }
-      
-      toast.success("All fields validated successfully!");
+      return;
+    }
+    
+      toast.success("All fields validated successfully!", toastOptions);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause to see success message
-
+      
       //upload logo 
       setCurrentSubmissionStep('uploading');
       const formData = new FormData();
@@ -356,7 +377,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       setUploadSuccess(false);
       setUploadComplete(false);
 
-      toast.loading("Uploading project logo...");
+      toast.loading("Uploading project logo...", toastOptions);
       
       const logoResponse = await axios.post(
         'http://localhost:5000/api/project-submit/logo-upload', 
@@ -388,18 +409,18 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       }
 
       const logoUrl = logoResponse.data.logoUrl;
-      toast.success("Logo uploaded successfully!");
+      toast.success("Logo uploaded successfully!", toastOptions);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Short pause to see success message
 
       // If validation successful, proceed with form submission
       setIsSubmitting(true);
       setCurrentSubmissionStep('preparing');
-      toast.loading("Preparing final submission data...");
+      toast.loading("Preparing final submission data...", { ...toastOptions, duration: 1500 });
       await new Promise(resolve => setTimeout(resolve, 1500)); // Short pause for visual flow
       
       // Visual indication of which data we're submitting
       setCurrentSubmissionStep('submitting');
-      toast.loading("Submitting project details and GitHub activity stats...");
+      toast.loading("Submitting project details and GitHub activity stats...", toastOptions);
       
       // Create form data for final submission
       const submitFormData = new FormData();
@@ -457,10 +478,11 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       if (submitResponse.data.success) {
         setCurrentSubmissionStep('success');
         // Show success animation
-        toast.success('Project submitted successfully!');
+        toast.success('Project submitted successfully!', toastOptions);
         
         setTimeout(() => {
           toast.success('Your submission includes all GitHub statistics from the entire project duration.', {
+            ...toastOptions,
             duration: 5000,
             icon: '📊'
           });
@@ -468,20 +490,20 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         
         // Reset form with a slight delay for better UX
         setTimeout(() => {
-          setProjectLink('');
-          setVideoLink('');
-          setDocumentLink('');
-          setDescription('');
-          setLogo(null);
-          setLogoPreview(null);
+        setProjectLink('');
+        setVideoLink('');
+        setDocumentLink('');
+        setDescription('');
+        setLogo(null);
+        setLogoPreview(null);
           setShowSubmissionPreview(false);
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
         }, 3000);
       } else {
         setCurrentSubmissionStep('error');
-        toast.error(submitResponse.data.error || 'Failed to submit project');
+        toast.error(submitResponse.data.error || 'Failed to submit project', toastOptions);
         setTimeout(() => {
           setShowSubmissionPreview(false);
         }, 3000);
@@ -489,7 +511,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
     } catch (error) {
       console.error('Error submitting project:', error);
       toast.dismiss();
-      toast.error('Failed to submit project: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to submit project: ' + (error.message || 'Unknown error'), toastOptions);
       resetFieldStatus();
       setCurrentSubmissionStep('error');
       setTimeout(() => {
@@ -525,15 +547,18 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="fixed bottom-6 right-6 bg-card shadow-lg border border-border rounded-lg p-4 w-80 z-50"
+        className="fixed bottom-6 left-6 bg-card shadow-lg border border-border rounded-lg p-4 w-80 z-50"
       >
-        <h4 className="font-semibold text-sm mb-3 flex items-center justify-between">
-          <span>Submission Progress</span>
+        <h4 className="font-semibold text-sm mb-3 flex items-center justify-between border-b border-border pb-2">
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            Submission Progress
+          </span>
           {currentSubmissionStep === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
           {currentSubmissionStep === 'error' && <AlertCircle className="h-4 w-4 text-destructive" />}
         </h4>
         
-        <div className="space-y-2 text-xs">
+        <div className="space-y-2.5 text-xs">
           <div className={`flex items-center gap-2 ${isActive('starting') ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
             {isActive('starting') ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
             <span>Initializing submission</span>
@@ -586,16 +611,25 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         
         {(currentSubmissionStep === 'submitting' || currentSubmissionStep === 'success') && (
           <div className="mt-3 pt-3 border-t border-border">
-            <div className="text-xs font-medium mb-1">Submitting Data Summary:</div>
+            <div className="text-xs font-medium mb-1 flex items-center gap-1">
+              <Github className="h-3 w-3" />
+              <span>GitHub Data Being Submitted:</span>
+            </div>
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
               <span className="text-muted-foreground">Repository:</span>
-              <span className="truncate">{team?.repo_name}</span>
+              <span className="truncate font-medium">{team?.repo_name}</span>
               
               <span className="text-muted-foreground">Commits:</span>
-              <span>{repostats?.commitCount || 0}</span>
+              <span className="font-medium">{repostats?.commitCount || 0}</span>
+              
+              <span className="text-muted-foreground">Pull Requests:</span>
+              <span className="font-medium">{repostats?.pullCount || 0}</span>
+              
+              <span className="text-muted-foreground">Issues:</span>
+              <span className="font-medium">{repostats?.issueCount || 0}</span>
               
               <span className="text-muted-foreground">Team Members:</span>
-              <span>{team?.member_profiles?.length || 0}</span>
+              <span className="font-medium">{team?.member_profiles?.length || 0}</span>
             </div>
           </div>
         )}
@@ -670,21 +704,21 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
 
         {/* Submission form */}
         <div className="space-y-4">
-          {/* Project Link */}  
+          {/* Project Link */}
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-1.5">
               <LinkIcon className="h-4 w-4 text-primary" />
               Project Link
             </label>
             <div className="relative">
-              <input
-                type="url"
-                value={projectLink}
-                onChange={(e) => setProjectLink(e.target.value)}
-                placeholder="https://your-project-link.com"
+            <input
+              type="url"
+              value={projectLink}
+              onChange={(e) => setProjectLink(e.target.value)}
+              placeholder="https://your-project-link.com"
                 className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full pr-8"
-                required
-              />
+              required
+            />
               <div className="absolute right-2 top-1/2 -translate-y-1/2">
                 <StatusIndicator status={fieldStatus.projectLink} />
               </div>
@@ -701,17 +735,17 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
                 Video Demonstration Link (Optional)
             </label>
             <div className="relative">
-              <input
-                type="url"
-                value={videoLink}
-                onChange={(e) => setVideoLink(e.target.value)}
-                placeholder="https://youtube.com/your-demo"
+            <input
+              type="url"
+              value={videoLink}
+              onChange={(e) => setVideoLink(e.target.value)}
+              placeholder="https://youtube.com/your-demo"
                 className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full pr-8"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2">
                 <StatusIndicator status={fieldStatus.videoLink} />
               </div>
-            </div>
+          </div>
             <p className="text-xs text-muted-foreground">
               Link to a video file which shows your project in action... This is optional but is a plus point if you provide it.
             </p>
@@ -722,9 +756,9 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
             <label className="text-sm font-medium flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                     <Text className="h-4 w-4 text-primary" />
-                    <span>
+              <span>
                         Project Description
-                    </span>
+              </span>
                 </div>
                <span className={`text-xs ${
                 wordCount < 300 
@@ -737,13 +771,13 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
               </span>
             </label>
             <div className="relative">
-              <textarea
-                value={description}
-                onChange={handleDescriptionChange}
+            <textarea
+              value={description}
+              onChange={handleDescriptionChange}
                 placeholder="Describe your project (minimum 300 characters, maximum 500 characters)..."
                 className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full min-h-[150px] pr-8"
-                required
-              />
+              required
+            />
               <div className="absolute right-2 top-6">
                 <StatusIndicator status={fieldStatus.description} />
               </div>
@@ -759,13 +793,13 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
               Project Logo <span className='text-red-500'>*</span>
             </label>
             <div className="relative">
-              <input
-                type="file"
+                  <input
+                    type="file"
                 accept=".jpg,.jpeg,.png"
                 onChange={handleLogoChange}
                 className="hidden"
                 id="logo-upload"
-                ref={fileInputRef}
+                    ref={fileInputRef}
               />
               <label
                 htmlFor="logo-upload"
@@ -782,9 +816,9 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
                     </motion.div>
                   ) : logoPreview ? (
                     <div className="relative w-32 h-32">
-                      <img 
-                        src={logoPreview} 
-                        alt="Logo preview" 
+                    <img 
+                      src={logoPreview} 
+                      alt="Logo preview" 
                         className="w-full h-full object-contain" 
                       />
                       <button
