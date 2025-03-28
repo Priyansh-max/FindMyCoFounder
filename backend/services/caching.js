@@ -13,7 +13,8 @@ const getCachedData = async (key) => {
     if (parsedData.metadata && parsedData.data) {
       return {
         data: parsedData.data,
-        metadata: parsedData.metadata
+        metadata: parsedData.metadata,
+        fromCache : true
       };
     } 
     // For backward compatibility, return old format data

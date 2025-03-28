@@ -9,25 +9,23 @@ const getRepoStats = async (req, res) => {
     
     const { username, repoName, repoConnectedAt } = req.params;
     const token = req.headers.authorization?.split(' ')[1];
-    const forceNoCache = req.query.cache === 'false';
+    const Cache = req.query.cache;
+    //if cache says true -- means we say that we dont want to use cache
+    //if cache says false -- means we say that we want to use cache
 
     console.log("Extracted values:", {
       username,
       repoName,
       repoConnectedAt,
       hasToken: !!token,
-      forceNoCache
+      Cache
     });
 
     if (!token) {
       return res.status(401).json({ error: 'GitHub token is required' });
     }
 
-    const githubService = new GitHubService(token);
-    if (forceNoCache) {
-      githubService.disableCache = true;
-      console.log("Cache disabled for this request");
-    }
+    const githubService = new GitHubService(token , Cache);
     
     // Set up date ranges
     const today = new Date();
@@ -53,17 +51,10 @@ const getRepoStats = async (req, res) => {
     try {
       // Fetch all data in parallel
       const [allCommitsResult, issuesResult, pullsResult, weeklyCommitsResult] = await Promise.all([
-        useConnectionDate 
-          ? githubService.fetchAllCommitsSince(username, repoName, connectionDate.toISOString()) 
-          : githubService.fetchAllCommits(username, repoName),
-        useConnectionDate
-          ? githubService.fetchIssuesSince(username, repoName, connectionDate.toISOString())
-          : githubService.fetchIssues(username, repoName),
-        useConnectionDate
-          ? githubService.fetchPullRequestsSince(username, repoName, connectionDate.toISOString())
-          : githubService.fetchPullRequests(username, repoName),
-        // Always use lastWeek for weekly commits
-        githubService.fetchWeeklyCommits(username, repoName, lastWeek.toISOString(), today.toISOString())
+          githubService.fetchAllCommitsSince(username, repoName, connectionDate.toISOString()),
+          githubService.fetchIssuesSince(username, repoName, connectionDate.toISOString()),
+          githubService.fetchPullRequestsSince(username, repoName, connectionDate.toISOString()),
+          githubService.fetchWeeklyCommits(username, repoName, lastWeek.toISOString(), today.toISOString())
       ]);
 
       // Check and extract data and metadata
@@ -121,21 +112,17 @@ const getMemberStats = async (req, res) => {
   try {
     const { username, repoName, githubUsername, joinedAt } = req.params;
     const token = req.headers.authorization?.split(' ')[1];
-    const forceNoCache = req.query.cache === 'false';
+    const Cache = req.query.cache;
 
     console.log("Request received for getMemberStats");
     console.log("Query params:", req.query);
-    console.log("Force no cache:", forceNoCache);
+    console.log("Force no cache:", Cache);
 
     if (!token) {
       return res.status(401).json({ error: 'GitHub token is required' });
     }
 
-    const githubService = new GitHubService(token);
-    if (forceNoCache) {
-      githubService.disableCache = true;
-      console.log("Cache disabled for this request");
-    }
+    const githubService = new GitHubService(token , Cache);
 
     const today = new Date();
     const todayDate = today.toISOString().split('T')[0];
@@ -158,15 +145,9 @@ const getMemberStats = async (req, res) => {
     try {
       // Fetch all member data in parallel
       const [commitsResult, issuesResult, pullRequestsResult] = await Promise.all([
-        useJoinDate
-          ? githubService.fetchMemberCommitsSince(username, repoName, githubUsername, joinDate.toISOString())
-          : githubService.fetchMemberCommits(username, repoName, githubUsername),
-        useJoinDate
-          ? githubService.fetchMemberIssuesSince(username, repoName, githubUsername, joinDate.toISOString())
-          : githubService.fetchMemberIssues(username, repoName, githubUsername),
-        useJoinDate
-          ? githubService.fetchMemberPullRequestsSince(username, repoName, githubUsername, joinDate.toISOString())
-          : githubService.fetchMemberPullRequests(username, repoName, githubUsername)
+          githubService.fetchMemberCommitsSince(username, repoName, githubUsername, joinDate.toISOString()),
+          githubService.fetchMemberIssuesSince(username, repoName, githubUsername, joinDate.toISOString()),
+          githubService.fetchMemberPullRequestsSince(username, repoName, githubUsername, joinDate.toISOString())
       ]);
 
       // Extract data and metadata with safe fallbacks

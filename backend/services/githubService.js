@@ -1,106 +1,109 @@
+//we only need the function which have since in the params
+
 const axios = require('axios');
 const { getCachedData, setCachedData } = require('./caching');
 
 const GITHUB_API_BASE = 'https://api.github.com';
 
 class GitHubService {
-  constructor(token) {
+  constructor(token, Cache) {
     this.token = token;
     this.headers = {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/vnd.github.v3+json'
     };
-    this.disableCache = false; // Flag to disable caching
+    this.Caching = Cache; // Flag to disable caching
   }
 
-  async fetchAllCommits(username, repoName, perPage = 100) {
-    // Use a day-based cache key instead of exact timestamps
-    const todayDate = new Date().toISOString().split('T')[0];
-    const cacheKey = `github:commits:${username}:${repoName}:${todayDate}`;
+  // async fetchAllCommits(username, repoName, perPage = 100) {
+  //   // Use a day-based cache key instead of exact timestamps
+  //   const todayDate = new Date().toISOString().split('T')[0];
+  //   const cacheKey = `github:commits:${username}:${repoName}:${todayDate}`;
     
-    // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
-      const cachedData = await getCachedData(cacheKey);
-      if (cachedData) {
-        return {
-          data: cachedData,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
-      }
-    }
+  //   // Check cache first (unless caching is disabled)
+  //   if (!this.disableCache) {
+  //     const cachedData = await getCachedData(cacheKey);
+  //     if (cachedData) {
+  //       return {
+  //         data: cachedData,
+  //         metadata: {
+  //           timestamp: new Date().toISOString(),
+  //           fromCache: true
+  //         }
+  //       };
+  //     }
+  //   }
 
-    let page = 1;
-    let allCommits = [];
-    let hasMore = true;
+  //   let page = 1;
+  //   let allCommits = [];
+  //   let hasMore = true;
 
-    while (hasMore) {
-      const response = await axios.get(
-        `${GITHUB_API_BASE}/repos/${username}/${repoName}/commits`,
-        {
-          headers: this.headers,
-          params: { per_page: perPage, page }
-        }
-      );
+  //   while (hasMore) {
+  //     const response = await axios.get(
+  //       `${GITHUB_API_BASE}/repos/${username}/${repoName}/commits`,
+  //       {
+  //         headers: this.headers,
+  //         params: { per_page: perPage, page }
+  //       }
+  //     );
 
-      const commits = response.data;
-      allCommits.push(...commits);
+  //     const commits = response.data;
+  //     allCommits.push(...commits);
 
-      hasMore = commits.length === perPage;
-      page++;
-    }
+  //     hasMore = commits.length === perPage;
+  //     page++;
+  //   }
 
-    // Cache the results
-    await setCachedData(cacheKey, allCommits);
-    return {
-        data: allCommits,
-        metadata: {
-          timestamp: new Date().toISOString()
-        }
-    };
-  }
+  //   // Cache the results
+  //   await setCachedData(cacheKey, allCommits);
+  //   return {
+  //       data: allCommits,
+  //       metadata: {
+  //         timestamp: new Date().toISOString()
+  //       }
+  //   };
+  // }
 
   async fetchAllCommitsSince(username, repoName, since, perPage = 100) {
+
+    console.log("i am here");
     // Use a day-based cache key with the since date
     const todayDate = new Date().toISOString().split('T')[0];
     const sinceDate = new Date(since).toISOString().split('T')[0];
     const cacheKey = `github:commits:${username}:${repoName}:${todayDate}:since:${sinceDate}`;
     
     // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
+    //so if disableCache is true, then we don't check the cache
+    //and if its false, then we check the cache
+    if (this.Caching === 'true') {
+      console.log("hiiii");
       const cachedData = await getCachedData(cacheKey);
       if (cachedData) {
-        return {
-          data: cachedData,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
-      }
-    
-      // First try to get from the full commits cache and filter
-      const fullCacheKey = `github:commits:${username}:${repoName}:${todayDate}`;
-      const fullCachedData = await getCachedData(fullCacheKey);
-      
-      if (fullCachedData) {
-        // Filter the cached data by the since date
-        const filteredCommits = fullCachedData.filter(commit => 
-          new Date(commit.commit.author.date) >= new Date(since)
-        );
-        
-        return {
-          data: filteredCommits,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            filtered: true,
-            fromCache: true
-          }
-        };
+        console.log("hiii11111");
+        return cachedData;
       }
     }
+    
+      // First try to get from the full commits cache and filter
+    //   const fullCacheKey = `github:commits:${username}:${repoName}:${todayDate}`;
+    //   const fullCachedData = await getCachedData(fullCacheKey);
+      
+    //   if (fullCachedData) {
+    //     // Filter the cached data by the since date
+    //     const filteredCommits = fullCachedData.filter(commit => 
+    //       new Date(commit.commit.author.date) >= new Date(since)
+    //     );
+        
+    //     return {
+    //       data: filteredCommits,
+    //       metadata: {
+    //         timestamp: new Date().toISOString(),
+    //         filtered: true,
+    //         fromCache: true
+    //       }
+    //     };
+    //   }
+    // }
 
     // If no cached data, fetch from API with since parameter
     let page = 1;
@@ -144,88 +147,89 @@ class GitHubService {
       data: allCommits,
       metadata: {
         timestamp: new Date().toISOString(),
+        fromCache: false,
         sinceDate: since
       }
     };
   }
 
-  async fetchIssues(username, repoName) {
-    // Use a day-based cache key instead of exact timestamps
-    const todayDate = new Date().toISOString().split('T')[0];
-    const cacheKey = `github:issues:${username}:${repoName}:${todayDate}`;
+  // async fetchIssues(username, repoName) {
+  //   // Use a day-based cache key instead of exact timestamps
+  //   const todayDate = new Date().toISOString().split('T')[0];
+  //   const cacheKey = `github:issues:${username}:${repoName}:${todayDate}`;
     
-    // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
-      const cachedResult = await getCachedData(cacheKey);
-      if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
-      }
-    }
+  //   // Check cache first (unless caching is disabled)
+  //   if (!this.disableCache) {
+  //     const cachedResult = await getCachedData(cacheKey);
+  //     if (cachedResult) {
+  //       return {
+  //         data: cachedResult,
+  //         metadata: {
+  //           timestamp: new Date().toISOString(),
+  //           fromCache: true
+  //         }
+  //       };
+  //     }
+  //   }
 
-    const response = await axios.get(
-      `${GITHUB_API_BASE}/repos/${username}/${repoName}/issues?state=all`,
-      { headers: this.headers }
-    );
+  //   const response = await axios.get(
+  //     `${GITHUB_API_BASE}/repos/${username}/${repoName}/issues?state=all`,
+  //     { headers: this.headers }
+  //   );
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, response.data);
-    }
+  //   // Cache the results if caching is enabled
+  //   if (!this.disableCache) {
+  //     await setCachedData(cacheKey, response.data);
+  //   }
     
-    // Return with metadata for immediate use
-    return {
-      data: response.data,
-      metadata: {
-        timestamp: new Date().toISOString(),
-        fromCache: false
-      }
-    };
-  }
+  //   // Return with metadata for immediate use
+  //   return {
+  //     data: response.data,
+  //     metadata: {
+  //       timestamp: new Date().toISOString(),
+  //       fromCache: false
+  //     }
+  //   };
+  // }
 
-  async fetchPullRequests(username, repoName) {
-    // Use a day-based cache key instead of exact timestamps
-    const todayDate = new Date().toISOString().split('T')[0];
-    const cacheKey = `github:pulls:${username}:${repoName}:${todayDate}`;
+  // async fetchPullRequests(username, repoName) {
+  //   // Use a day-based cache key instead of exact timestamps
+  //   const todayDate = new Date().toISOString().split('T')[0];
+  //   const cacheKey = `github:pulls:${username}:${repoName}:${todayDate}`;
     
-    // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
-      const cachedResult = await getCachedData(cacheKey);
-      if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
-      }
-    }
+  //   // Check cache first (unless caching is disabled)
+  //   if (!this.disableCache) {
+  //     const cachedResult = await getCachedData(cacheKey);
+  //     if (cachedResult) {
+  //       return {
+  //         data: cachedResult,
+  //         metadata: {
+  //           timestamp: new Date().toISOString(),
+  //           fromCache: true
+  //         }
+  //       };
+  //     }
+  //   }
 
-    const response = await axios.get(
-      `${GITHUB_API_BASE}/repos/${username}/${repoName}/pulls`,
-      { headers: this.headers }
-    );
+  //   const response = await axios.get(
+  //     `${GITHUB_API_BASE}/repos/${username}/${repoName}/pulls`,
+  //     { headers: this.headers }
+  //   );
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, response.data);
-    }
+  //   // Cache the results if caching is enabled
+  //   if (!this.disableCache) {
+  //     await setCachedData(cacheKey, response.data);
+  //   }
     
-    // Return with metadata for immediate use
-    return {
-      data: response.data,
-      metadata: {
-        timestamp: new Date().toISOString(),
-        fromCache: false
-      }
-    };
-  }
+  //   // Return with metadata for immediate use
+  //   return {
+  //     data: response.data,
+  //     metadata: {
+  //       timestamp: new Date().toISOString(),
+  //       fromCache: false
+  //     }
+  //   };
+  // }
 
   async fetchWeeklyCommits(username, repoName, since, until) {
     // Generate a stable cache key by using only the date portion (YYYY-MM-DD)
@@ -234,16 +238,10 @@ class GitHubService {
     const cacheKey = `github:weekly:${username}:${repoName}:last7days:${todayDate}`;
     
     // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
+    if (this.Caching === 'true') {
       const cachedResult = await getCachedData(cacheKey);
       if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
+        return cachedResult;
       }
     }
 
@@ -290,11 +288,9 @@ class GitHubService {
 
     console.log(`Fetched ${allCommits.length} weekly commits for ${username}/${repoName}`);
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, allCommits);
-    }
-    
+
+    //cache data everytime we fetch the data.. only get it when disableCache is true
+    await setCachedData(cacheKey, allCommits);
     // Return with metadata for immediate use
     return {
       data: allCommits,
@@ -305,166 +301,164 @@ class GitHubService {
     };
   }
 
-  async fetchMemberCommits(username, repoName, githubUsername) {
-    // Use a day-based cache key instead of exact timestamps
-    const todayDate = new Date().toISOString().split('T')[0];
-    const cacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}`;
+  // async fetchMemberCommits(username, repoName, githubUsername) {
+  //   // Use a day-based cache key instead of exact timestamps
+  //   const todayDate = new Date().toISOString().split('T')[0];
+  //   const cacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}`;
     
-    // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
-      const cachedResult = await getCachedData(cacheKey);
-      if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
-      }
-    }
+  //   // Check cache first (unless caching is disabled)
+  //   if (!this.disableCache) {
+  //     const cachedResult = await getCachedData(cacheKey);
+  //     if (cachedResult) {
+  //       return {
+  //         data: cachedResult,
+  //         metadata: {
+  //           timestamp: new Date().toISOString(),
+  //           fromCache: true
+  //         }
+  //       };
+  //     }
+  //   }
 
-    let page = 1;
-    let allCommits = [];
-    let hasMore = true;
+  //   let page = 1;
+  //   let allCommits = [];
+  //   let hasMore = true;
 
-    while (hasMore) {
-      const response = await axios.get(
-        `${GITHUB_API_BASE}/repos/${username}/${repoName}/commits`,
-        {
-          headers: this.headers,
-          params: { 
-            per_page: 100, 
-            page,
-            author: githubUsername 
-          }
-        }
-      );
+  //   while (hasMore) {
+  //     const response = await axios.get(
+  //       `${GITHUB_API_BASE}/repos/${username}/${repoName}/commits`,
+  //       {
+  //         headers: this.headers,
+  //         params: { 
+  //           per_page: 100, 
+  //           page,
+  //           author: githubUsername 
+  //         }
+  //       }
+  //     );
 
-      const commits = response.data;
-      allCommits.push(...commits);
+  //     const commits = response.data;
+  //     allCommits.push(...commits);
 
-      hasMore = commits.length === 100;
-      page++;
-    }
+  //     hasMore = commits.length === 100;
+  //     page++;
+  //   }
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, allCommits);
-    }
+  //   // Cache the results if caching is enabled
+  //   await setCachedData(cacheKey, allCommits);
     
-    // Return with metadata for immediate use
-    return {
-      data: allCommits,
-      metadata: {
-        timestamp: new Date().toISOString(),
-        fromCache: false
-      }
-    };
-  }
+  //   // Return with metadata for immediate use
+  //   return {
+  //     data: allCommits,
+  //     metadata: {
+  //       timestamp: new Date().toISOString(),
+  //       fromCache: false
+  //     }
+  //   };
+  // }
 
-  async fetchMemberIssues(username, repoName, githubUsername) {
-    // Use a day-based cache key instead of exact timestamps
-    const todayDate = new Date().toISOString().split('T')[0];
-    const cacheKey = `github:member:issues:${username}:${repoName}:${githubUsername}:${todayDate}`;
+  // async fetchMemberIssues(username, repoName, githubUsername) {
+  //   // Use a day-based cache key instead of exact timestamps
+  //   const todayDate = new Date().toISOString().split('T')[0];
+  //   const cacheKey = `github:member:issues:${username}:${repoName}:${githubUsername}:${todayDate}`;
     
-    // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
-      const cachedResult = await getCachedData(cacheKey);
-      if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
-      }
-    }
+  //   // Check cache first (unless caching is disabled)
+  //   if (!this.disableCache) {
+  //     const cachedResult = await getCachedData(cacheKey);
+  //     if (cachedResult) {
+  //       return {
+  //         data: cachedResult,
+  //         metadata: {
+  //           timestamp: new Date().toISOString(),
+  //           fromCache: true
+  //         }
+  //       };
+  //     }
+  //   }
 
-    const [openIssues, closedIssues] = await Promise.all([
-      axios.get(
-        `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:issues+state:open`,
-        { headers: this.headers }
-      ),
-      axios.get(
-        `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:issues+state:closed`,
-        { headers: this.headers }
-      )
-    ]);
+  //   const [openIssues, closedIssues] = await Promise.all([
+  //     axios.get(
+  //       `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:issues+state:open`,
+  //       { headers: this.headers }
+  //     ),
+  //     axios.get(
+  //       `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:issues+state:closed`,
+  //       { headers: this.headers }
+  //     )
+  //   ]);
 
-    const result = {
-      open: openIssues.data.total_count,
-      closed: closedIssues.data.total_count
-    };
+  //   const result = {
+  //     open: openIssues.data.total_count,
+  //     closed: closedIssues.data.total_count
+  //   };
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, result);
-    }
+  //   // Cache the results if caching is enabled
+  //   if (!this.disableCache) {
+  //     await setCachedData(cacheKey, result);
+  //   }
     
-    // Return with metadata for immediate use
-    return {
-      data: result,
-      metadata: {
-        timestamp: new Date().toISOString(),
-        fromCache: false
-      }
-    };
-  }
+  //   // Return with metadata for immediate use
+  //   return {
+  //     data: result,
+  //     metadata: {
+  //       timestamp: new Date().toISOString(),
+  //       fromCache: false
+  //     }
+  //   };
+  // }
 
-  async fetchMemberPullRequests(username, repoName, githubUsername) {
-    // Use a day-based cache key instead of exact timestamps
-    const todayDate = new Date().toISOString().split('T')[0];
-    const cacheKey = `github:member:prs:${username}:${repoName}:${githubUsername}:${todayDate}`;
+  // async fetchMemberPullRequests(username, repoName, githubUsername) {
+  //   // Use a day-based cache key instead of exact timestamps
+  //   const todayDate = new Date().toISOString().split('T')[0];
+  //   const cacheKey = `github:member:prs:${username}:${repoName}:${githubUsername}:${todayDate}`;
     
-    // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
-      const cachedResult = await getCachedData(cacheKey);
-      if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
-      }
-    }
+  //   // Check cache first (unless caching is disabled)
+  //   if (!this.disableCache) {
+  //     const cachedResult = await getCachedData(cacheKey);
+  //     if (cachedResult) {
+  //       return {
+  //         data: cachedResult,
+  //         metadata: {
+  //           timestamp: new Date().toISOString(),
+  //           fromCache: true
+  //         }
+  //       };
+  //     }
+  //   }
 
-    const [openPRs, closedPRs] = await Promise.all([
-      axios.get(
-        `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:pr+state:open`,
-        { headers: this.headers }
-      ),
-      axios.get(
-        `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:pr+state:closed`,
-        { headers: this.headers }
-      )
-    ]);
+  //   const [openPRs, closedPRs] = await Promise.all([
+  //     axios.get(
+  //       `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:pr+state:open`,
+  //       { headers: this.headers }
+  //     ),
+  //     axios.get(
+  //       `${GITHUB_API_BASE}/search/issues?q=repo:${username}/${repoName}+author:${githubUsername}+type:pr+state:closed`,
+  //       { headers: this.headers }
+  //     )
+  //   ]);
 
-    const result = {
-      open: openPRs.data.total_count,
-      closed: closedPRs.data.total_count,
-      merged: closedPRs.data.items.filter(item => 
-        item.pull_request && item.pull_request.merged_at
-      ).length
-    };
+  //   const result = {
+  //     open: openPRs.data.total_count,
+  //     closed: closedPRs.data.total_count,
+  //     merged: closedPRs.data.items.filter(item => 
+  //       item.pull_request && item.pull_request.merged_at
+  //     ).length
+  //   };
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, result);
-    }
+  //   // Cache the results if caching is enabled
+  //   if (!this.disableCache) {
+  //     await setCachedData(cacheKey, result);
+  //   }
     
-    // Return with metadata for immediate use
-    return {
-      data: result,
-      metadata: {
-        timestamp: new Date().toISOString(),
-        fromCache: false
-      }
-    };
-  }
+  //   // Return with metadata for immediate use
+  //   return {
+  //     data: result,
+  //     metadata: {
+  //       timestamp: new Date().toISOString(),
+  //       fromCache: false
+  //     }
+  //   };
+  // }
 
   async fetchIssuesSince(username, repoName, since) {
     // Use a day-based cache key with the since date
@@ -473,16 +467,10 @@ class GitHubService {
     const cacheKey = `github:issues:${username}:${repoName}:${todayDate}:since:${sinceDateStr}`;
     
     // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
+    if (this.Caching === 'true') {
       const cachedResult = await getCachedData(cacheKey);
       if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
+        return cachedResult;
       }
     }
 
@@ -499,10 +487,8 @@ class GitHubService {
     );
 
     // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, response.data);
-    }
-    
+    await setCachedData(cacheKey, response.data);
+
     return {
       data: response.data,
       metadata: {
@@ -520,16 +506,10 @@ class GitHubService {
     const cacheKey = `github:pulls:${username}:${repoName}:${todayDate}:since:${sinceDateStr}`;
     
     // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
+    if (this.Caching === 'true') {
       const cachedResult = await getCachedData(cacheKey);
       if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
+        return cachedResult;
       }
     }
 
@@ -554,9 +534,8 @@ class GitHubService {
     });
 
     // Cache the filtered results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, filteredPulls);
-    }
+    await setCachedData(cacheKey, filteredPulls);
+
     
     return {
       data: filteredPulls,
@@ -575,16 +554,10 @@ class GitHubService {
     const cacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}`;
     
     // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
+    if (this.Caching === 'true') {
       const cachedResult = await getCachedData(cacheKey);
       if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
+        return cachedResult;
       }
     }
 
@@ -620,9 +593,8 @@ class GitHubService {
     }
 
     // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, allCommits);
-    }
+
+    await setCachedData(cacheKey, allCommits);
     
     return {
       data: allCommits,
@@ -641,16 +613,10 @@ class GitHubService {
     const cacheKey = `github:member:issues:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}`;
     
     // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
+    if (this.Caching === 'true') {
       const cachedResult = await getCachedData(cacheKey);
       if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
+        return cachedResult;
       }
     }
 
@@ -672,11 +638,7 @@ class GitHubService {
       items: [...openIssues.data.items, ...closedIssues.data.items]
     };
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, result);
-    }
-    
+    await setCachedData(cacheKey, result);
     return {
       data: result,
       metadata: {
@@ -694,16 +656,10 @@ class GitHubService {
     const cacheKey = `github:member:prs:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}`;
     
     // Check cache first (unless caching is disabled)
-    if (!this.disableCache) {
+    if (this.Caching === 'true') {
       const cachedResult = await getCachedData(cacheKey);
       if (cachedResult) {
-        return {
-          data: cachedResult,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            fromCache: true
-          }
-        };
+        return cachedResult;
       }
     }
 
@@ -727,11 +683,7 @@ class GitHubService {
       items: [...openPRs.data.items, ...closedPRs.data.items]
     };
 
-    // Cache the results if caching is enabled
-    if (!this.disableCache) {
-      await setCachedData(cacheKey, result);
-    }
-    
+    await setCachedData(cacheKey, result);
     return {
       data: result,
       metadata: {
