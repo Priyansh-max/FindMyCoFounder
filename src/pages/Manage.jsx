@@ -123,28 +123,48 @@ export default function Manage() {
         throw new Error('No repository selected');
       }
 
-      // 2. Fetch repository statistics from our cached backend
+      console.log("Fetching repo stats for:", {
+        username,
+        repo: currentTeam.repo_name
+      });
+
+      // Add timestamp parameter for the server to properly identify the request
+      const timestamp = Date.now();
+      const requestConfig = {
+        headers: {
+          'Authorization': `Bearer ${currentSession.provider_token}`
+        },
+        params: {
+          t: timestamp,
+          cache: 'true' // Tell the server to not use cached data
+        }
+      };
+
+      // 2. Fetch repository statistics from our backend
       const response = await axios.get(
         `http://localhost:5000/api/github/repo-stats/${username}/${currentTeam.repo_name}/${currentTeam.updated_at}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${currentSession.provider_token}`
-          }
-        }
+        requestConfig
       );
 
       if (!response.data.success) {
         throw new Error('Failed to fetch repository statistics');
       }
 
-      // 3. Update state with the cached data
+      console.log("Repo stats received:", {
+        commitCount: response.data.data.commitCount,
+        issueCount: response.data.data.issueCount,
+        pullCount: response.data.data.pullCount,
+        isCached: response.data.data.isCached
+      });
+
+      // 3. Update state with the data
       setDailyCommitData(response.data.data.dailyCommits);
       setRepoStats({
         commitCount: response.data.data.commitCount,
         issueCount: response.data.data.issueCount,
         pullCount: response.data.data.pullCount,
         lastUpdated: response.data.data.lastUpdated,
-        isCached: response.data.data.isCached
+        isCached: response.data.data.isCached || false
       });
 
     } catch (error) {
@@ -229,6 +249,12 @@ export default function Manage() {
       return;
     }
 
+    console.log("Fetching member stats for:", {
+      username,
+      repo: repoName,
+      memberCount: team.member_profiles?.length || 0
+    });
+
     const memberProfiles = team.member_profiles;
     if (!memberProfiles || !Array.isArray(memberProfiles)) {
       console.error('No member profiles found or invalid data');
@@ -236,6 +262,18 @@ export default function Manage() {
     }
 
     try {
+      // Add timestamp parameter for the server to properly identify the request
+      const timestamp = Date.now();
+      const requestConfig = {
+        headers: {
+          'Authorization': `Bearer ${session.provider_token}`
+        },
+        params: {
+          t: timestamp,
+          cache: 'true' // Tell the server to not use cached data this means caching is on....
+        }
+      };
+
       const updatedProfiles = await Promise.all(memberProfiles.map(async (member) => {
         try {
           const github_username = member.github_username;
@@ -244,23 +282,29 @@ export default function Manage() {
             return member;
           }
 
-          // Fetch member statistics from our cached backend
+          console.log(`Fetching stats for member: ${github_username}`);
+
+          // Fetch member statistics
           const response = await axios.get(
             `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}/${team.updated_at}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${session.provider_token}`
-              }
-            }
+            requestConfig
           );
 
           if (!response.data.success) {
             throw new Error(`Failed to fetch stats for ${github_username}`);
           }
 
+          console.log(`Stats for ${github_username}:`, {
+            commits: response.data.data.commits,
+            isCached: response.data.data.isCached
+          });
+
           return {
             ...member,
-            stats: response.data.data
+            stats: {
+              ...response.data.data,
+              isCached: response.data.data.isCached || false
+            }
           };
         } catch (memberError) {
           console.error(`Error fetching stats for ${member.github_username}:`, memberError);
@@ -286,9 +330,9 @@ export default function Manage() {
       case 'contact': 
         return <Contact session={session} ideaId={ideaId} team={team} />
       case 'overview':
-        return <Overview session={session} repostats={repostats} team={team} dailyCommitData={dailyCommitData}  />     
+        return <Overview session={session} repostats={repostats} team={team} dailyCommitData={dailyCommitData} />     
       case 'details':
-        return <Details team={team}/>
+        return <Details team={team} />
       case 'submit':
         return <Submit session={session} ideaId={ideaId} team={team} repostats={repostats} />
       default:
