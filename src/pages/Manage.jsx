@@ -177,11 +177,13 @@ export default function Manage() {
     setIsConnecting(true);
     try {
       // 1. Update team data in the backend
+      const updated_at = new Date();
       const response = await axios.put(
         `http://localhost:5000/api/manage-team/update-team/${ideaId}`,
         {
           repo_name: repo.name,
           repo_url: repo.html_url,
+          updated_at: updated_at
         },
         {
           headers: {
@@ -198,7 +200,9 @@ export default function Manage() {
       const updatedTeam = {
         ...team,
         repo_name: repo.name,
-        repo_url: repo.html_url
+        repo_url: repo.html_url,
+        updated_at : updated_at
+
       };
       setTeam(updatedTeam);
       // 3. Fetch repository statistics
@@ -436,6 +440,7 @@ export default function Manage() {
                       {team.repo_name}
                     </a>
                   </div>
+                  
                 </div>
               </div>
             )}
@@ -444,20 +449,26 @@ export default function Manage() {
 
         {/* Tabs */}
         <div className="border-b border-border">
-          <div className="flex space-x-8">
-            {['overview', 'details', 'contact', 'submit'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-2 px-1 font-medium text-sm transition-colors ${
-                  activeTab === tab 
-                    ? 'border-b-2 border-primary text-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
+          <div className="flex space-x-8 justify-between">
+            <div className="flex space-x-8">
+              {['overview', 'details', 'contact', 'submit'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-2 px-1 font-medium text-sm transition-colors ${
+                    activeTab === tab 
+                      ? 'border-b-2 border-primary text-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="flex pb-2 px-1 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors items-center space-x-3">
+              {/* it should display 29th march like this */}
+              <p>ESTD : {new Date(team.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+            </div>
           </div>
         </div>
 

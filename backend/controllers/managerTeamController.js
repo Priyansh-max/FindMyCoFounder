@@ -58,6 +58,7 @@ const updateTeam = async (req, res) => {
 
     const repo_name = req.body.repo_name;
     const repo_url = req.body.repo_url;
+    const updated_at = req.body.updated_at;
 
     try{
         const { data , error } = await supabase
@@ -65,7 +66,7 @@ const updateTeam = async (req, res) => {
         .update({
             repo_name: repo_name,
             repo_url: repo_url,
-            updated_at: new Date(),
+            updated_at: updated_at,
         })
         .eq('idea_id', idea_id);
 
