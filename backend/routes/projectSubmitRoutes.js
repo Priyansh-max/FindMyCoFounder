@@ -10,7 +10,7 @@ const upload = multer({
     }
   });
 
-router.post('/submit-project', authenticateUser , submitProject);
+router.post('/submit', authenticateUser , submitProject);
 router.post('/logo-upload' , authenticateUser , upload.single('logo'), uploadLogo);
 
 module.exports = router;
