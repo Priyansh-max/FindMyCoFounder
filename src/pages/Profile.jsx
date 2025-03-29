@@ -644,12 +644,19 @@ function Profile() {
                   <div className="flex items-center gap-2">
                     <span
                       className={`flex-shrink-0 flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        idea.status === "open"
-                          ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
-                          : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
+                        idea.completion_status === 'review'
+                          ? "bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-100"
+                          : idea.status === "open"
+                            ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
+                            : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
                       }`}
                     >
-                      {idea.status === "open" ? (
+                      {idea.completion_status === 'review' ? (
+                        <>
+                          <Info className="w-3 h-3 mr-1" />
+                          Under Review
+                        </>
+                      ) : idea.status === "open" ? (
                         <>
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Open
@@ -663,46 +670,54 @@ function Profile() {
                     </span>
 
                     <div className="flex items-center gap-2 ml-2">
-                      <Tooltip id={`view-tooltip-${idea.id}`} place="top" effect="solid">
-                        View received applications
-                      </Tooltip>
-                      <button 
-                        data-tooltip-id={`view-tooltip-${idea.id}`}
-                        onClick={() => viewDetails(idea.id)}
-                        className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
-                      >
-                        <GrView className="w-5 h-5" />
-                      </button>
+                      {idea.completion_status === 'review' ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>Contact support for queries</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Tooltip id={`view-tooltip-${idea.id}`} place="top" effect="solid">
+                            View received applications
+                          </Tooltip>
+                          <button 
+                            data-tooltip-id={`view-tooltip-${idea.id}`}
+                            onClick={() => viewDetails(idea.id)}
+                            className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
+                          >
+                            <GrView className="w-5 h-5" />
+                          </button>
 
-                      <Tooltip id={`status-tooltip-${idea.id}`} place="top" effect="solid">
-                        {idea.status === "open" ? "Close applications" : "Reopen applications"}
-                      </Tooltip>
-                      <button 
-                        data-tooltip-id={`status-tooltip-${idea.id}`}
-                        onClick={() => handleIdeaStatus(idea.id)}
-                        className={`p-2 transition-colors ${
-                          idea.status === "open"
-                            ? "text-orange-500 hover:text-orange-600"
-                            : "text-green-500 hover:text-green-600"
-                        }`}
-                      >
-                        {idea.status === "open" ? (
-                          <AiOutlineStop className="w-5 h-5" />
-                        ) : (
-                          <PlayCircle className="w-5 h-5" />
-                        )}
-                      </button>
+                          <Tooltip id={`status-tooltip-${idea.id}`} place="top" effect="solid">
+                            {idea.status === "open" ? "Close applications" : "Reopen applications"}
+                          </Tooltip>
+                          <button 
+                            data-tooltip-id={`status-tooltip-${idea.id}`}
+                            onClick={() => handleIdeaStatus(idea.id)}
+                            className={`p-2 transition-colors ${
+                              idea.status === "open"
+                                ? "text-orange-500 hover:text-orange-600"
+                                : "text-green-500 hover:text-green-600"
+                            }`}
+                          >
+                            {idea.status === "open" ? (
+                              <AiOutlineStop className="w-5 h-5" />
+                            ) : (
+                              <PlayCircle className="w-5 h-5" />
+                            )}
+                          </button>
 
-                      <Tooltip id={`delete-tooltip-${idea.id}`} place="top" effect="solid">
-                        Delete post
-                      </Tooltip>
-                      <button 
-                        data-tooltip-id={`delete-tooltip-${idea.id}`}
-                        onClick={() => handleDeleteIdea(idea.id)}
-                        className="p-2 text-destructive hover:text-destructive/90 transition-colors"
-                      >
-                        <RiDeleteBin6Line className="w-5 h-5"/>
-                      </button>
+                          <Tooltip id={`delete-tooltip-${idea.id}`} place="top" effect="solid">
+                            Delete post
+                          </Tooltip>
+                          <button 
+                            data-tooltip-id={`delete-tooltip-${idea.id}`}
+                            onClick={() => handleDeleteIdea(idea.id)}
+                            className="p-2 text-destructive hover:text-destructive/90 transition-colors"
+                          >
+                            <RiDeleteBin6Line className="w-5 h-5"/>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

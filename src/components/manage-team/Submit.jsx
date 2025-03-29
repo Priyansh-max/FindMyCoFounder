@@ -8,7 +8,6 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
   // Form state
   const [projectLink, setProjectLink] = useState('');
   const [videoLink, setVideoLink] = useState('');
-  const [documentLink, setDocumentLink] = useState('');
   const [description, setDescription] = useState('');
   const [logo, setLogo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -406,7 +405,6 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       submitFormData.append('repoStats', JSON.stringify(repostats));
       submitFormData.append('memberStats', JSON.stringify(team.member_profiles));
 
-      // Log submission summary to console
       console.log('Project Submission Summary:', {
         projectDetails: {
           link: projectLink,
@@ -429,20 +427,56 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
           } : "No members"
         }
       });
-      
+
+      //create a new object for repostats
+      const finalrepostats = {
+        commitCount : repostats?.commitCount,
+        pullCount : repostats?.pullCount,
+        issueCount : repostats?.issueCount
+      }
+
+      const finalmemberstats = team.member_profiles.map(member => ({
+        id : member.id,
+        full_name : member.full_name,
+        email : member.email,
+        github_url : member.github_url,
+        github_username : member.github_username,
+        joined_at : member.joined_at,
+        commits : member.stats.commits,
+        open_pull_requests : member.stats.open_prs,
+        closed_pull_requests : member.stats.closed_prs,
+        open_issues : member.stats.open_issues,
+        closed_issues : member.stats.closed_issues,
+        merged_pull_requests : member.stats.merged_prs,
+        inactive_days : member.stats.inactivity_count,
+        last_commit_date : member.stats.last_commit,
+      }))
       // Submit to backend with a slight delay for visual feedback
       await new Promise(resolve => setTimeout(resolve, 2000)); // Short pause for visual flow
       
       const submitResponse = await axios.post(
-        `http://localhost:5000/api/manage-team/submit-project/${ideaId}`,
-        submitFormData,
+        `http://localhost:5000/api/project-submit/submit`,
+        {
+          projectLink,
+          videoLink,
+          description,
+          logoUrl,
+          ideaId,
+          repoName : team.repo_name,
+          repoUrl : team.repo_url,
+          start_date : team.updated_at,
+          repostats : finalrepostats,
+          memberStats : finalmemberstats
+        },
         {
           headers: {
             'Authorization': `Bearer ${session?.access_token}`,
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/json'
           }
         }
       );
+
+      console.log("yaha aa gaya hoon me")
       
       toast.dismiss();
       
@@ -452,9 +486,9 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         toast.success('Project submitted successfully!', toastOptions);
         
         setTimeout(() => {
-          toast.success('Your submission includes all GitHub statistics from the entire project duration.', {
+          toast.success('Your submission includes all statistics from the entire project duration.', {
             ...toastOptions,
-            duration: 5000,
+            duration: 3000,
             icon: '📊'
           });
         }, 1500);
@@ -463,21 +497,25 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         setTimeout(() => {
         setProjectLink('');
         setVideoLink('');
-        setDocumentLink('');
         setDescription('');
         setLogo(null);
+        setUploadComplete(false);
+        setUploadProgress(0);
+        setUploadSuccess(false);
         setLogoPreview(null);
-          setShowSubmissionPreview(false);
+        setShowSubmissionPreview(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-        }, 3000);
+        }, 2000);
+
+
       } else {
         setCurrentSubmissionStep('error');
         toast.error(submitResponse.data.error || 'Failed to submit project', toastOptions);
         setTimeout(() => {
           setShowSubmissionPreview(false);
-        }, 3000);
+        }, 2000);
       }
     } catch (error) {
       console.error('Error submitting project:', error);
@@ -625,7 +663,18 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         </div>
 
         {/* Repository Status */}
-        {team && team.repo_name ? (
+        {!team?.repo_name ? (
+          <div className="flex flex-col items-center justify-center py-8 px-4 border-2 border-dashed border-border rounded-lg">
+            <Github className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">Connect Your Repository First</h3>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              Before submitting your project, you need to connect your GitHub repository and start development.
+            </p>
+            <p className="text-xs text-muted-foreground text-center">
+              Go to the Overview tab to connect your repository.
+            </p>
+          </div>
+        ) : team && team.repo_name ? (
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-md p-3 mb-6">
             <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-400">
               <Github className="h-4 w-4" />
@@ -641,256 +690,260 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
           </div>
         )}
 
-        {/* Guidelines section */}
-        {showGuidelines && (
-          <div className="bg-muted/40 border border-border rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
-              <FileText className="h-5 w-5" /> 
-              Submission Tips and Scoring Criteria
-            </h3>
-            <div className="text-sm space-y-4">
-              <div>
-                <h4 className="font-medium mb-1">Submission Tips:</h4>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li>Innovation and creativity (25 points)</li>
-                  <li>Technical implementation (30 points)</li>
-                  <li>User experience and design (20 points)</li>
-                  <li>Presentation and documentation (15 points)</li>
-                  <li>Adherence to project requirements (10 points)</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-medium mb-1">Requirements:</h4>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li>Project must be accessible via the provided link</li>
-                  <li>Description should clearly explain your project (300-500 characters)</li>
-                  <li>Logo must be in JPG or PNG format (max 1MB)</li>
-                  <li>Video demonstrations are highly recommended</li>
-                  <li>All submissions are final after the deadline</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Submission form */}
-        <div className="space-y-4">
-          {/* Project Link */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-1.5">
-              <LinkIcon className="h-4 w-4 text-primary" />
-              Project Link
-            </label>
-            <div className="relative">
-            <input
-              type="url"
-              value={projectLink}
-              onChange={(e) => setProjectLink(e.target.value)}
-              placeholder="https://your-project-link.com"
-                className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full pr-8"
-              required
-            />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <StatusIndicator status={fieldStatus.projectLink} />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              The main link to your deployed project or any relevant links
-            </p>
-          </div>
-
-          {/* Video Link */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-1.5">
-                <Video className="h-4 w-4 text-primary" />
-                Video Demonstration Link (Optional)
-            </label>
-            <div className="relative">
-            <input
-              type="url"
-              value={videoLink}
-              onChange={(e) => setVideoLink(e.target.value)}
-              placeholder="https://youtube.com/your-demo"
-                className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full pr-8"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <StatusIndicator status={fieldStatus.videoLink} />
-              </div>
-          </div>
-            <p className="text-xs text-muted-foreground">
-              Link to a video file which shows your project in action... This is optional but is a plus point if you provide it.
-            </p>
-          </div>
-
-          {/* Project Description */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                    <Text className="h-4 w-4 text-primary" />
-              <span>
-                        Project Description
-              </span>
+        {team?.repo_name && (
+          <>
+            {/* Guidelines section */}
+            {showGuidelines && (
+              <div className="bg-muted/40 border border-border rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
+                  <FileText className="h-5 w-5" /> 
+                  Submission Tips and Scoring Criteria
+                </h3>
+                <div className="text-sm space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-1">Submission Tips:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      <li>Innovation and creativity (25 points)</li>
+                      <li>Technical implementation (30 points)</li>
+                      <li>User experience and design (20 points)</li>
+                      <li>Presentation and documentation (15 points)</li>
+                      <li>Adherence to project requirements (10 points)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">Requirements:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      <li>Project must be accessible via the provided link</li>
+                      <li>Description should clearly explain your project (300-500 characters)</li>
+                      <li>Logo must be in JPG or PNG format (max 1MB)</li>
+                      <li>Video demonstrations are highly recommended</li>
+                      <li>All submissions are final after the deadline</li>
+                    </ul>
+                  </div>
                 </div>
-               <span className={`text-xs ${
-                wordCount < 300 
-                  ? 'text-destructive' 
-                  : wordCount > 500 
-                    ? 'text-destructive' 
-                    : 'text-blue-500'
-              }`}>
-                {wordCount}/500 characters
-              </span>
-            </label>
-            <div className="relative">
-            <textarea
-              value={description}
-              onChange={handleDescriptionChange}
-                placeholder="Describe your project (minimum 300 characters, maximum 500 characters)..."
-                className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full min-h-[150px] pr-8"
-              required
-            />
-              <div className="absolute right-2 top-6">
-                <StatusIndicator status={fieldStatus.description} />
               </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Explain what your project does, the technologies used and how it is innovative (300-500 characters)
-            </p>
-          </div>
+            )}
 
-          {/* Logo Upload */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground mb-1">
-              Project Logo <span className='text-red-500'>*</span>
-            </label>
-            <div className="relative">
-                  <input
-                    type="file"
-                accept=".jpg,.jpeg,.png"
-                onChange={handleLogoChange}
-                className="hidden"
-                id="logo-upload"
-                    ref={fileInputRef}
-              />
-              <label
-                htmlFor="logo-upload"
-                className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors relative"
-              >
-                <div className="flex flex-col items-center space-y-2 py-4 w-full">
-                  {uploadSuccess ? (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="text-green-500"
-                    >
-                      <CheckCircle2 className="w-8 h-8" />
-                    </motion.div>
-                  ) : logoPreview ? (
-                    <div className="relative w-32 h-32">
-                    <img 
-                      src={logoPreview} 
-                      alt="Logo preview" 
-                        className="w-full h-full object-contain" 
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setLogo(null);
-                          setLogoPreview(null);
-                          setUploadProgress(0);
-                          setUploadSuccess(false);
-                          setUploadComplete(false);
-                          if (fileInputRef.current) {
-                            fileInputRef.current.value = '';
-                          }
-                        }}
-                        className="absolute -top-2 -right-2 p-1 bg-destructive rounded-full text-white hover:bg-destructive/90"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </button>
+            {/* Submission form */}
+            <div className="space-y-4">
+              {/* Project Link */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <LinkIcon className="h-4 w-4 text-primary" />
+                  Project Link
+                </label>
+                <div className="relative">
+                <input
+                  type="url"
+                  value={projectLink}
+                  onChange={(e) => setProjectLink(e.target.value)}
+                  placeholder="https://your-project-link.com"
+                    className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full pr-8"
+                  required
+                />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <StatusIndicator status={fieldStatus.projectLink} />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  The main link to your deployed project or any relevant links
+                </p>
+              </div>
+
+              {/* Video Link */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                    <Video className="h-4 w-4 text-primary" />
+                    Video Demonstration Link (Optional)
+                </label>
+                <div className="relative">
+                <input
+                  type="url"
+                  value={videoLink}
+                  onChange={(e) => setVideoLink(e.target.value)}
+                  placeholder="https://youtube.com/your-demo"
+                    className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full pr-8"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <StatusIndicator status={fieldStatus.videoLink} />
+                  </div>
+              </div>
+                <p className="text-xs text-muted-foreground">
+                  Link to a video file which shows your project in action... This is optional but is a plus point if you provide it.
+                </p>
+              </div>
+
+              {/* Project Description */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                        <Text className="h-4 w-4 text-primary" />
+                  <span>
+                            Project Description
+                    </span>
                     </div>
-                  ) : (
-                    <Upload className={`w-8 h-8 text-muted-foreground ${uploadProgress > 0 && uploadProgress < 100 ? 'animate-bounce' : ''}`} />
-                  )}
-                  <span className="text-sm text-muted-foreground flex items-center gap-2">
-                    {logo ? (
-                      <>
-                        {logo.name}
-                        {uploadComplete && (
-                          <motion.span
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="text-green-500 text-xs"
-                          >
-                            (Upload Complete)
-                          </motion.span>
-                        )}
-                      </>
-                    ) : (
-                      'Upload your project logo (JPG/PNG, max 1MB)'
-                    )}
+                   <span className={`text-xs ${
+                    wordCount < 300 
+                      ? 'text-destructive' 
+                      : wordCount > 500 
+                        ? 'text-destructive' 
+                        : 'text-blue-500'
+                  }`}>
+                    {wordCount}/500 characters
                   </span>
-                  {uploadProgress > 0 && (
-                    <div className="w-full max-w-xs h-2 bg-secondary rounded-full overflow-hidden">
-                      <motion.div 
-                        className="h-full bg-primary"
-                        initial={{ width: 0 }}
-                        animate={{ 
-                          width: `${uploadProgress}%`,
-                          transition: { duration: 0.3 }
-                        }}
-                        style={{
-                          backgroundImage: uploadProgress < 100 ? 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)' : 'none',
-                          backgroundSize: '1rem 1rem',
-                          animation: uploadProgress < 100 ? 'progress-stripes 1s linear infinite' : 'none'
-                        }}
-                      />
-                    </div>
-                  )}
+                </label>
+                <div className="relative">
+                <textarea
+                  value={description}
+                  onChange={handleDescriptionChange}
+                    placeholder="Describe your project (minimum 300 characters, maximum 500 characters)..."
+                    className="flex-1 px-3 py-2 bg-white dark:bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full min-h-[150px] pr-8"
+                  required
+                />
+                  <div className="absolute right-2 top-6">
+                    <StatusIndicator status={fieldStatus.description} />
+                  </div>
                 </div>
-              </label>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Upload a logo or icon that represents your project (JPG or PNG format)
-              <br />
-              <strong className="text-xs text-muted-foreground">
-                This would be considered as your final logo you cannot change it once submitted.
-              </strong>
-            </p>
-          </div>
-          {error && (
-            <div className="p-2 bg-destructive/10 border border-destructive/20 rounded-md flex gap-2 text-sm text-destructive whitespace-pre-wrap">
-              {error}
-            </div>
-          )}
+                <p className="text-xs text-muted-foreground">
+                  Explain what your project does, the technologies used and how it is innovative (300-500 characters)
+                </p>
+              </div>
 
-          {/* Submit Button */}
-          <div className="pt-2">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-3 rounded-md font-medium text-sm transition-colors flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 h-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4" />
-                  Submit Project
-                </>
+              {/* Logo Upload */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Project Logo <span className='text-red-500'>*</span>
+                </label>
+                <div className="relative">
+                      <input
+                        type="file"
+                    accept=".jpg,.jpeg,.png"
+                    onChange={handleLogoChange}
+                    className="hidden"
+                    id="logo-upload"
+                        ref={fileInputRef}
+                  />
+                  <label
+                    htmlFor="logo-upload"
+                    className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors relative"
+                  >
+                    <div className="flex flex-col items-center space-y-2 py-4 w-full">
+                      {uploadSuccess ? (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="text-green-500"
+                        >
+                          <CheckCircle2 className="w-8 h-8" />
+                        </motion.div>
+                      ) : logoPreview ? (
+                        <div className="relative w-32 h-32">
+                        <img 
+                          src={logoPreview} 
+                          alt="Logo preview" 
+                            className="w-full h-full object-contain" 
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setLogo(null);
+                              setLogoPreview(null);
+                              setUploadProgress(0);
+                              setUploadSuccess(false);
+                              setUploadComplete(false);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                              }
+                            }}
+                            className="absolute -top-2 -right-2 p-1 bg-destructive rounded-full text-white hover:bg-destructive/90"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <Upload className={`w-8 h-8 text-muted-foreground ${uploadProgress > 0 && uploadProgress < 100 ? 'animate-bounce' : ''}`} />
+                      )}
+                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        {logo ? (
+                          <>
+                            {logo.name}
+                            {uploadComplete && (
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-green-500 text-xs"
+                              >
+                                (Upload Complete)
+                              </motion.span>
+                            )}
+                          </>
+                        ) : (
+                          'Upload your project logo (JPG/PNG, max 1MB)'
+                        )}
+                      </span>
+                      {uploadProgress > 0 && (
+                        <div className="w-full max-w-xs h-2 bg-secondary rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-primary"
+                            initial={{ width: 0 }}
+                            animate={{ 
+                              width: `${uploadProgress}%`,
+                              transition: { duration: 0.3 }
+                            }}
+                            style={{
+                              backgroundImage: uploadProgress < 100 ? 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)' : 'none',
+                              backgroundSize: '1rem 1rem',
+                              animation: uploadProgress < 100 ? 'progress-stripes 1s linear infinite' : 'none'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Upload a logo or icon that represents your project (JPG or PNG format)
+                  <br />
+                  <strong className="text-xs text-muted-foreground">
+                    This would be considered as your final logo you cannot change it once submitted.
+                  </strong>
+                </p>
+              </div>
+              {error && (
+                <div className="p-2 bg-destructive/10 border border-destructive/20 rounded-md flex gap-2 text-sm text-destructive whitespace-pre-wrap">
+                  {error}
+                </div>
               )}
-            </button>
-          </div>
-          
-        </div>
+
+              {/* Submit Button */}
+              <div className="pt-2">
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-3 rounded-md font-medium text-sm transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 h-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Submit Project
+                    </>
+                  )}
+                </button>
+              </div>
+              
+            </div>
+          </>
+        )}
       </div>
 
       {/* GitHub Statistics Section */}
-      {team && team.repo_name && (
+      {team?.repo_name && (
         <div className="mt-6 bg-muted/30 border border-border rounded-lg p-4">
           <h3 className="font-semibold text-primary flex items-center gap-2">
             <Database className="h-4 w-4" /> 
