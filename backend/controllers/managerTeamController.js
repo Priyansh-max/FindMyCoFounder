@@ -149,6 +149,8 @@ const getTeam = async (req, res) => {
 const contactInfo = async (req, res) => {
     const idea_id = req.params.id;
 
+    console.log(idea_id);
+
     const whatsapp_link = req.body.whatsapp_link;
     const slack_link = req.body.slack_link;
     const discord_link = req.body.discord_link;
@@ -170,7 +172,7 @@ const contactInfo = async (req, res) => {
     if(slack_link !== 'not set' && !slack_link.includes('https://slack.com/')){
         return res.status(200).json({success : false , error : 'Slack link is not valid'});
     }
-    if(discord_link !== 'not set' && !discord_link.includes('https://discord.com/')){
+    if(discord_link !== 'not set' && !discord_link.includes('https://discord.gg/')){
         return res.status(200).json({success : false , error : 'Discord link is not valid'});
     }
 
@@ -178,13 +180,15 @@ const contactInfo = async (req, res) => {
         const { data , error} = await supabase
         .from('manage_team')
         .update({
-            whatsapp_link: whatsapp_link,
-            slack_link: slack_link,
-            discord_link: discord_link,
+            whatsapp_url: whatsapp_link,
+            slack_url: slack_link,
+            discord_url: discord_link,
         })
         .eq('idea_id', idea_id);
-
+        console.log(data);
+        console.log("hiii");
         if(error){
+            console.log("hiweiubiewfb");
             throw error;
         }
 
