@@ -466,8 +466,11 @@ export default function Manage() {
               ))}
             </div>
             <div className="flex pb-2 px-1 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors items-center space-x-3">
-              {/* it should display 29th march like this */}
-              <p>ESTD : {new Date(team.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+              {/* it should display 29th march like this
+              add a check if updated_at is null then display "Not connected yet" */}
+              {team.updated_at ? (
+              <p>ESTD : {new Date(team.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p> ) : 
+              <p>Not connected yet</p>}
             </div>
           </div>
         </div>
