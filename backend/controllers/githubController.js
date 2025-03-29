@@ -32,21 +32,34 @@ const getRepoStats = async (req, res) => {
     const lastWeek = new Date(today);
     lastWeek.setDate(lastWeek.getDate() - 7);
 
-    // For fetchAllCommitsSince: use repoConnectedAt - 1 day
+    // For fetchAllCommitsSince: use repoConnectedAt
     let connectionDate = null;
     let useConnectionDate = false;
+    let weeklyStartDate = lastWeek;
+
     if (repoConnectedAt) {
       console.log("repoConnectedAt from params:", repoConnectedAt);
       connectionDate = new Date(repoConnectedAt);
+      
       if (!isNaN(connectionDate.getTime())) {
         useConnectionDate = true;
-        connectionDate.setDate(connectionDate.getDate() - 1);
+        connectionDate.setDate(connectionDate.getDate());
+
+        // Calculate days since connection
+        const daysSinceConnection = Math.floor((today - connectionDate) / (1000 * 60 * 60 * 24));
+        console.log("Days since connection:", daysSinceConnection);
+
+        // If repo was connected less than 7 days ago, adjust the weekly start date
+        if (daysSinceConnection < 7) {
+          weeklyStartDate = connectionDate;
+          console.log("Using connection date for weekly stats as it's less than 7 days old");
+        }
       }
     }
 
     console.log("Original connection date:", repoConnectedAt);
     console.log("Adjusted connection date for all commits:", connectionDate?.toISOString());
-    console.log("Last week date for weekly commits:", lastWeek.toISOString());
+    console.log("Weekly stats start date:", weeklyStartDate.toISOString());
 
     try {
       // Fetch all data in parallel
@@ -54,7 +67,7 @@ const getRepoStats = async (req, res) => {
           githubService.fetchAllCommitsSince(username, repoName, connectionDate.toISOString()),
           githubService.fetchIssuesSince(username, repoName, connectionDate.toISOString()),
           githubService.fetchPullRequestsSince(username, repoName, connectionDate.toISOString()),
-          githubService.fetchWeeklyCommits(username, repoName, lastWeek.toISOString(), today.toISOString())
+          githubService.fetchWeeklyCommits(username, repoName, weeklyStartDate.toISOString(), today.toISOString())
       ]);
 
       // Check and extract data and metadata
@@ -69,13 +82,13 @@ const getRepoStats = async (req, res) => {
           issuesResult?.metadata?.timestamp, 
           pullsResult?.metadata?.timestamp, 
           weeklyCommitsResult?.metadata?.timestamp
-      ].filter(Boolean); // Remove any undefined/null values
+      ].filter(Boolean);
       
       // Use the earliest timestamp as lastUpdated, or current time if no timestamps
       const lastUpdated = timestamps.length > 0 ? timestamps.sort()[0] : new Date().toISOString();
       
-      // Process commit data for chart
-      const dailyCommits = processCommitData(weeklyCommits, today);
+      // Process commit data for chart with adjusted date range
+      const dailyCommits = processCommitData(weeklyCommits, today, weeklyStartDate);
 
       // Check if we're using cached data and get the timestamp
       const todayDate = today.toISOString().split('T')[0];
@@ -91,8 +104,9 @@ const getRepoStats = async (req, res) => {
           dailyCommits,
           lastUpdated: lastUpdated,
           isCached: cacheExists,
-          since: connectionDate?.toISOString() || lastWeek.toISOString(), // Add the since date to the response
-          useConnectionDate // Flag indicating if we used the connection date
+          since: connectionDate?.toISOString() || lastWeek.toISOString(),
+          useConnectionDate,
+          daysTracked: Math.floor((today - weeklyStartDate) / (1000 * 60 * 60 * 24)) + 1
         }
       });
     } catch (innerError) {
@@ -236,12 +250,12 @@ const getMemberStats = async (req, res) => {
   }
 };
 
-// Helper function to process commit data for chart
-const processCommitData = (commits, today) => {
+// Helper function to process commit data for chart with adjusted date range
+const processCommitData = (commits, today, startDate) => {
   // Defensive check to ensure commits is an array
   if (!commits || !Array.isArray(commits)) {
     console.warn('processCommitData received invalid data:', commits);
-    commits = []; // Default to empty array to avoid errors
+    commits = [];
   }
 
   console.log(`Processing ${commits.length} commits for chart`);
@@ -250,8 +264,14 @@ const processCommitData = (commits, today) => {
   const labels = [];
   const commitCounts = [];
 
+  // Calculate number of days to show
+  const daysToShow = Math.min(
+    7,
+    Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1
+  );
+
   // Initialize all days with 0 commits
-  for (let i = 6; i >= 0; i--) {
+  for (let i = daysToShow - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
