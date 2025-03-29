@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js');
-const nodemailer = require('nodemailer');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -7,7 +6,57 @@ const supabase = createClient(
 );
 
 const submitProject = async (req, res) => {
-    return res.status(200).json({ message: 'Project submitted successfully' });
+  try {
+    const {
+        projectLink,
+        videoLink,
+        description,
+        logoUrl,
+        ideaId,
+        repoName,
+        repoUrl,
+        start_date,
+        repostats,
+        memberStats
+    } = req.body;
+
+    const {data, error} = await supabase
+    .from('projectSubmission')
+    .insert({
+      idea_id : ideaId,
+      project_link : projectLink,
+      video_link : videoLink,
+      description : description,
+      logo_url : logoUrl,
+      repo_name : repoName,
+      repo_url : repoUrl,
+      start_date : start_date,
+      repo_stats : repostats,
+      mem_stats : memberStats,
+    })
+
+    if(error){  
+      throw error;
+    }
+
+    const {data : updateIdea , error : updateIdeaError } = await supabase
+      .from('ideas')
+      .update({
+        status : 'closed',
+        completion_status : 'review'
+      })
+      .eq('id', ideaId);
+
+    if(updateIdeaError){
+      throw updateIdeaError;
+    }
+
+    res.status(200).json({ success: true, message: 'Project submitted successfully!' , data});
+
+    } catch (error) {
+      console.error('Error processing submission:', error);
+      res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
 }
 
 const uploadLogo = async (req, res) => {
@@ -15,7 +64,6 @@ const uploadLogo = async (req, res) => {
       if (!req.file) {
         return res.status(400).json({ error: 'No logo file uploaded' });
       }
-
 
       const logo = req.file;
       const allowedMimeTypes = ["image/jpeg", "image/png"];
