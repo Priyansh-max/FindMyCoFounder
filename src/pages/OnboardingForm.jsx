@@ -46,6 +46,7 @@ const OnboardingForm = () => {
         setFormData(prev => ({
           ...prev,
           githubUrl: user.user_metadata?.user_name ? `https://github.com/${user.user_metadata.user_name}` : '',
+          github_username: user.user_metadata?.user_name || '',
           email: user.email || ''
         }));
       }

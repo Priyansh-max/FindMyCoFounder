@@ -21,7 +21,7 @@ const verificationCodes = new Map();
 // Create or update profile
 const createProfile = async (req, res) => {
   try {
-    const { fullName, email, githubUrl, portfolioUrl, description, skills, resumeUrl , avatar_url } = req.body;
+    const { fullName, email, githubUrl,github_username, portfolioUrl, description, skills, resumeUrl , avatar_url } = req.body;
     
     const userId = req.user.id;
 
@@ -32,6 +32,7 @@ const createProfile = async (req, res) => {
         full_name: fullName,
         email,
         github_url: githubUrl,
+        github_username: github_username,
         portfolio_url: portfolioUrl || '',
         description,
         skills,
