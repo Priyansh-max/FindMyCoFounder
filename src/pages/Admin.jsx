@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Video, AlertTriangle, Github, Users, GitPullRequest, GitMerge, Calendar, Clock, Info, GitCommitIcon, CircleDot } from 'lucide-react';
+import { CheckCircle, XCircle, Video, AlertTriangle, Github, Users, GitPullRequest, GitMerge, Calendar, Clock, Info, GitCommitIcon, CircleDot, Flag, Shield } from 'lucide-react';
 import supabase from '../lib/supabase';
 import { toast } from 'react-hot-toast';
-import { RiGitMergeFill } from 'react-icons/ri';
+import axios from 'axios';
 
 const Admin = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checklist, setChecklist] = useState({});
+  const [spamMembers, setSpamMembers] = useState({});
+  const [session, setSession] = useState(null);
 
   // Checklist items
   const checklistItems = [
@@ -16,27 +18,74 @@ const Admin = () => {
     "Does it has an open issue or open pull request",
     "Does it provide a video demo",
     "Does it provide a relevant description",
+    "Mark SPAM"
   ];
 
   useEffect(() => {
-    fetchSubmissions();
+    const fetchSessionAndData = async () => {
+      try {
+        // First get the session
+        const {data: {session}} = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Authentication required');
+          // Assuming navigate is imported from react-router-dom
+          // navigate('/');
+          return;
+        }
+        setSession(session);
+        
+        // Now fetch submissions with the session
+        await fetchSubmissions(session);
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        toast.error('Failed to initialize data');
+      }
+    };
+    
+    fetchSessionAndData();
   }, []);
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = async (currentSession) => {
     try {
-      const { data, error } = await supabase
-        .from('projectSubmission')
-        .select('*')
-        .order('submitted_on', { ascending: false });
+      setLoading(true);
+      
+      // Use the session passed as parameter or fall back to the state
+      const sessionToUse = currentSession || session;
+      
+      if (!sessionToUse) {
+        toast.error('No active session');
+        return;
+      }
+      
+      const submissionsResponse = await axios.get('http://localhost:5000/api/admin/submissions', {
+        headers: {
+          Authorization: `Bearer ${sessionToUse.access_token}`
+        }
+      });
 
-      if (error) throw error;
+      if(!submissionsResponse.data.success){
+        toast.error(submissionsResponse.data.error);
+        return;
+      }
 
-      // Initialize checklist state for each submission
+      const data = submissionsResponse.data.data;
       const initialChecklist = {};
+      const initialSpamMembers = {};
+        
       data.forEach(submission => {
         initialChecklist[submission.id] = new Array(checklistItems.length).fill(false);
+        
+        // Initialize spam tracking for each member in each submission
+        initialSpamMembers[submission.id] = {};
+        if (submission.mem_stats && Array.isArray(submission.mem_stats)) {
+          submission.mem_stats.forEach((member, index) => {
+            initialSpamMembers[submission.id][index] = false;
+          });
+        }
       });
+      
       setChecklist(initialChecklist);
+      setSpamMembers(initialSpamMembers);
       setSubmissions(data);
 
       console.log(data);
@@ -55,12 +104,72 @@ const Admin = () => {
     }));
   };
 
+  const handleToggleSpamMember = (submissionId, memberIndex) => {
+    setSpamMembers(prev => ({
+      ...prev,
+      [submissionId]: {
+        ...prev[submissionId],
+        [memberIndex]: !prev[submissionId][memberIndex]
+      }
+    }));
+    
+    const memberName = submissions.find(s => s.id === submissionId)?.mem_stats[memberIndex]?.full_name || 'Team member';
+    const isSpam = !spamMembers[submissionId]?.[memberIndex];
+    
+    if (isSpam) {
+      toast.success(`${memberName} marked as spam contributor`);
+    } else {
+      toast.success(`${memberName} unmarked as spam contributor`);
+    }
+  };
+
   const handleApprove = async (submissionId) => {
     try {
-        //get idea_id from submission id then get profile_id from idea_id
-        //create an array of objects with the following properties:
-        //calculate number of days, merged pr , no of inactivities then for each member give points
-
+      // Get the submission by ID
+      const submission = submissions.find(s => s.id === submissionId);
+      
+      if (!submission) {
+        throw new Error('Submission not found');
+      }
+      
+      // 1. Create project details object
+      const projectDetails = {
+        idea_id: submission.idea_id,
+        description: submission.description,
+        logo_url: submission.logo_url,
+        project_link: submission.project_link,
+        repo_url: submission.repo_url,
+        repo_stats: submission.repo_stats
+      };
+      
+      // 2. Create member stats object with spam flags
+      const memberStatsWithSpam = submission.mem_stats.map((member, index) => {
+        return {
+          ...member,
+          is_spam: spamMembers[submissionId]?.[index] || false
+        };
+      });
+      
+      // 3. Create checklist object with only checked items
+      const checkedItems = {};
+      if (checklist[submissionId]) {
+        checklist[submissionId].forEach((isChecked, index) => {
+          if (isChecked) {
+            checkedItems[checklistItems[index]] = true;
+          }
+        });
+      }
+      
+      // Log all three objects
+      console.log("Project Details:", projectDetails);
+      console.log("Member Stats with Spam Flags:", memberStatsWithSpam);
+      console.log("Checked Checklist Items:", checkedItems);
+      
+      // Here you would include the API call to approve the project
+      // including these objects in your payload
+      
+      toast.success('Project approved successfully');
+      
     } catch (error) {
       console.error('Error approving submission:', error);
       toast.error('Failed to approve project');
@@ -207,20 +316,41 @@ const Admin = () => {
                       <span className="text-xs text-muted-foreground">
                         Showing {submission.mem_stats.length} members
                       </span>
+                      {Object.values(spamMembers[submission.id] || {}).some(isSpam => isSpam) && (
+                        <div className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded flex items-center gap-1">
+                          <Flag className="w-3 h-3" />
+                          {Object.values(spamMembers[submission.id] || {}).filter(isSpam => isSpam).length} spam contributors marked
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 modern-scrollbar">
                       {submission.mem_stats.map((member, index) => (
-                        <div key={index} className="bg-background rounded-lg p-3 border border-border hover:border-primary/50 transition-colors">
+                        <div key={index} className={`bg-background rounded-lg p-3 border transition-colors ${
+                          spamMembers[submission.id]?.[index] 
+                            ? 'border-destructive border-dashed' 
+                            : 'border-border hover:border-primary/50'
+                        }`}>
                           <div className="flex items-center gap-4">
                             {/* Avatar and Identity */}
                             <div className="flex items-center gap-3 w-64">
-                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Users className="w-5 h-5 text-primary" />
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                member.avatar_url ? 'bg-primary/10' : 'bg-destructive/10'
+                              }`}>
+                                {member.avatar_url ? (
+                                  <img src={member.avatar_url} alt="Member Avatar" className="w-full h-full object-cover rounded-full" />
+                                ) : (
+                                  <Users className="w-5 h-5 text-primary" />
+                                )}
                               </div>
                               <div>
-                                <div className="font-medium">{member.full_name}</div>
+                                <div className="font-medium flex items-center gap-2">
+                                  {member.full_name}
+                                  {spamMembers[submission.id]?.[index] && (
+                                    <span className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded">SPAM</span>
+                                  )}
+                                </div>
                                 <a 
-                                  href={member.github_url}
+                                  href={`https://github.com/${member.github_username}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-xs text-primary hover:underline flex items-center gap-1"
@@ -262,11 +392,11 @@ const Admin = () => {
                               </div>
 
                               <div className={`px-2 py-1 rounded-full text-xs ${
-                                member.inactive_days > 4 
+                                member.inactive_days > 0 
                                   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                   : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                               }`}>
-                                {member.inactive_days}d
+                                Inactive for {member.inactive_days}d
                               </div>
 
                               <div className="flex items-center gap-1">
@@ -274,6 +404,27 @@ const Admin = () => {
                                 <span className="text-sm"> {new Date(member.joined_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                               </div>
 
+                              {/* Mark as Spam Button */}
+                              <button
+                                onClick={() => handleToggleSpamMember(submission.id, index)}
+                                className={`ml-auto px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${
+                                  spamMembers[submission.id]?.[index]
+                                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                                    : 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50'
+                                }`}
+                              >
+                                {spamMembers[submission.id]?.[index] ? (
+                                  <>
+                                    <Shield className="w-3 h-3" />
+                                    Unmark Spam
+                                  </>
+                                ) : (
+                                  <>
+                                    <Flag className="w-3 h-3" />
+                                    Mark as Spam
+                                  </>
+                                )}
+                              </button>
                             </div>
                           </div>
                         </div>
