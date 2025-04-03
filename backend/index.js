@@ -13,6 +13,7 @@ const manageTeamRoutes = require('./routes/manageTeamRoutes');
 const githubRoutes = require('./routes/githubRoutes');
 const projectValidation = require('./validate/projectValidation');
 const projectSubmitRoutes = require('./routes/projectSubmitRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/data', NumberRoutes);
 app.use('/api/manage-team', manageTeamRoutes);
 app.use('/api/github' , githubRoutes);
 app.use('/api/project-submit', projectSubmitRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
