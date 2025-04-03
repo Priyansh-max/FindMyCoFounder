@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect , useNavigate } from 'react';
 import { Upload, Video, Database, Text, Image, Info, FileText, AlertCircle, Loader2, CheckCircle, Link as LinkIcon, CheckCircle2, XCircle, Github } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 
 const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostats }) => {
   // Form state
+  const navigate = useNavigate();
   const [projectLink, setProjectLink] = useState('');
   const [videoLink, setVideoLink] = useState('');
   const [description, setDescription] = useState('');
@@ -493,6 +494,8 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
           fileInputRef.current.value = '';
         }
         }, 2000);
+
+        navigate('/idealist');
 
 
       } else {
