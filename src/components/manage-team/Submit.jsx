@@ -391,19 +391,6 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       
       // Visual indication of which data we're submitting
       setCurrentSubmissionStep('submitting');
-      
-      // Create form data for final submission
-      const submitFormData = new FormData();
-      submitFormData.append('projectLink', projectLink);
-      submitFormData.append('videoLink', videoLink);
-      submitFormData.append('description', description);
-      submitFormData.append('logoUrl', logoUrl); // Send the logo URL instead of file
-      submitFormData.append('ideaId', ideaId);
-      submitFormData.append('repoName', team.repo_name);
-      submitFormData.append('repoUrl', team.repo_url);
-      submitFormData.append('start_date', team.updated_at);
-      submitFormData.append('repoStats', JSON.stringify(repostats));
-      submitFormData.append('memberStats', JSON.stringify(team.member_profiles));
 
       console.log('Project Submission Summary:', {
         projectDetails: {
@@ -437,11 +424,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
 
       const finalmemberstats = team.member_profiles.map(member => ({
         id : member.id,
-        full_name : member.full_name,
-        email : member.email,
-        github_url : member.github_url,
-        github_username : member.github_username,
-        joined_at : member.joined_at,
+        joined_at : member.joined_at, //project joined date
         commits : member.stats.commits,
         open_pull_requests : member.stats.open_prs,
         closed_pull_requests : member.stats.closed_prs,
@@ -503,6 +486,8 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         setUploadProgress(0);
         setUploadSuccess(false);
         setLogoPreview(null);
+        resetFieldStatus();
+        setWordCount(0);
         setShowSubmissionPreview(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
