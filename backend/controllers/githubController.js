@@ -149,7 +149,7 @@ const getMemberStats = async (req, res) => {
       joinDate = new Date(joinedAt);
       if (!isNaN(joinDate.getTime())) {
         useJoinDate = true;
-        joinDate.setDate(joinDate.getDate() - 1); // Start from one day before join date
+        joinDate.setDate(joinDate.getDate()); // Start from one day before join date
       }
     }
 
