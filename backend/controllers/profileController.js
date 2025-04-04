@@ -204,6 +204,143 @@ const verifyPhone = async (req, res) => {
   }
 };
 
+// Get project statistics for user profile
+const getProjectStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('project_completion, project_rating, total_commits, total_pull_req, total_issues, total_merged_pr')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+
+    // Format project completion data for frontend
+    let ratings = [];
+    if (data.project_completion && Array.isArray(data.project_completion)) {
+      // Sort project_completion by date (newest first)
+
+      //no we dont need to sort get the data as it is already sorted
+      const sortedProjects = [...data.project_completion];
+
+      // Map to the format expected by frontend
+      ratings = sortedProjects.map(project => ({
+        project: project.project_title,
+        project_id: project.project_id,
+        rating: project.rating,
+        totalRating: project.totalRating,
+        date: project.date.split('T')[0], // Format date as YYYY-MM-DD
+        role: project.role,
+      }));
+    }
+
+    // Return formatted project stats
+    console.log("Ratings:", ratings);
+    res.json({
+      success: true,
+      data: {
+        ratings,
+        totalCommits: data.total_commits || 0,
+        totalIssues: data.total_issues || 0,
+        totalPRs: data.total_pull_requests || 0,
+        mergedPRs: data.total_merged_pr || 0
+      }
+    });
+  } catch (error) {
+    console.error('Project stats fetch error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+};
+
+// Get project details by project ID
+const getProjectDetails = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const projectIds = req.query.projectIds ? req.query.projectIds.split(',') : [];
+    
+    if (projectIds.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    // Get profile data to verify user's relationship to projects
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('project_completion')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Verify the user has these project IDs in their project_completion
+    const userProjectIds = profileData.project_completion 
+      ? profileData.project_completion.map(p => p.project_id)
+      : [];
+    
+    // Filter to only include projects the user has in their profile
+    const validProjectIds = projectIds.filter(id => userProjectIds.includes(id));
+    
+    if (validProjectIds.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    // Fetch the idea details for these projects
+    const { data: ideasData, error: ideasError } = await supabase
+      .from('ideas')
+      .select(`
+        id, 
+        title, 
+        idea_desc, 
+        project_type,
+        project_link, 
+        video_url, 
+        logo_url, 
+        repo_url, 
+        founder_id,
+        created_at,
+        duration,
+        profiles(full_name, avatar_url),
+        completion_status
+      `)
+      .in('id', validProjectIds);
+
+    if (ideasError) throw ideasError;
+    
+    // Get the user's role for each project from their profile
+    const projectsWithRole = ideasData.map(idea => {
+      const projectCompletion = profileData.project_completion.find(p => p.project_id === idea.id);
+      return {
+        ...idea,
+        role: projectCompletion ? projectCompletion.role : null,
+        rating: projectCompletion ? projectCompletion.rating : 0,
+        date: projectCompletion ? projectCompletion.date : null
+      };
+    });
+
+    res.json({
+      success: true,
+      data: projectsWithRole
+    });
+    
+  } catch (error) {
+    console.error('Project details fetch error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   createProfile,
   updateProfile,
@@ -211,4 +348,6 @@ module.exports = {
   uploadResume,
   verifyEmail,
   verifyPhone,
+  getProjectStats,
+  getProjectDetails
 }; 
