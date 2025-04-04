@@ -1,25 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 const ProjectStats = ({ stats }) => {
   // For client-side rendering only
   const [mounted, setMounted] = useState(false);
 
-  // Example data structure for project completion ratings
-  const projectRatings = [
-    { project: "Starting Point", rating: 0, totalRating: 0, date: "2024-01-01" },
-    { project: "Project A", rating: 150, totalRating: 150, date: "2024-01-15" },
-    { project: "Project B", rating: 280, totalRating: 430, date: "2024-02-01" },
-    { project: "Project C", rating: 420, totalRating: 850, date: "2024-02-15" },
-    { project: "Project D", rating: 520, totalRating: 1370, date: "2024-03-01" },
-    { project: "Project E", rating: -620, totalRating: 750, date: "2024-03-01" },
-    { project: "Project F", rating: 1000, totalRating: 1200, date: "2024-03-01" },
-
-  ];
+  // Prepare the project ratings data - add a starting point and use the data from stats
+  const projectRatings = useMemo(() => {
+    // Create a starting point entry
+    const startingPoint = { project: "Starting Point", rating: 0, totalRating: 0, date: stats.ratings[0]?.date ? new Date(new Date(stats.ratings[0].date).getTime() - 86400000).toISOString().split('T')[0] : "2024-01-01" };
+    
+    //no we dont need to sort get the data as it is already sorted
+    const sortedRatings = stats.ratings;
+    
+    // Return the combined array with the starting point first
+    return [startingPoint, ...sortedRatings];
+  }, [stats.ratings]);
 
   // Setup client-side rendering
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Add global CSS to fix tooltip styling
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .apexcharts-tooltip {
+          overflow: visible !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
   }, []);
 
   // Prepare data for ApexCharts
@@ -60,17 +80,57 @@ const ProjectStats = ({ stats }) => {
       theme: 'dark',
       custom: ({ series, seriesIndex, dataPointIndex }) => {
         const point = projectRatings[dataPointIndex];
+        if (point.project === "Starting Point") return '';
+        
         const previousRating = dataPointIndex > 0 ? projectRatings[dataPointIndex - 1].totalRating : 0;
         const ratingGained = dataPointIndex === 0 ? point.rating : point.totalRating - previousRating;
         const isNegative = ratingGained < 0;
-        const textColorClass = isNegative ? 'text-red-400' : 'text-emerald-400';
-        const sign = isNegative ? '' : '+'; // Only add plus sign for positive values
         
-        return `<div class="p-2 bg-[#1E293B] rounded text-white">
-          <div class="font-medium">${point.project}</div>
-          <div class="text-sm text-gray-300">Total: ${point.totalRating} pts</div>
-          <div class="text-xs font-medium ${textColorClass}">${sign}${ratingGained} pts ${isNegative ? 'lost' : 'gained'}</div>
-        </div>`;
+        // Format date to "Jan 06, 2024" style
+        let formattedDate = '';
+        if (point.date) {
+          const date = new Date(point.date);
+          formattedDate = date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: '2-digit', 
+            year: 'numeric' 
+          });
+        }
+        
+        return `
+          <div style="position: relative; margin-bottom: 20px;">
+            <div style="background: #0F172A; color: white; border-radius: 4px; padding: 10px 15px; min-width: 200px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <div style="font-size: 12px; color: #94A3B8;">${formattedDate}</div>
+              </div>
+              <div style="font-size: 14px; font-weight: 500; margin-bottom: 6px; color: white;">${point.project || 'undefined'}</div>
+              <div style="display: flex; font-size: 12px;">
+                <div style="margin-right: 16px;">
+                  <span style="color: #94A3B8; margin-right: 4px;">Rating</span>
+                  <span style="color: ${isNegative ? '#EF4444' : '#10B981'};">
+                    ${isNegative ? '' : '+'}${ratingGained}
+                  </span>
+                </div>
+                <div>
+                  <span style="color: #94A3B8; margin-right: 4px;">Role</span>
+                  <span style="color: #3B82F6;">
+                    ${point.role ? point.role.charAt(0).toUpperCase() + point.role.slice(1) : 'Contributor'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      },
+      fixed: {
+        enabled: false
+      },
+      marker: {
+        show: true
+      },
+      style: {
+        fontSize: '12px',
+        fontFamily: 'inherit'
       }
     },
     xaxis: {
@@ -93,46 +153,27 @@ const ProjectStats = ({ stats }) => {
     dataLabels: {
       enabled: false,
     },
-    // Add an annotation for Project C (850 points)
+    // Remove annotations to get rid of the "225" number
     annotations: {
-      points: [{
-        x: 'Project C',
-        y: 850,
-        marker: {
-          size: 0
-        },
-        label: {
-          text: '850',
-          offsetY: -15,
-          borderWidth: 0,
-          borderRadius: 4,
-          style: {
-            background: '#1E293B',
-            color: '#fff',
-            padding: {
-              left: 10,
-              right: 10,
-              top: 5,
-              bottom: 5
-            },
-            fontSize: '14px'
-          }
-        }
-      }]
+      points: []
     }
   };
 
   return (
     <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
-      {/* Header with Project Rating */}
+      {/* Header with Project Rating and Role */}
       <div className="mb-6">
         <h3 className="text-[13px] font-medium text-muted-foreground">Project Rating</h3>
-        <p className="text-[32px] font-bold">{projectRatings[projectRatings.length - 1].totalRating}</p>
+        <div className="flex items-center">
+          <p className="text-[32px] font-bold">
+            {projectRatings.length > 1 ? projectRatings[projectRatings.length - 1].totalRating : 0}
+          </p>
+        </div>
       </div>
 
       {/* Rating Progress Graph */}
       <div className="relative" style={{ height: '140px' }}>
-        {mounted && (
+        {mounted && projectRatings.length > 1 ? (
           <ReactApexChart
             options={options}
             series={series}
@@ -140,6 +181,10 @@ const ProjectStats = ({ stats }) => {
             height="100%"
             width="100%"
           />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground text-sm">No project data available</p>
+          </div>
         )}
       </div>
     </div>
