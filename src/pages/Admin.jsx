@@ -139,7 +139,10 @@ const Admin = () => {
         logo_url: submission.logo_url,
         project_link: submission.project_link,
         repo_url: submission.repo_url,
-        repo_stats: submission.repo_stats
+        repo_stats: submission.repo_stats,
+        start_date: submission.start_date,
+        repo_name: submission.repo_name,
+        video_url: submission.video_url
       };
       
       // 2. Create member stats object with spam flags
@@ -164,9 +167,21 @@ const Admin = () => {
       console.log("Project Details:", projectDetails);
       console.log("Member Stats with Spam Flags:", memberStatsWithSpam);
       console.log("Checked Checklist Items:", checkedItems);
+
+      const response = await axios.put(`http://localhost:5000/api/admin/submissions/${submissionId}`, {
+        projectDetails,
+        mem_details: memberStatsWithSpam,
+        checklist: checkedItems
+      },{
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
       
-      // Here you would include the API call to approve the project
-      // including these objects in your payload
+      if(!response.data.success){
+        toast.error(response.data.error);
+        return;
+      }
       
       toast.success('Project approved successfully');
       
