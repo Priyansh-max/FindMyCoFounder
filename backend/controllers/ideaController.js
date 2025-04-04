@@ -118,7 +118,6 @@ const createIdea = async (req, res) => {
         data: data
 
       });
-      console.log(data);
     } catch (error) {
       console.error('Idea fetch error:', error);
       res.status(500).json({ error: error.message });
