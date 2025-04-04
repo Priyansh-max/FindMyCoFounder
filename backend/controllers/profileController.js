@@ -6,18 +6,6 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// Email transporter setup
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASSWORD
-  }
-});
-
-// Store verification codes temporarily (should use Redis in production)
-const verificationCodes = new Map();
-
 // Create or update profile
 const createProfile = async (req, res) => {
   try {
@@ -144,66 +132,6 @@ const uploadResume = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// Generate verification code
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-// Send verification email
-const verifyEmail = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const code = generateCode();
-    
-    // Store code with timestamp
-    verificationCodes.set(email, {
-      code,
-      timestamp: Date.now(),
-      attempts: 0
-    });
-
-    // Send email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Email Verification Code',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Verify Your Email</h2>
-          <p>Your verification code is: <strong>${code}</strong></p>
-          <p>This code will expire in 10 minutes.</p>
-        </div>
-      `
-    });
-
-    res.json({ message: 'Verification code sent' });
-  } catch (error) {
-    console.error('Email verification error:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Verify phone (implement SMS service integration here)
-const verifyPhone = async (req, res) => {
-  try {
-    const { phone } = req.body;
-    const code = generateCode();
-    
-    // Store code (in production, integrate with SMS service)
-    verificationCodes.set(phone, {
-      code,
-      timestamp: Date.now(),
-      attempts: 0
-    });
-
-    // In production, send SMS here
-    // For now, just return the code
-    res.json({ message: 'Verification code sent', code });
-  } catch (error) {
-    console.error('Phone verification error:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
 // Get project statistics for user profile
 const getProjectStats = async (req, res) => {
   try {
@@ -346,8 +274,6 @@ module.exports = {
   updateProfile,
   getProfile,
   uploadResume,
-  verifyEmail,
-  verifyPhone,
   getProjectStats,
   getProjectDetails
 }; 

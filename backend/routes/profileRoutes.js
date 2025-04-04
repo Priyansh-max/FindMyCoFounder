@@ -22,7 +22,6 @@ const upload = multer({
 router.post('/create', authenticateUser, createProfile);
 router.put('/update', authenticateUser, updateProfile);
 router.get('/details', authenticateUser, getProfile); //imp
-// Resume Upload Route
 router.post('/resume', authenticateUser, upload.single('resume'), uploadResume);
 router.get('/get-project-stats', authenticateUser, getProjectStats);
 router.get('/get-project-details', authenticateUser, getProjectDetails);
