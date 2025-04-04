@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X, Lightbulb, Heart, ScrollText, Github, PlayCircle, Calendar, Info, GitPullRequest, AlertTriangle } from "lucide-react";
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X, Lightbulb, Heart, ScrollText, Github, PlayCircle, Calendar, Info, GitPullRequest, AlertTriangle, ExternalLink, FileCode } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
@@ -44,18 +44,16 @@ function Profile() {
   });
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [projectStats, setProjectStats] = useState({
-    ratings: [
-      { project: "Project A", rating: 150, totalRating: 150, date: "2024-01-15" },
-      { project: "Project B", rating: 280, totalRating: 430, date: "2024-02-01" },
-      { project: "Project C", rating: 420, totalRating: 850, date: "2024-02-15" },
-      { project: "Project D", rating: 520, totalRating: 1370, date: "2024-03-01" },
-    ],
-    totalCommits: 156,
-    totalIssues: 23,
-    totalPRs: 45,
-    mergedPRs: 38
+    ratings: [],
+    totalCommits: 0,
+    totalIssues: 0,
+    totalPRs: 0,
+    mergedPRs: 0
   });
   const [activeTab, setActiveTab] = useState('applications');
+  const [authoredProjects, setAuthoredProjects] = useState([]);
+  const [contributedProjects, setContributedProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
 
   const resetError = () => {
     setError(null);
@@ -87,7 +85,8 @@ function Profile() {
         fetchProfile(session),
         fetchApplications(session),
         fetchIdeas(session),
-        fetchStats(session)
+        fetchStats(session),
+        fetchProjectStats(session)
       ];
 
       // Wait for all fetch operations to complete
@@ -238,6 +237,110 @@ function Profile() {
   const filteredApplications = filter === "all"
   ? applications
   : applications.filter((app) => app.status === filter);
+
+  async function fetchProjectStats(session) {
+    try {
+      const response = await axios.get('http://localhost:5000/api/profile/get-project-stats', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (response.data.success) {
+        setProjectStats(response.data.data);
+        console.log('Fetched project stats:', response.data.data);
+        
+        // Extract project IDs from project completion data
+        const authoredIds = response.data.data.ratings
+          .filter(project => project.role === 'author')
+          .map(project => project.project_id);
+          
+        const contributedIds = response.data.data.ratings
+          .filter(project => project.role === 'contributor')
+          .map(project => project.project_id);
+          
+        console.log(authoredIds);
+        console.log(contributedIds);
+        // Fetch details for these projects if tab is active or there are projects
+        if (activeTab === 'authored' && authoredIds.length > 0) {
+          fetchProjectDetails(session, authoredIds, 'authored');
+        }
+        
+        if (activeTab === 'contributed' && contributedIds.length > 0) {
+          fetchProjectDetails(session, contributedIds, 'contributed');
+        }
+      } else {
+        throw new Error('Failed to fetch project statistics');
+      }
+    } catch (error) {
+      console.error('Error fetching project stats:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch project statistics');
+    }
+  }
+  
+  // Function to fetch project details
+  async function fetchProjectDetails(session, projectIds, type) {
+    if (!projectIds || projectIds.length === 0) return;
+    
+    setLoadingProjects(true);
+    try {
+      const response = await axios.get(`http://localhost:5000/api/profile/get-project-details?projectIds=${projectIds.join(',')}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (response.data.success) {
+        if (type === 'authored') {
+          setAuthoredProjects(response.data.data);
+        } else {
+          setContributedProjects(response.data.data);
+        }
+        console.log(`Fetched ${type} project details:`, response.data.data);
+      } else {
+        throw new Error(`Failed to fetch ${type} project details`);
+      }
+    } catch (error) {
+      console.error(`Error fetching ${type} project details:`, error);
+      toast.error(`Failed to fetch ${type} project details`);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }
+
+  // Load project details when tab changes
+  useEffect(() => {
+    const loadProjectDetails = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        if (activeTab === 'authored' && projectStats.ratings.length > 0) {
+          const authoredIds = projectStats.ratings
+            .filter(project => project.role === 'author')
+            .map(project => project.project_id);
+            
+          if (authoredIds.length > 0 && authoredProjects.length === 0) {
+            fetchProjectDetails(session, authoredIds, 'authored');
+          }
+        }
+        
+        if (activeTab === 'contributed' && projectStats.ratings.length > 0) {
+          const contributedIds = projectStats.ratings
+            .filter(project => project.role === 'contributor')
+            .map(project => project.project_id);
+            
+          if (contributedIds.length > 0 && contributedProjects.length === 0) {
+            fetchProjectDetails(session, contributedIds, 'contributed');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading project details:', error);
+      }
+    };
+    
+    loadProjectDetails();
+  }, [activeTab, projectStats.ratings]);
 
   if (error) {
     return <ErrorPage error={error} resetError={resetError} />;
@@ -507,26 +610,37 @@ function Profile() {
             Your Applications
           </button>
           <button
-            onClick={() => setActiveTab('ideas')}
+            onClick={() => setActiveTab('posted')}
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-              activeTab === 'ideas'
+              activeTab === 'posted'
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
-            Your Ideas
+            Your Posted
           </button>
           <button
-            onClick={() => setActiveTab('completed')}
+            onClick={() => setActiveTab('authored')}
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
-              activeTab === 'completed'
+              activeTab === 'authored'
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
-            Completed Projects
+            Authored
+          </button>
+          <button
+            onClick={() => setActiveTab('contributed')}
+            className={cn(
+              "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+              activeTab === 'contributed'
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Contributed
           </button>
         </div>
 
@@ -614,7 +728,7 @@ function Profile() {
           </div>
         )}
 
-        {activeTab === 'ideas' && (
+        {activeTab === 'posted' && (
           <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
             <h2 className="text-2xl font-bold mb-6 text-foreground">Your Posted Ideas</h2>
             {ideas.map((idea) => (
@@ -729,17 +843,100 @@ function Profile() {
           </div>
         )}
 
-        {activeTab === 'completed' && (
+        {activeTab === 'authored' && (
           <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
-            <h2 className="text-2xl font-bold mb-6 text-foreground">Completed Projects</h2>
-            {/* Add completed projects content here */}
-            {projectStats.points.length > 0 ? (
-              <div className="space-y-4">
-                {/* Add your completed projects list here */}
-                {projectStats.points.map((point, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span>{point.project}</span>
-                    <span>{point.points} points</span>
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Projects You Created</h2>
+            {loadingProjects ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : projectStats.ratings.filter(project => project.role === 'author').length > 0 ? (
+              <div className="space-y-6">
+                {authoredProjects.map((project, index) => (
+                  <div key={index} className="border border-border rounded-lg p-5 hover:border-primary/50 transition-colors group">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-primary/10">
+                          {project.logo_url ? (
+                            <img 
+                              src={project.logo_url} 
+                              alt={project.title} 
+                              className="w-10 h-10 rounded object-cover"
+                            />
+                          ) : (
+                            <Lightbulb className="w-6 h-6 text-primary" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
+                          <span className="text-sm px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                            Approved
+                          </span>
+                        </div>
+                        
+                        <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
+                          {project.idea_desc}
+                        </p>
+                        
+                        <div className="mt-4 flex items-center text-sm text-muted-foreground">
+                          <div className="flex items-center mr-4">
+                            <Calendar className="w-4 h-4 mr-1" /> 
+                            {new Date(project.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                          <div className="flex items-center mr-4">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {project.duration} days
+                          </div>
+                          <div className="flex items-center">
+                            <Users className="w-4 h-4 mr-1" />
+                            {project.project_type === 'team' ? 'Team Project' : 'Solo Project'}
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 flex items-center gap-3">
+                          {project.repo_url && (
+                            <a 
+                              href={project.repo_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                            >
+                              <Github className="w-3 h-3 mr-1" /> Repository
+                            </a>
+                          )}
+                          {project.project_link && (
+                            <a 
+                              href={project.project_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" /> Live Demo
+                            </a>
+                          )}
+                          {project.video_url && (
+                            <a 
+                              href={project.video_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs font-medium text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-3 py-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                            >
+                              <PlayCircle className="w-3 h-3 mr-1" /> Video Demo
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-foreground">{project.rating} points</div>
+                        <div className="text-sm text-primary font-medium">Author</div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -747,9 +944,120 @@ function Profile() {
               <div className="text-center py-8 bg-muted/50 rounded-lg">
                 <div className="flex flex-col items-center justify-center">
                   <CheckCircle className="h-12 w-12 text-muted-foreground mb-3" />
-                  <h3 className="text-lg font-medium text-foreground mb-1">No Completed Projects Yet</h3>
+                  <h3 className="text-lg font-medium text-foreground mb-1">No Authored Projects Yet</h3>
                   <p className="text-sm text-muted-foreground max-w-md">
-                    Keep contributing to projects and building your portfolio!
+                    Create and complete your own project ideas to see them here!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'contributed' && (
+          <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Projects You Contributed To</h2>
+            {loadingProjects ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : projectStats.ratings.filter(project => project.role === 'contributor').length > 0 ? (
+              <div className="space-y-6">
+                {contributedProjects.map((project, index) => (
+                  <div key={index} className="border border-border rounded-lg p-5 hover:border-primary/50 transition-colors group">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-blue-100 dark:bg-blue-900/30">
+                          {project.logo_url ? (
+                            <img 
+                              src={project.logo_url} 
+                              alt={project.title} 
+                              className="w-10 h-10 rounded object-cover"
+                            />
+                          ) : (
+                            <FileCode className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
+                          <span className="text-sm px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                            Approved
+                          </span>
+                        </div>
+                        
+                        <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
+                          {project.idea_desc}
+                        </p>
+                        
+                        <div className="mt-4 flex items-center text-sm text-muted-foreground">
+                          <div className="flex items-center mr-4">
+                            <Calendar className="w-4 h-4 mr-1" /> 
+                            {new Date(project.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                          <div className="flex items-center mr-4">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {project.duration} days
+                          </div>
+                          <div className="flex items-center">
+                            <Users className="w-4 h-4 mr-1" />
+                            {project.project_type === 'team' ? 'Team Project' : 'Solo Project'}
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 flex items-center gap-3">
+                          {project.repo_url && (
+                            <a 
+                              href={project.repo_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                            >
+                              <Github className="w-3 h-3 mr-1" /> Repository
+                            </a>
+                          )}
+                          {project.project_link && (
+                            <a 
+                              href={project.project_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" /> Live Demo
+                            </a>
+                          )}
+                          {project.video_url && (
+                            <a 
+                              href={project.video_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs font-medium text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-3 py-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                            >
+                              <PlayCircle className="w-3 h-3 mr-1" /> Video Demo
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-foreground">{project.rating} points</div>
+                        <div className="text-sm text-blue-500 font-medium">Contributor</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-muted/50 rounded-lg">
+                <div className="flex flex-col items-center justify-center">
+                  <CheckCircle className="h-12 w-12 text-muted-foreground mb-3" />
+                  <h3 className="text-lg font-medium text-foreground mb-1">No Contributions Yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Apply to projects and start contributing to see them here!
                   </p>
                 </div>
               </div>
