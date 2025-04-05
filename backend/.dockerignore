@@ -1,0 +1,9 @@
+node_modules
+.env
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+docker-compose.override.yml
+Dockerfile.dev
