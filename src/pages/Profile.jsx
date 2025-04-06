@@ -219,6 +219,7 @@ function Profile() {
     }
   };
 
+  //remove this thing we dont need delete feature for now....
   const handleDeleteIdea = async (ideaId) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
