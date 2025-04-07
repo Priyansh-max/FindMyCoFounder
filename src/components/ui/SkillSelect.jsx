@@ -86,7 +86,7 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills , text}) => {
     <div className="space-y-2 relative">
       {/* Combined Input and Selected Skills */}
       <div 
-        className="relative flex flex-wrap items-center gap-2 px-2 rounded-md border border-input bg-white dark:bg-background focus-within:ring-1 focus-within:ring-primary"
+        className="relative flex flex-wrap items-center gap-2 px-2 rounded-md border border-input bg-white dark:bg-background focus-within:ring-1 focus-within:ring-primary transition-colors"
         onClick={() => inputRef.current?.focus()}
       >
         {/* Selected Skills */}
@@ -113,7 +113,7 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills , text}) => {
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          className="flex-1 min-w-[100px] bg-transparent border-none focus:border-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+          className="flex-1 min-w-[100px] bg-white dark:bg-background border-none focus:border-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none transition-colors"
           placeholder={selectedSkills.length === 0 ? text : ""}
         />
       </div>
@@ -122,7 +122,7 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills , text}) => {
       {isOpen && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full left-0 right-0 mt-1 max-h-60 overflow-auto rounded-md border border-border bg-white dark:bg-background shadow-lg"
+          className="absolute z-50 w-full left-0 right-0 mt-1 max-h-60 overflow-auto rounded-md border border-border bg-white dark:bg-background shadow-lg transition-colors"
           style={{ maxWidth: '100%' }}
         >
           <div className="py-1">
