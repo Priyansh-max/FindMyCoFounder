@@ -290,7 +290,7 @@ export default function Manage() {
 
           // Fetch member statistics
           const response = await axios.get(
-            `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}/${team.updated_at}`,
+            `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
             requestConfig
           );
 
