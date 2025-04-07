@@ -12,8 +12,10 @@ const NumberRoutes = require('./routes/numberRoutes');
 const manageTeamRoutes = require('./routes/manageTeamRoutes');
 const githubRoutes = require('./routes/githubRoutes');
 const projectValidation = require('./validate/projectValidation');
+const pitchValidation = require('./validate/pitchValidation');
 const projectSubmitRoutes = require('./routes/projectSubmitRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const idealistRoutes = require('./routes/idealistRoutes');
 
 const app = express();
 
@@ -28,6 +30,7 @@ app.use('/api/validate', emailValidation);
 app.use('/api/validate', ideaValidation);
 app.use('/api/validate', profileValidation);
 app.use('/api/validate', projectValidation);
+app.use('/api/validate', pitchValidation);
 app.use('/api/idea', ideaRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/data', NumberRoutes);
@@ -35,6 +38,7 @@ app.use('/api/manage-team', manageTeamRoutes);
 app.use('/api/github' , githubRoutes);
 app.use('/api/project-submit', projectSubmitRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/idealist', idealistRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
