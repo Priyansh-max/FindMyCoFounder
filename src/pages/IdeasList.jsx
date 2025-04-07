@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import supabase from '../lib/supabase';
-import { Rocket, Users, Calendar, ArrowRight, Search, RefreshCcw, Filter, AlertTriangle } from 'lucide-react';
+import { Rocket, Users, Calendar, ArrowRight, Search, RefreshCcw, Filter, AlertTriangle, X, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SkillSelect from '@/components/ui/SkillSelect';
 import ErrorPage from '../components/ErrorPage';
+import { Textarea } from "@/components/ui/textarea";
 
 function IdeasList() {
   const [ideas, setIdeas] = useState([]);
@@ -18,64 +19,94 @@ function IdeasList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [selectedSkills, setSelectedSkills] = useState([]);
-  const [showOnboardingWarning, setShowOnboardingWarning] = useState(false);
-  const location = useLocation();
+  const [showOnboardingWarning, setShowOnboardingWarning] = useState(true);
   const navigate = useNavigate();
   const [error, setError] = useState(null);
+  const [session, setSession] = useState(null);
+  const [boarded, setBoarded] = useState(false);
+  const [applyOverlay, setApplyOverlay] = useState(false);
+  const [pitchText, setPitchText] = useState('');
+  const [applyingToIdea, setApplyingToIdea] = useState(null);
+  const [refreshLoading, setRefreshLoading] = useState(false);
+  const [pitchValidation, setPitchValidation] = useState({ loading: false, valid: null, message: '' });
 
   useEffect(() => {
     console.log('Component mounted');
     checkUser();
-    checkOnboardingStatus();
   }, []);
 
-  // Watch for auth state changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        fetchIdeas();
-      } else {
-        setIdeas([]);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const resetError = () => {
-    setError(null);
-    checkUser();
-  };
-
-  const checkOnboardingStatus = async () => {
-        setShowOnboardingWarning(true); //add later create a backend for this that checks if the users onboarding is completed  
-  };
-
-  async function checkUser() {
-    const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user || null);
-    if (session?.user) {
-      try {
-        await fetchIdeas();
-      } catch (error) {
-        console.error('Error:', error);
-        setError(error);
-      }
-    }
-  }
-
-  async function fetchIdeas() {
+  const checkUser = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      // Get the current authenticated user
       const { data: { session } } = await supabase.auth.getSession();
-  
-      if (!session?.user) {
-        console.log("User not signed in");
+      if (!session) {
+        navigate('/');
         return;
       }
 
+      setSession(session);
+      setUser(session.user);
+      
+      try {
+        // Run both functions in parallel but handle their errors individually
+        const [ideasResult, onboardingResult] = await Promise.allSettled([
+          fetchIdeas(session),
+          checkOnboardingStatus(session)
+        ]);
+        
+        // Handle potential errors from each promise
+        if (ideasResult.status === 'rejected') {
+          console.error('Error fetching ideas:', ideasResult.reason);
+          setError(new Error(ideasResult.reason?.message || 'Failed to fetch ideas'));
+        }
+        
+        if (onboardingResult.status === 'rejected') {
+          console.error('Error checking onboarding:', onboardingResult.reason);
+          // Just log this error but don't set it as the main error
+        }
+      } catch (err) {
+        console.error('Error in parallel operations:', err);
+        setError(err);
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetError = () => {
+    setError(null);
+    if (session) {
+      fetchIdeas(session);
+    } else {
+      checkUser();
+    }
+  };
+
+  const checkOnboardingStatus = async (session) => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/idealist/verify-onboarding', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (response.data.success && response.data.onboarding) {
+        setShowOnboardingWarning(false);
+        setBoarded(true);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      throw error;
+    }
+  };
+
+  async function fetchIdeas(session) {
+    try {
       const response = await axios.get('http://localhost:5000/api/idea', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
@@ -87,81 +118,105 @@ function IdeasList() {
       if (success) {
         setIdeas(data || []);
         console.log('Fetched ideas:', data);
+        return data;
       } else {
         throw new Error("Failed to fetch ideas");
       }
     } catch (error) {
       console.error('Unexpected Error:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch ideas');
-    } finally {
-      setLoading(false);
+      throw error;
     }
   }
   
 
   async function handleApply(ideaId) {
-    if (!user) {
-      alert('Please sign in to apply');
+    if (!session.user) {
+      toast.error('Please sign in to apply');
       return;
     }
 
     if (submitting) return;
 
-    const pitch = prompt('Why are you interested in this idea? (This will be your pitch to the founder)');
-    if (!pitch) {
-      alert('Application cancelled');
+    if (!boarded) {
+      toast.error('Complete your profile to apply for ideas', { 
+        duration: 5000,
+        icon: '⛔️'
+      });
+      return;
+    }
+
+    setApplyingToIdea(ideaId);
+    setPitchText('');
+    setApplyOverlay(true);
+  }
+
+  async function submitApplication() {
+    if (pitchText.trim().length < 200) {
+      toast.error('Please provide a more detailed pitch (at least 200 characters)');
       return;
     }
 
     setSubmitting(true);
+    setPitchValidation({ loading: true, valid: null, message: '' });
 
     try {
-      // Check for existing application
-      const { data: existingApp, error: fetchError } = await supabase
-        .from('applications')
-        .select('id')
-        .eq('idea_id', ideaId)
-        .eq('profile_id', user.id)
-        .maybeSingle();
+      const response = await axios.post(`http://localhost:5000/api/idealist/apply/${applyingToIdea}`, {
+        pitch: pitchText
+      }, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
 
-      if (fetchError) {
-        console.error('Error checking existing application:', fetchError);
-        alert(`Error: ${fetchError.message}`);
-        return;
-      }
+      console.log(response.data);
 
-      if (existingApp) {
-        alert('You have already applied for this idea!');
-        return;
-      }
-
-      // Submit new application
-      const { error: insertError } = await supabase
-        .from('applications')
-        .insert({
-          idea_id: ideaId,
-          profile_id: user.id,
-          pitch
+      if (response.data.validationError) {
+        setPitchValidation({ 
+          loading: false, 
+          valid: false, 
+          message: response.data.message 
         });
-
-      if (insertError) {
-        console.error('Error submitting application:', insertError);
-        alert(`Error: ${insertError.message}`);
-        return;
+        // Remove toast for validation errors - show in UI only
+      } else if (response.data.success) {
+        setPitchValidation({ loading: false, valid: true, message: '' });
+        toast.success(`${response.data.message}`);
+        setApplyOverlay(false);
+        setApplyingToIdea(null);
+        setPitchText('');
+      } else {
+        setPitchValidation({ loading: false, valid: false, message: '' });
+        toast.error('There is some error in submitting your application');
       }
-
-      alert('Application submitted successfully!');
     } catch (error) {
       console.error('Unexpected error:', error);
-      alert(`An unexpected error occurred: ${error.message}`);
+      setPitchValidation({ loading: false, valid: false, message: '' });
+      toast.error(`An unexpected error occurred: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
   }
 
+  // Function to reset all states when closing the overlay
+  const closeApplyOverlay = () => {
+    setApplyOverlay(false);
+    setApplyingToIdea(null);
+    setPitchText('');
+    setPitchValidation({ loading: false, valid: null, message: '' });
+  }
+
   const handleRefresh = () => {
-    setLoading(true);
-    fetchIdeas();
+    //on refresh, reset all filter and randomize the ideas
+    setFilter('all');
+    setSelectedSkills([]);
+    setSearchQuery(''); 
+
+    //randomize the ideas
+    setRefreshLoading(true);
+    setTimeout(() => {
+      const shuffledIdeas = ideas.sort(() => Math.random() - 0.5);
+      setIdeas(shuffledIdeas);
+      setRefreshLoading(false);
+    }, 1500); // Slightly longer to show the animation
   };
 
   const filteredIdeas = useMemo(() => {
@@ -183,6 +238,20 @@ function IdeasList() {
     });
   }, [ideas, searchQuery, filter, selectedSkills]);
 
+  // Status indicator component similar to the one in OnboardingForm
+  const StatusIndicator = ({ status }) => {
+    if (status.loading) {
+      return <Loader2 className="w-4 h-4 animate-spin text-primary" />;
+    }
+    if (status.valid === true) {
+      return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    }
+    if (status.valid === false) {
+      return <XCircle className="w-4 h-4 text-destructive" />;
+    }
+    return null;
+  };
+
   if (error) {
     return <ErrorPage error={error} resetError={resetError} />;
   }
@@ -194,6 +263,7 @@ function IdeasList() {
       </div>
     );
   }
+  
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -208,7 +278,7 @@ function IdeasList() {
               placeholder="Search by idea name or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full bg-background hover:border-primary/50 focus:border-primary transition-colors"
+              className="pl-10 w-full bg-white dark:bg-background hover:border-primary/50 focus:border-primary transition-colors"
             />
           </div>
           
@@ -217,7 +287,7 @@ function IdeasList() {
               <SkillSelect
                 selectedSkills={selectedSkills}
                 setSelectedSkills={setSelectedSkills}
-                placeholder="Filter by skills..."
+                text="Filter by skills..."
               />
             </div>
 
@@ -225,7 +295,7 @@ function IdeasList() {
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm hover:border-primary/50 focus:border-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="h-10 rounded-md border border-input bg-white dark:bg-background px-3 py-2 text-sm hover:border-primary/50 focus:border-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="all">All Ideas</option>
                 <option value="open">Open</option>
@@ -271,7 +341,17 @@ function IdeasList() {
         </div>
       )}
 
-      {user && filteredIdeas.length > 0 ? (
+      {refreshLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <h3 className="mt-8 text-xl font-semibold text-foreground animate-pulse">
+            Fetching latest ideas just for you
+          </h3>
+          <p className="mt-2 text-muted-foreground text-sm">
+            Curating the perfect selection...
+          </p>
+        </div>
+      ) : session.user && filteredIdeas.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filteredIdeas.map((idea) => (
             <div key={idea.id} className="bg-card text-card-foreground rounded-xl shadow-md dark:shadow-primary/10 overflow-hidden hover:shadow-lg transition-all border border-border flex flex-col h-full">
@@ -348,6 +428,74 @@ function IdeasList() {
         <div className="text-center py-12">
           <h3 className="text-xl font-medium text-foreground mb-2">No ideas found</h3>
           <p className="text-muted-foreground">Try adjusting your search or filters</p>
+        </div>
+      )}
+
+      {applyOverlay && (
+        <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000]">
+          <div className="bg-card text-card-foreground p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[600px] relative border border-border">
+            <button
+              onClick={closeApplyOverlay}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">Apply for this Idea</h2>
+              <p className="text-muted-foreground">Tell the founder why you're interested and what skills you bring to the project.</p>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Your Pitch</label>
+                <div className="relative">
+                  <Textarea
+                    value={pitchText}
+                    onChange={(e) => setPitchText(e.target.value)}
+                    placeholder="Explain why you're interested in this idea and what skills you can contribute..."
+                    className="min-h-[200px] resize-none pr-8"
+                  />
+                  <div className="absolute right-2 top-6">
+                    <StatusIndicator status={pitchValidation} />
+                  </div>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{pitchText.length} characters</span>
+                  <span className={pitchText.length < 200 ? "text-red-500" : "text-green-500"}>
+                    {pitchText.length < 200 ? `${200 - pitchText.length} more characters needed` : "Minimum length reached"}
+                  </span>
+                </div>
+                {pitchValidation.valid === false && pitchValidation.message && (
+                  <div className="mt-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
+                    {pitchValidation.message}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={closeApplyOverlay}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={submitApplication}
+                  disabled={submitting || pitchText.trim().length < 200}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>Apply Now <ArrowRight className="ml-2 w-4 h-4" /></>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
