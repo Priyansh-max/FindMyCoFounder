@@ -197,7 +197,7 @@ const CreatorsLab = () => {
     <div className="max-w-8xl mx-auto px-4 py-8">
       <div className="flex flex-col space-y-8">
         {/* Header with Repo Info and Communication Links */}
-        <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
+        <div className="bg-card text-card-foreground rounded-lg border-b border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Creators Lab</h1>
