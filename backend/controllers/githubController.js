@@ -127,6 +127,8 @@ const getMemberStats = async (req, res) => {
     const { username, repoName, githubUsername, joinedAt } = req.params;
     const token = req.headers.authorization?.split(' ')[1];
     const Cache = req.query.cache;
+    const from = req.query.from;
+    const updatedDate = req.query.updatedDate;
 
     console.log("Request received for getMemberStats");
     console.log("Query params:", req.query);
@@ -137,19 +139,30 @@ const getMemberStats = async (req, res) => {
     }
 
     const githubService = new GitHubService(token , Cache);
-
     const today = new Date();
     const todayDate = today.toISOString().split('T')[0];
 
     // Set up join date for fetching stats
     let joinDate = null;
     let useJoinDate = false;
-    if (joinedAt) {
+
+    if (joinedAt && updatedDate) {
       console.log("joinedAt from params:", joinedAt);
-      joinDate = new Date(joinedAt);
-      if (!isNaN(joinDate.getTime())) {
-        useJoinDate = true;
-        joinDate.setDate(joinDate.getDate()); // Start from one day before join date
+      console.log("updatedDate from params:", updatedDate);
+
+      if(joinedAt < updatedDate){
+        joinDate = new Date(updatedDate);
+        if (!isNaN(joinDate.getTime())) {
+          useJoinDate = true;
+          joinDate.setDate(joinDate.getDate()); 
+        }
+      }
+      else{
+        joinDate = new Date(joinedAt);
+        if (!isNaN(joinDate.getTime())) {
+          useJoinDate = true;
+          joinDate.setDate(joinDate.getDate()); 
+        }
       }
     }
 
@@ -159,9 +172,9 @@ const getMemberStats = async (req, res) => {
     try {
       // Fetch all member data in parallel
       const [commitsResult, issuesResult, pullRequestsResult] = await Promise.all([
-          githubService.fetchMemberCommitsSince(username, repoName, githubUsername, joinDate.toISOString()),
-          githubService.fetchMemberIssuesSince(username, repoName, githubUsername, joinDate.toISOString()),
-          githubService.fetchMemberPullRequestsSince(username, repoName, githubUsername, joinDate.toISOString())
+          githubService.fetchMemberCommitsSince(username, repoName, githubUsername, joinDate.toISOString(),from),
+          githubService.fetchMemberIssuesSince(username, repoName, githubUsername, joinDate.toISOString(),from),
+          githubService.fetchMemberPullRequestsSince(username, repoName, githubUsername, joinDate.toISOString(),from)
       ]);
 
       // Extract data and metadata with safe fallbacks
@@ -216,8 +229,9 @@ const getMemberStats = async (req, res) => {
       
       const lastUpdated = timestamps.length > 0 ? timestamps.sort()[0] : new Date().toISOString();
 
+      const sinceDateStr = new Date(joinDate).toISOString().split('T')[0];
       // Check if we're using cached data
-      const commitsCacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}`;
+      const commitsCacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}:${from}`;
       const commitsCached = await getCachedData(commitsCacheKey) !== null;
 
       res.json({

@@ -17,7 +17,6 @@ class GitHubService {
 
   async fetchAllCommitsSince(username, repoName, since, perPage = 100) {
 
-    console.log("i am here");
     // Use a day-based cache key with the since date
     const todayDate = new Date().toISOString().split('T')[0];
     const sinceDate = new Date(since).toISOString().split('T')[0];
@@ -240,11 +239,11 @@ class GitHubService {
     };
   }
 
-  async fetchMemberCommitsSince(username, repoName, githubUsername, since) {
+  async fetchMemberCommitsSince(username, repoName, githubUsername, since, from) {
     // Use a day-based cache key with the since date
     const todayDate = new Date().toISOString().split('T')[0];
     const sinceDateStr = new Date(since).toISOString().split('T')[0];
-    const cacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}`;
+    const cacheKey = `github:member:commits:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}:${from}`;
     
     // Check cache first (unless caching is disabled)
     if (this.Caching === 'true') {
@@ -299,12 +298,12 @@ class GitHubService {
     };
   }
 
-  async fetchMemberIssuesSince(username, repoName, githubUsername, since) {
+  async fetchMemberIssuesSince(username, repoName, githubUsername, since, from) {
     // Use a day-based cache key with the since date
     const todayDate = new Date().toISOString().split('T')[0];
     const sinceDateStr = new Date(since).toISOString().split('T')[0];
-    const cacheKey = `github:member:issues:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}`;
-    
+    const cacheKey = `github:member:issues:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}:${from}`;
+
     // Check cache first (unless caching is disabled)
     if (this.Caching === 'true') {
       const cachedResult = await getCachedData(cacheKey);
@@ -342,11 +341,11 @@ class GitHubService {
     };
   }
 
-  async fetchMemberPullRequestsSince(username, repoName, githubUsername, since) {
+  async fetchMemberPullRequestsSince(username, repoName, githubUsername, since, from) {
     // Use a day-based cache key with the since date
     const todayDate = new Date().toISOString().split('T')[0];
     const sinceDateStr = new Date(since).toISOString().split('T')[0];
-    const cacheKey = `github:member:prs:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}`;
+    const cacheKey = `github:member:prs:${username}:${repoName}:${githubUsername}:${todayDate}:since:${sinceDateStr}:${from}`;
     
     // Check cache first (unless caching is disabled)
     if (this.Caching === 'true') {
