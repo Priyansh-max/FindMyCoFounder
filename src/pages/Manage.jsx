@@ -136,7 +136,7 @@ export default function Manage() {
         },
         params: {
           t: timestamp,
-          cache: 'true' // Tell the server to not use cached data
+          cache: 'true' 
         }
       };
 
@@ -274,7 +274,9 @@ export default function Manage() {
         },
         params: {
           t: timestamp,
-          cache: 'true' // Tell the server to not use cached data this means caching is on....
+          updatedDate: team.updated_at,
+          cache: 'true',
+          from: 'manage'
         }
       };
 
