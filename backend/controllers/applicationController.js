@@ -76,6 +76,7 @@ const createApplication = async (req, res) => {
             dev_req,
             additional_details,
             status,
+            completion_status,
             profiles (
               full_name,
               avatar_url
