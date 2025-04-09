@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X, Lightbulb, Heart, ScrollText, Github, PlayCircle, Calendar, Info, GitPullRequest, AlertTriangle, ExternalLink, FileCode } from "lucide-react";
+import { Users, Phone, XCircle, Clock, CheckCircle, Undo, X, Lightbulb, Heart, ScrollText, Github, PlayCircle, Calendar, Info, GitPullRequest, AlertTriangle, ExternalLink, FileCode, CheckCircle2, Star } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { AiOutlineStop } from "react-icons/ai";
@@ -16,11 +16,16 @@ import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { cn } from "@/lib/utils";
 import ProjectStats from '@/components/ui/ProjectStats';
+import Authored from '../components/profile/Authored';
+import PostedTab from '../components/profile/PostedTab';
+import ApplicationTab from '../components/profile/ApplicationTab';
+import ContributedTab from '../components/profile/ContributedTab';
 
 function Profile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [applications, setApplications] = useState([]);
   const [ideas, setIdeas] = useState([]);
@@ -42,7 +47,6 @@ function Profile() {
     },
     ideas_posted: 0
   });
-  const [selectedApplication, setSelectedApplication] = useState(null);
   const [projectStats, setProjectStats] = useState({
     ratings: [],
     totalCommits: 0,
@@ -79,6 +83,7 @@ function Profile() {
       }
 
       setUser(session.user);
+      setSession(session);
       
       // Create an array of promises for parallel fetching
       const fetchPromises = [
@@ -160,18 +165,6 @@ function Profile() {
       throw new Error(error.response?.data?.message || 'Failed to fetch applications');
     }
   }
-
-  const viewDetails = async(ideaId) => {
-    try{
-      if(ideaId != null){
-        navigate(`/details/${ideaId}`)
-      }
-
-    }catch(error){
-      console.error("Error viewing details: ",error);
-      setError("Error viewing details");
-    }
-  }
   
   async function fetchIdeas(session) {
     try {
@@ -194,46 +187,6 @@ function Profile() {
       throw new Error(error.response?.data?.message || 'Failed to fetch ideas');
     }
   }
-
-  const handleIdeaStatus = async (ideaId) => {
-    try {
-      const ideaToUpdate = ideas.find(idea => idea.id === ideaId);
-      const newStatus = ideaToUpdate.status === "open" ? "closed" : "open";
-      
-      const { data: { session } } = await supabase.auth.getSession(); 
-      await axios.put(`http://localhost:5000/api/idea/status/${ideaId}`, { status: newStatus }, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      
-      // Update local state
-      setIdeas(ideas.map(idea => 
-        idea.id === ideaId ? { ...idea, status: newStatus } : idea
-      ));
-      
-      toast.success(`Idea ${newStatus === 'open' ? 'reopened' : 'closed'} successfully`);
-    } catch (error) {
-      console.error('Error updating idea status:', error);
-      toast.error('Failed to update idea status');
-    }
-  };
-
-  //remove this thing we dont need delete feature for now....
-  const handleDeleteIdea = async (ideaId) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      await axios.delete(`http://localhost:5000/api/idea/${ideaId}`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      toast.success('Idea deleted successfully');
-    } catch (error) {
-      console.error('Error deleting idea:', error);
-      toast.error('Failed to delete idea');
-    }
-  };  
 
   const filteredApplications = filter === "all"
   ? applications
@@ -665,179 +618,14 @@ function Profile() {
             </div>
 
             {/* Applications List */}
-            <div className="space-y-3">
-              {filteredApplications.length === 0 ? (
-                <div className="text-center py-8 bg-muted/50 rounded-lg">
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="h-12 w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path>
-                      <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"></path>
-                      <path d="M9.5 9.5 14 5"></path>
-                    </svg>
-                    <h3 className="text-lg font-medium text-foreground mb-1">No Applications Yet</h3>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      You haven't applied to any ideas yet. Start exploring and find your next project!
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                filteredApplications.map((app, index) => (
-                  <div key={app.id} className="flex items-center gap-4 p-3 bg-card border border-border rounded-lg hover:border-primary/50 transition-all group">
-                    {/* Number */}
-                    <span className="w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
-                      {index + 1}
-                    </span>
-                    
-                    {/* Idea Name - Clickable */}
-                    <div className="flex-1 flex items-center">
-                      <button
-                        onClick={() => setSelectedApplication(app)}
-                        className="text-left font-medium text-foreground hover:text-primary transition-colors w-fit"
-                      >
-                        {app.idea.title}
-                      </button>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-                        app.status === "pending" && "bg-yellow-500/20 text-yellow-500",
-                        app.status === "accepted" && "bg-green-500/20 text-green-500",
-                        app.status === "rejected" && "bg-red-500/20 text-red-500"
-                      )}>
-                        {app.status === "pending" && <Clock className="w-3 h-3" />}
-                        {app.status === "accepted" && <CheckCircle className="w-3 h-3" />}
-                        {app.status === "rejected" && <XCircle className="w-3 h-3" />}
-                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                      </div>
-
-                      {/* Dashboard Button for Accepted Applications */}
-                      {app.status === "accepted" && (
-                        <button
-                          onClick={() => navigate(`/creators-lab/${app.idea.id}`)}
-                          className="px-3 py-1 text-xs font-medium text-primary bg-primary/10 rounded-full hover:bg-primary/20 transition-colors flex items-center gap-1"
-                        >
-                          <Users className="w-3 h-3" /> Creators Lab
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <ApplicationTab filteredApplications={filteredApplications} />
           </div>
         )}
 
         {activeTab === 'posted' && (
           <div className="bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border">
             <h2 className="text-2xl font-bold mb-6 text-foreground">Your Posted Ideas</h2>
-            {ideas.map((idea) => (
-              <div key={idea.id} className="mb-6 last:mb-0 border border-border rounded-lg p-4 hover:border-primary/50 transition-colors group">
-                <div className="flex items-center gap-4">
-                  <div className="flex-shrink-0">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${
-                      idea.status === 'open' 
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
-                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
-                    }`}>
-                      <Lightbulb className="w-5 h-5 transition-transform duration-300 group-hover:rotate-12 group-hover:animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-foreground truncate pr-4 mb-1">{idea.title}</h3>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(idea.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`flex-shrink-0 flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        idea.completion_status === 'review'
-                          ? "bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-100"
-                          : idea.status === "open"
-                            ? "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100"
-                            : "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100"
-                      }`}
-                    >
-                      {idea.completion_status === 'review' ? (
-                        <>
-                          <Info className="w-3 h-3 mr-1" />
-                          Under Review
-                        </>
-                      ) : idea.status === "open" ? (
-                        <>
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Open
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-3 h-3 mr-1" />
-                          Closed
-                        </>
-                      )}
-                    </span>
-
-                    <div className="flex items-center gap-2 ml-2">
-                      {idea.completion_status === 'review' ? (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>Contact support for queries</span>
-                        </div>
-                      ) : (
-                        <>
-                          <Tooltip id={`view-tooltip-${idea.id}`} place="top" effect="solid">
-                            View received applications
-                          </Tooltip>
-                          <button 
-                            data-tooltip-id={`view-tooltip-${idea.id}`}
-                            onClick={() => viewDetails(idea.id)}
-                            className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
-                          >
-                            <GrView className="w-5 h-5" />
-                          </button>
-
-                          <Tooltip id={`status-tooltip-${idea.id}`} place="top" effect="solid">
-                            {idea.status === "open" ? "Close applications" : "Reopen applications"}
-                          </Tooltip>
-                          <button 
-                            data-tooltip-id={`status-tooltip-${idea.id}`}
-                            onClick={() => handleIdeaStatus(idea.id)}
-                            className={`p-2 transition-colors ${
-                              idea.status === "open"
-                                ? "text-orange-500 hover:text-orange-600"
-                                : "text-green-500 hover:text-green-600"
-                            }`}
-                          >
-                            {idea.status === "open" ? (
-                              <AiOutlineStop className="w-5 h-5" />
-                            ) : (
-                              <PlayCircle className="w-5 h-5" />
-                            )}
-                          </button>
-
-                          <Tooltip id={`delete-tooltip-${idea.id}`} place="top" effect="solid">
-                            Delete post
-                          </Tooltip>
-                          <button 
-                            data-tooltip-id={`delete-tooltip-${idea.id}`}
-                            onClick={() => handleDeleteIdea(idea.id)}
-                            className="p-2 text-destructive hover:text-destructive/90 transition-colors"
-                          >
-                            <RiDeleteBin6Line className="w-5 h-5"/>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <PostedTab ideas={ideas} session={session}/>
             {ideas.length === 0 && (
               <p className="text-muted-foreground text-center py-4">No ideas posted yet</p>
             )}
@@ -852,104 +640,14 @@ function Profile() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : projectStats.ratings.filter(project => project.role === 'author').length > 0 ? (
-              <div className="space-y-6">
-                {authoredProjects.map((project, index) => (
-                  <div key={index} className="border border-border rounded-lg p-5 hover:border-primary/50 transition-colors group">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-primary/10">
-                          {project.logo_url ? (
-                            <img 
-                              src={project.logo_url} 
-                              alt={project.title} 
-                              className="w-10 h-10 rounded object-cover"
-                            />
-                          ) : (
-                            <Lightbulb className="w-6 h-6 text-primary" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
-                          <span className="text-sm px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
-                            Approved
-                          </span>
-                        </div>
-                        
-                        <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
-                          {project.idea_desc}
-                        </p>
-                        
-                        <div className="mt-4 flex items-center text-sm text-muted-foreground">
-                          <div className="flex items-center mr-4">
-                            <Calendar className="w-4 h-4 mr-1" /> 
-                            {new Date(project.date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </div>
-                          <div className="flex items-center mr-4">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {project.duration} days
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-1" />
-                            {project.project_type === 'team' ? 'Team Project' : 'Solo Project'}
-                          </div>
-                        </div>
-                        
-                        <div className="mt-4 flex items-center gap-3">
-                          {project.repo_url && (
-                            <a 
-                              href={project.repo_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors"
-                            >
-                              <Github className="w-3 h-3 mr-1" /> Repository
-                            </a>
-                          )}
-                          {project.project_link && (
-                            <a 
-                              href={project.project_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3 mr-1" /> Live Demo
-                            </a>
-                          )}
-                          {project.video_url && (
-                            <a 
-                              href={project.video_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-xs font-medium text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-3 py-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                            >
-                              <PlayCircle className="w-3 h-3 mr-1" /> Video Demo
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-foreground">{project.rating} points</div>
-                        <div className="text-sm text-primary font-medium">Author</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Authored authoredProjects={authoredProjects} />
             ) : (
-              <div className="text-center py-8 bg-muted/50 rounded-lg">
-                <div className="flex flex-col items-center justify-center">
-                  <CheckCircle className="h-12 w-12 text-muted-foreground mb-3" />
-                  <h3 className="text-lg font-medium text-foreground mb-1">No Authored Projects Yet</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    Create and complete your own project ideas to see them here!
-                  </p>
-                </div>
+              <div className="text-center p-10">
+                <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="text-xl font-medium text-foreground mb-2">No projects found</h3>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  You haven't created any projects yet. Start by posting an idea and completing it to see your authored projects here.
+                </p>
               </div>
             )}
           </div>
@@ -963,95 +661,7 @@ function Profile() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : projectStats.ratings.filter(project => project.role === 'contributor').length > 0 ? (
-              <div className="space-y-6">
-                {contributedProjects.map((project, index) => (
-                  <div key={index} className="border border-border rounded-lg p-5 hover:border-primary/50 transition-colors group">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-blue-100 dark:bg-blue-900/30">
-                          {project.logo_url ? (
-                            <img 
-                              src={project.logo_url} 
-                              alt={project.title} 
-                              className="w-10 h-10 rounded object-cover"
-                            />
-                          ) : (
-                            <FileCode className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
-                          <span className="text-sm px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
-                            Approved
-                          </span>
-                        </div>
-                        
-                        <p className="text-muted-foreground text-sm mt-1 line-clamp-2">
-                          {project.idea_desc}
-                        </p>
-                        
-                        <div className="mt-4 flex items-center text-sm text-muted-foreground">
-                          <div className="flex items-center mr-4">
-                            <Calendar className="w-4 h-4 mr-1" /> 
-                            {new Date(project.date).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </div>
-                          <div className="flex items-center mr-4">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {project.duration} days
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-1" />
-                            {project.project_type === 'team' ? 'Team Project' : 'Solo Project'}
-                          </div>
-                        </div>
-                        
-                        <div className="mt-4 flex items-center gap-3">
-                          {project.repo_url && (
-                            <a 
-                              href={project.repo_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors"
-                            >
-                              <Github className="w-3 h-3 mr-1" /> Repository
-                            </a>
-                          )}
-                          {project.project_link && (
-                            <a 
-                              href={project.project_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3 mr-1" /> Live Demo
-                            </a>
-                          )}
-                          {project.video_url && (
-                            <a 
-                              href={project.video_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-xs font-medium text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-3 py-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                            >
-                              <PlayCircle className="w-3 h-3 mr-1" /> Video Demo
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-foreground">{project.rating} points</div>
-                        <div className="text-sm text-blue-500 font-medium">Contributor</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ContributedTab contributedProjects={contributedProjects} />
             ) : (
               <div className="text-center py-8 bg-muted/50 rounded-lg">
                 <div className="flex flex-col items-center justify-center">
@@ -1085,81 +695,7 @@ function Profile() {
         </div>
       </div>
       )}
-
-      {/* Application Details Overlay */}
-      {selectedApplication && (
-        <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000]">
-          <div className="bg-card text-card-foreground p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[600px] relative border border-border">
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedApplication(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="space-y-6">
-              {/* Header with Idea Title */}
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">{selectedApplication.idea.title}</h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {selectedApplication.idea.founder?.full_name || "Unknown"}
-                </p>
-              </div>
-
-              {/* Your Pitch - Highlighted */}
-              <div className="bg-primary/5 border border-primary/10 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-primary mb-2">Your Pitch</h3>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{selectedApplication.pitch}</p>
-              </div>
-
-              {/* Idea Description */}
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Idea Description</h3>
-                <p className="text-sm text-muted-foreground">{selectedApplication.idea.idea_desc}</p>
-              </div>
-
-              {/* Required Skills */}
-              {selectedApplication.idea.dev_req && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Required Skills</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedApplication.idea.dev_req.split(',').map((skill, index) => (
-                      <span 
-                        key={index} 
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary"
-                      >
-                        {skill.trim()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Footer Actions
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <button
-                  onClick={() => navigate(`/details/${selectedApplication.idea.id}`)}
-                  className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-                >
-                  View Full Idea <ArrowRight className="w-3 h-3" />
-                </button>
-                {selectedApplication.status === "accepted" && (
-                  <button
-                    onClick={() => {
-                      navigate(`/manage-team/${selectedApplication.idea.id}`);
-                      setSelectedApplication(null);
-                    }}
-                    className="text-xs font-medium bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors flex items-center gap-1"
-                  >
-                    <Users className="w-3 h-3" /> Go to Dashboard
-                  </button>
-                )}
-              </div> */}
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
 
 
