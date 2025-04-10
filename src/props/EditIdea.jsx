@@ -90,7 +90,7 @@ const EditIdea = () => {
     <div className="space-y-8 px-4 py-6">
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold text-foreground">
-          Edit Your Idea
+          Edit Your Project
         </h2>
       </div>
 
@@ -113,14 +113,14 @@ const EditIdea = () => {
               onChange={handleChange}
               required
               placeholder="Enter the title of your idea"
-              className="w-full bg-background border-border"
+              className="w-full bg-white dark:bg-background border-border"
             />
           </div>
 
           <div className="space-y-2 relative">
             <label className="text-sm font-medium text-foreground flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-muted-foreground" />
-              Idea Description
+              Project Description
             </label>
             <Textarea
               name="ideaDescription"
@@ -128,7 +128,7 @@ const EditIdea = () => {
               onChange={handleChange}
               required
               placeholder="Describe your startup idea in detail"
-              className="w-full min-h-32 bg-background border-border"
+              className="w-full min-h-32 bg-white dark:bg-background border-border"
             />
             <span className={`absolute bottom-2 italic right-2 text-sm ${
               formData.ideaDescription.length < 100 ? "text-destructive" : "text-primary"
@@ -145,6 +145,7 @@ const EditIdea = () => {
             <SkillSelect
               selectedSkills={selectedSkills}
               setSelectedSkills={setSelectedSkills}
+              text="Select skills"
             />
           </div>
 
@@ -158,7 +159,7 @@ const EditIdea = () => {
               value={formData.additionalDetails}
               onChange={handleChange}
               placeholder="Describe any additional information here"
-              className="w-full min-h-24 bg-background border-border"
+              className="w-full min-h-24 bg-white dark:bg-background border-border"
             />
           </div>
         </div>
@@ -176,7 +177,7 @@ const EditIdea = () => {
           ) : (
             <>
               <Send className="w-4 h-4" />
-              Update Idea
+              Update
             </>
           )}
         </button>
