@@ -4,7 +4,12 @@ import {
   Users, 
   Lightbulb, 
   HandshakeIcon,
-  ArrowRight
+  ArrowRight,
+  Github,
+  Twitter,
+  Instagram,
+  Heart,
+  X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BackgroundLines } from "@/components/ui/background-lines";
@@ -55,9 +60,9 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background transition-colors duration-200">
-      <BackgroundLines className="flex items-center justify-center w-full flex-col px-4 ">
+      <BackgroundLines className="flex items-center justify-center w-full flex-col px-4 pointer-events-none">
         {/* Hero Section */}
-        <div>
+        <div className="pointer-events-auto">
           <div className="container mx-auto px-4 ">
             <motion.div 
               className="container mx-auto px-4 pt-12 pb-16"
@@ -153,6 +158,33 @@ const LandingPage = () => {
             </motion.div>
           </div>
         </div>
+
+        {/* Footer Section */}
+        <motion.div
+          className="w-full mt-auto pointer-events-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex flex-wrap items-center justify-center text-center pt-4">
+              <span className="font-semibold text-primary">FindMyTeam</span>
+              <span className="text-muted-foreground px-1">© Copyright {new Date().getFullYear()}</span>
+              <span className="text-muted-foreground px-1">•</span>
+              <a 
+                href="https://priyanshagarwal.me/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-muted-foreground hover:text-primary transition-colors px-1"
+              >
+                Priyansh Agarwal
+              </a>
+            </div>
+            <div className="flex flex-wrap items-center justify-center text-center">
+              <span className="text-muted-foreground">Server time: {new Date().toLocaleString()}</span>
+            </div>
+          </div>
+        </motion.div>
       </BackgroundLines>
     </div>
   );
