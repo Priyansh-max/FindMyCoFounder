@@ -129,7 +129,7 @@ const CreatorsLab = () => {
       const timestamp = Date.now();
       const requestConfig = {
         headers: {
-          'Authorization': `Bearer ${session.provider_token}`
+          'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
         },
         params: {
           t: timestamp,

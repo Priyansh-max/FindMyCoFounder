@@ -60,7 +60,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       const timestamp = Date.now();
       const requestConfig = {
         headers: {
-          'Authorization': `Bearer ${session.provider_token}`,
+          'Authorization': `Bearer ${localStorage.getItem('provider_token')}`,
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
@@ -275,7 +275,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         description
       }, {
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
+          'Authorization': `Bearer ${localStorage.getItem('provider_token')}`,
         }
       });
       
@@ -330,7 +330,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         formData, 
         {
           headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
+            'Authorization': `Bearer ${localStorage.getItem('provider_token')}`,
             'Content-Type': 'multipart/form-data'
           },
           onUploadProgress: (progressEvent) => {
@@ -453,7 +453,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
         },
         {
           headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
+            'Authorization': `Bearer ${localStorage.getItem('provider_token')}`,
             'Content-Type': 'application/json'
           }
         }

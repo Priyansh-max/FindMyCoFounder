@@ -43,7 +43,7 @@ export default function Manage() {
         }
 
         // 2. Check if GitHub token is missing or expired
-        if (!session.provider_token) {
+        if (!localStorage.getItem('provider_token')) {
           //set delay of 2 seconds before signing out
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
@@ -61,12 +61,12 @@ export default function Manage() {
         const [ideaResponse, teamResponse] = await Promise.all([
           axios.get(`http://localhost:5000/api/idea/${ideaId}`, {
             headers: {
-              'Authorization': `Bearer ${session.access_token}`
+              'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
             }
           }),
           axios.get(`http://localhost:5000/api/manage-team/get-team/${ideaId}`, {
             headers: {
-              'Authorization': `Bearer ${session.access_token}`
+              'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
             }
           })
         ]);
@@ -110,7 +110,7 @@ export default function Manage() {
   const getRepoStats = async (currentSession, currentTeam) => {
     try {
       // 1. Validate session and required data
-      if (!currentSession?.provider_token) {
+      if (!localStorage.getItem('provider_token')) {
         throw new Error('No valid GitHub token found');
       }
 
@@ -132,7 +132,7 @@ export default function Manage() {
       const timestamp = Date.now();
       const requestConfig = {
         headers: {
-          'Authorization': `Bearer ${currentSession.provider_token}`
+          'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
         },
         params: {
           t: timestamp,
@@ -187,7 +187,7 @@ export default function Manage() {
         },
         {
           headers: {
-            'Authorization': `Bearer ${session?.access_token}`
+            'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
           }
         }
       );
@@ -220,7 +220,7 @@ export default function Manage() {
   // GitHub Repository Functions
   const getRepo = async (session) => {
     try {
-      const token = session?.provider_token || (await supabase.auth.getSession()).data.session.provider_token;
+      const token = localStorage.getItem('provider_token');
       const response = await axios.get('https://api.github.com/user/repos', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -270,7 +270,7 @@ export default function Manage() {
       const timestamp = Date.now();
       const requestConfig = {
         headers: {
-          'Authorization': `Bearer ${session.provider_token}`
+          'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
         },
         params: {
           t: timestamp,

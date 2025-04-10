@@ -82,6 +82,10 @@ function AuthHandler({ user, setUser, setIsLoading }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setUser(session.user);
+        // Store provider_token in localStorage if it exists
+        if (session.provider_token) {
+          localStorage.setItem('provider_token', session.provider_token);
+        }
       } else {
         setUser(null);
       }
@@ -95,6 +99,10 @@ function AuthHandler({ user, setUser, setIsLoading }) {
       if (event === 'INITIAL_SESSION') {
         if (session) {
           setUser(session.user);
+          // Store provider_token in localStorage if it exists
+          if (session.provider_token) {
+            localStorage.setItem('provider_token', session.provider_token);
+          }
         } else {
           setUser(null);
         }
@@ -104,6 +112,11 @@ function AuthHandler({ user, setUser, setIsLoading }) {
       if (event === 'SIGNED_IN') {
         if (session) {
           setUser(session.user);
+          // Store provider_token in localStorage if it exists
+          if (session.provider_token) {
+            localStorage.setItem('provider_token', session.provider_token);
+            console.log('Provider token stored in localStorage');
+          }
         }
         // Show welcome message only on fresh sign in from landing page
         if (window.location.pathname === '/') {
@@ -115,6 +128,9 @@ function AuthHandler({ user, setUser, setIsLoading }) {
       else if (event === 'SIGNED_OUT') {
         setUser(null);
         setHasShownWelcome(false);
+        // Clear provider_token from localStorage on sign out
+        localStorage.removeItem('provider_token');
+        console.log('Provider token removed from localStorage');
       }
       setIsLoading(false);
     });
