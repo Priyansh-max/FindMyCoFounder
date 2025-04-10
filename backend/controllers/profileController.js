@@ -229,6 +229,7 @@ const getProjectDetails = async (req, res) => {
         id, 
         title, 
         idea_desc, 
+        dev_req,
         project_type,
         project_link, 
         video_url, 
