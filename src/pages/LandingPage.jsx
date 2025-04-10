@@ -88,25 +88,24 @@ const LandingPage = () => {
                 Share your vision, find the perfect team, and start building together.
               </motion.p>
               <motion.div 
-                className="flex justify-center gap-4"
-                initial={{ opacity: 0, y: 20 }}
+                className="flex justify-center"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <motion.button 
-                  className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold flex items-center gap-2 hover:bg-primary/90 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Share Your Idea <ArrowRight className="w-5 h-5" />
-                </motion.button>
-                <motion.button 
-                  className="border-2 border-primary text-primary px-8 py-3 rounded-lg font-semibold hover:bg-primary/10 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Browse Projects
-                </motion.button>
+                <div className="relative group">
+                  {/* Animated glowing border */}
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-purple-500 to-primary rounded-full blur-sm opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-300 animate-border-flow"></div>
+                  
+                  {/* Button */}
+                  <motion.div 
+                    className="relative bg-background border border-transparent px-5 py-2.5 rounded-full font-medium flex items-center gap-2 text-sm text-muted-foreground"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span>Get Started by signing in with your GitHub account</span>
+                  </motion.div>
+                </div>
               </motion.div>
             </motion.div>
           </div>
@@ -186,6 +185,24 @@ const LandingPage = () => {
           </div>
         </motion.div>
       </BackgroundLines>
+      <style jsx global>{`
+        @keyframes border-flow {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+
+        .animate-border-flow {
+          background-size: 200% 200%;
+          animation: border-flow 3s ease infinite;
+        }
+      `}</style>
     </div>
   );
 };

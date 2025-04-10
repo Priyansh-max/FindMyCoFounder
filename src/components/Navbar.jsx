@@ -35,7 +35,6 @@ const Navbar = ({user}) => {
   };
 
   const handleSignOut = async () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
       try {
         const loadingToast = toast.loading('Signing out...');
         
@@ -51,7 +50,6 @@ const Navbar = ({user}) => {
         console.error('Error signing out:', error.message);
         toast.error('Failed to sign out. Please try again.');
       }
-    }
   };
 
   const handlePostIdea = async () => {
