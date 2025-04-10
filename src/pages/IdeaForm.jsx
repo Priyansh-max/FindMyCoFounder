@@ -269,7 +269,7 @@ function IdeaForm() {
               <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
                 <PlusCircle className="w-6 h-6 text-primary" />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
-                  Submit New Startup Idea
+                  Create a Project
                 </span>
               </CardTitle>
             </CardHeader>
@@ -300,7 +300,7 @@ function IdeaForm() {
                   <div className="space-y-2 relative">
                     <label htmlFor="ideaDescription" className="text-sm font-medium text-foreground flex items-center gap-2">
                       <Lightbulb className="w-4 h-4 text-muted-foreground" />
-                      Idea Description
+                      Project Description
                     </label>
                     <div className="relative">
                       <Textarea
@@ -309,7 +309,7 @@ function IdeaForm() {
                         value={formData.ideaDescription}
                         onChange={handleChange}
                         required
-                        placeholder="Describe your startup idea in detail. atleast 100 characters!"
+                        placeholder="Describe your initial idea for the developer to get started"
                         className="w-full min-h-32 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none"
                       />
                       <div className="absolute right-2 top-2">
@@ -332,6 +332,7 @@ function IdeaForm() {
                       <SkillSelect
                         selectedSkills={selectedSkills}
                         setSelectedSkills={setSelectedSkills}
+                        text="Select skills"
                       />
                       <div className="absolute right-2 top-2">
                         <StatusIndicator status={fieldStatus.devReq} />
@@ -380,7 +381,7 @@ function IdeaForm() {
                   ) : (
                     <div className="flex items-center justify-center gap-2">
                       <Send className="w-4 h-4" />
-                      Submit Idea
+                      Submit
                     </div>
                   )}
                 </Button>
