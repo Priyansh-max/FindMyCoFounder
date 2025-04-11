@@ -3,14 +3,6 @@ import { Loader2, Trash2, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const Details = ({ team }) => {
-    const [loading, setLoading] = useState(false);
-    console.log("Details component team data:", team);
-    
-    const handleRemoveMember = (memberId, memberName) => {
-        // In real implementation, this would make an API call
-        toast.success(`Removed ${memberName} from the team`);
-    };
-
     // Handle case where team data might not be loaded yet
     if (!team) {
         return (
@@ -82,9 +74,6 @@ const Details = ({ team }) => {
                   <th className="px-4 py-3 font-medium text-center">
                     Merged PRs
                   </th>
-                  <th className="px-4 py-3 font-medium text-center">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -143,15 +132,6 @@ const Details = ({ team }) => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="text-green-500 font-medium">{member.stats?.merged_prs || 0}</span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => handleRemoveMember(member.id, member.full_name)}
-                        className="p-2 text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-full transition-colors"
-                        title={`Remove ${member.full_name}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </td>
                   </tr>
                 ))}
