@@ -25,6 +25,11 @@ app.use(express.json());
 app.use(morgan('dev')); // Logging
 
 // Routes
+//make a default / route which says hi
+app.get('/', (req, res) => {
+  res.send('Hi');
+});
+
 app.use('/api/profile', profileRoutes);
 app.use('/api/validate', emailValidation);
 app.use('/api/validate', ideaValidation);
