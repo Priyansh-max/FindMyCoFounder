@@ -221,7 +221,7 @@ export default function Manage() {
   const getRepo = async (session) => {
     try {
       const token = localStorage.getItem('provider_token');
-      const response = await axios.get('https://api.github.com/user/repos', {
+      const response = await axios.get('https://api.github.com/user/repos?affiliation=owner', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/vnd.github.v3+json'
