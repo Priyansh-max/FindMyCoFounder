@@ -61,12 +61,12 @@ export default function Manage() {
         const [ideaResponse, teamResponse] = await Promise.all([
           axios.get(`http://localhost:5000/api/idea/${ideaId}`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
+              'Authorization': `Bearer ${session.access_token}`
             }
           }),
           axios.get(`http://localhost:5000/api/manage-team/get-team/${ideaId}`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
+              'Authorization': `Bearer ${session.access_token}`
             }
           })
         ]);
@@ -187,7 +187,7 @@ export default function Manage() {
         },
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('provider_token')}`
+            'Authorization': `Bearer ${session.access_token}`
           }
         }
       );
