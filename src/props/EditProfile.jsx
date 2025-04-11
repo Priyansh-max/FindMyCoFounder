@@ -284,7 +284,7 @@ const EditProfile = () => {
                 onChange={handleChange}
                 required
                 placeholder="John Doe"
-                className="w-full bg-background pr-8"
+                className="w-full bg-white dark:bg-background pr-8"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2">
                 <StatusIndicator status={fieldStatus.fullName} />
@@ -327,7 +327,7 @@ const EditProfile = () => {
                 value={formData.portfolioUrl}
                 onChange={handleChange}
                 placeholder="https://yourportfolio.com"
-                className="w-full bg-background pr-8"
+                className="w-full bg-white dark:bg-background pr-8"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2">
                 <StatusIndicator status={fieldStatus.portfolioUrl} />
@@ -354,7 +354,7 @@ const EditProfile = () => {
                 onChange={handleChange}
                 required
                 placeholder="Tell us about yourself, your skills, and what you're looking for..."
-                className="w-full min-h-[100px] bg-background pr-8"
+                className="w-full min-h-[100px] bg-white dark:bg-background pr-8"
               />
               <div className="absolute right-2 top-4">
                 <StatusIndicator status={fieldStatus.description} />
