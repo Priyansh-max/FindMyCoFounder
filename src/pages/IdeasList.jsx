@@ -87,7 +87,7 @@ function IdeasList() {
 
   const checkOnboardingStatus = async (session) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/idealist/verify-onboarding', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/idealist/verify-onboarding', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -107,7 +107,7 @@ function IdeasList() {
 
   async function fetchIdeas(session) {
     try {
-      const response = await axios.get('http://localhost:5000/api/idea', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/idea', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -160,7 +160,7 @@ function IdeasList() {
     setPitchValidation({ loading: true, valid: null, message: '' });
 
     try {
-      const response = await axios.post(`http://localhost:5000/api/idealist/apply/${applyingToIdea}`, {
+      const response = await axios.post(`https://findmycofounder.onrender.com/api/idealist/apply/${applyingToIdea}`, {
         pitch: pitchText
       }, {
         headers: {

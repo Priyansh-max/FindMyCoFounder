@@ -40,7 +40,7 @@ const EditProfile = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await axios.get('http://localhost:5000/api/profile/details', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/profile/details', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -102,7 +102,7 @@ const EditProfile = () => {
       }
 
       const response = await axios.post(
-        'http://localhost:5000/api/profile/resume',
+        'https://findmycofounder.onrender.com/api/profile/resume',
         formData,
         {
           headers: {
@@ -161,7 +161,7 @@ const EditProfile = () => {
       if (!session) throw new Error('No authentication session found');
 
       // Validate the form data first
-      const response = await axios.post('http://localhost:5000/api/validate/profile', {
+      const response = await axios.post('https://findmycofounder.onrender.com/api/validate/profile', {
         fullName: formData.fullName,
         skills: selectedSkills.join(', '),
         portfolioUrl: formData.portfolioUrl,
@@ -192,7 +192,7 @@ const EditProfile = () => {
           resumeUrl
         };
 
-        const updateResponse = await axios.put('http://localhost:5000/api/profile/update', 
+        const updateResponse = await axios.put('https://findmycofounder.onrender.com/api/profile/update', 
           profileData,
           {
             headers: {
