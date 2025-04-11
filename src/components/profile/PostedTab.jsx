@@ -128,34 +128,22 @@ const PostedTab = ({ideas , session}) => {
                       </div>
                     ) : (
                       <>
-                        <Tooltip id={`view-tooltip-${idea.id}`} place="top" effect="solid">
-                          View received applications
-                        </Tooltip>
                         <button 
-                          data-tooltip-id={`view-tooltip-${idea.id}`}
                           onClick={() => viewDetails(idea.id)}
-                          className="p-2 text-blue-500 hover:text-blue-600 transition-colors"
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors"
                         >
-                          <GrView className="w-5 h-5" />
+                          View Applications
                         </button>
 
-                        <Tooltip id={`status-tooltip-${idea.id}`} place="top" effect="solid">
-                          {idea.status === "open" ? "Close applications" : "Reopen applications"}
-                        </Tooltip>
                         <button 
-                          data-tooltip-id={`status-tooltip-${idea.id}`}
                           onClick={() => handleIdeaStatus(idea.id)}
-                          className={`p-2 transition-colors ${
+                          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                             idea.status === "open"
-                              ? "text-orange-500 hover:text-orange-600"
-                              : "text-green-500 hover:text-green-600"
+                              ? "bg-orange-500 hover:bg-orange-600 text-white"
+                              : "bg-green-500 hover:bg-green-600 text-white"
                           }`}
                         >
-                          {idea.status === "open" ? (
-                            <AiOutlineStop className="w-5 h-5" />
-                          ) : (
-                            <PlayCircle className="w-5 h-5" />
-                          )}
+                          {idea.status === "open" ? "Stop Receiving" : "Start Receiving"}
                         </button>
                       </>
                     )}
