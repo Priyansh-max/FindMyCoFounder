@@ -115,7 +115,7 @@ const OnboardingForm = () => {
       console.log(session);
 
       const response = await axios.post(
-        `http://localhost:5000/api/profile/resume`, 
+        `https://findmycofounder.onrender.com/api/profile/resume`, 
         formData,
         {
           headers: {
@@ -178,7 +178,7 @@ const OnboardingForm = () => {
 
       const { data: { session } } = await supabase.auth.getSession();
 
-      const response = await axios.post('http://localhost:5000/api/validate/profile', {
+      const response = await axios.post('https://findmycofounder.onrender.com/api/validate/profile', {
         fullName: formRecord.fullName,
         skills: formRecord.skills,
         portfolioUrl: formRecord.portfolioUrl,
@@ -208,7 +208,7 @@ const OnboardingForm = () => {
         console.log(profileData);
 
         try{
-          const profileResponse = await axios.post('http://localhost:5000/api/profile/create', profileData, {
+          const profileResponse = await axios.post('https://findmycofounder.onrender.com/api/profile/create', profileData, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${session.access_token}`

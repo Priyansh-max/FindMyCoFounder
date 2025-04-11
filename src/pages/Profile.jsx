@@ -106,7 +106,7 @@ function Profile() {
 
   async function fetchStats(session) {
     try {
-      const response = await axios.get('http://localhost:5000/api/data/stats', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/data/stats', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -126,7 +126,7 @@ function Profile() {
 
   async function fetchProfile(session) {
     try {
-      const response = await axios.get('http://localhost:5000/api/profile/details', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/profile/details', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -146,7 +146,7 @@ function Profile() {
 
   async function fetchApplications(session) {
     try {
-      const response = await axios.get('http://localhost:5000/api/application/user', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/application/user', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -168,7 +168,7 @@ function Profile() {
   
   async function fetchIdeas(session) {
     try {
-      const response = await axios.get('http://localhost:5000/api/idea/user', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/idea/user', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -194,7 +194,7 @@ function Profile() {
 
   async function fetchProjectStats(session) {
     try {
-      const response = await axios.get('http://localhost:5000/api/profile/get-project-stats', {
+      const response = await axios.get('https://findmycofounder.onrender.com/api/profile/get-project-stats', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -238,7 +238,7 @@ function Profile() {
     
     setLoadingProjects(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/profile/get-project-details?projectIds=${projectIds.join(',')}`, {
+      const response = await axios.get(`https://findmycofounder.onrender.com/api/profile/get-project-details?projectIds=${projectIds.join(',')}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }

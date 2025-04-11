@@ -93,7 +93,7 @@ const IdeaDetails = () => {
         
         // Call backend to create team
         const response = await axios.post(
-          `http://localhost:5000/api/manage-team/create-team/${id}`, 
+          `https://findmycofounder.onrender.com/api/manage-team/create-team/${id}`, 
           {}, 
           {
             headers: {
@@ -121,7 +121,7 @@ const IdeaDetails = () => {
 
   const checkTeamCreation = async (session) => {
     try{
-      const response = await axios.get(`http://localhost:5000/api/manage-team/check-team/${id}`, {
+      const response = await axios.get(`https://findmycofounder.onrender.com/api/manage-team/check-team/${id}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -138,7 +138,7 @@ const IdeaDetails = () => {
 
   const fetchApplicationStats = async (session) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/data/application-stats/${id}`, {
+      const response = await axios.get(`https://findmycofounder.onrender.com/api/data/application-stats/${id}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -158,7 +158,7 @@ const IdeaDetails = () => {
 
   const fetchApplicationsForIdea = async (session) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/application/details/${id}`, {
+      const response = await axios.get(`https://findmycofounder.onrender.com/api/application/details/${id}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -177,7 +177,7 @@ const IdeaDetails = () => {
 
   const fetchIdeaDetails = async (session) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/idea/${id}`, {
+      const response = await axios.get(`https://findmycofounder.onrender.com/api/idea/${id}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -206,8 +206,8 @@ const IdeaDetails = () => {
       }
       
       const endpoint = newStatus === "accepted" 
-        ? `http://localhost:5000/api/application/accept/${applicationId}`
-        : `http://localhost:5000/api/application/reject/${applicationId}`;
+        ? `https://findmycofounder.onrender.com/api/application/accept/${applicationId}`
+        : `https://findmycofounder.onrender.com/api/application/reject/${applicationId}`;
         
       const response = await axios.put(
         endpoint, 

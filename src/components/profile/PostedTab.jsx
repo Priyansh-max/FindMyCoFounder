@@ -52,7 +52,7 @@ const PostedTab = ({ideas , session}) => {
           toast.success(`Idea ${newStatus === 'open' ? 'reopened' : 'closed'} successfully`);
           
           // Send API request in the background
-          await axios.put(`http://localhost:5000/api/idea/status/${ideaId}`, { status: newStatus }, {
+          await axios.put(`https://findmycofounder.onrender.com/api/idea/status/${ideaId}`, { status: newStatus }, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
             }

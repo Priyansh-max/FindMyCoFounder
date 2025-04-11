@@ -20,7 +20,7 @@ const Contact = ({ session, ideaId, team }) => {
   const handleContactSubmit = async () => {
     setContactLoading(true);
     try {
-      const response = await axios.put(`http://localhost:5000/api/manage-team/contact-info/${ideaId}`, {
+      const response = await axios.put(`https://findmycofounder.onrender.com/api/manage-team/contact-info/${ideaId}`, {
         whatsapp_link: whatsappLink,
         slack_link: slackLink,
         discord_link: discordLink

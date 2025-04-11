@@ -57,7 +57,7 @@ const Admin = () => {
         return;
       }
       
-      const submissionsResponse = await axios.get('http://localhost:5000/api/admin/submissions', {
+      const submissionsResponse = await axios.get('https://findmycofounder.onrender.com/api/admin/submissions', {
         headers: {
           Authorization: `Bearer ${sessionToUse.access_token}`
         }
@@ -168,7 +168,7 @@ const Admin = () => {
       console.log("Member Stats with Spam Flags:", memberStatsWithSpam);
       console.log("Checked Checklist Items:", checkedItems);
 
-      const response = await axios.put(`http://localhost:5000/api/admin/submissions/${submissionId}`, {
+      const response = await axios.put(`https://findmycofounder.onrender.com/api/admin/submissions/${submissionId}`, {
         projectDetails,
         mem_details: memberStatsWithSpam,
         checklist: checkedItems

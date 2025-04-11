@@ -88,7 +88,7 @@ const CreatorsLab = () => {
       });
 
       // Fetch team data
-      const response = await axios.get(`http://localhost:5000/api/manage-team/get-team/${ideaId}`, {
+      const response = await axios.get(`https://findmycofounder.onrender.com/api/manage-team/get-team/${ideaId}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -145,7 +145,7 @@ const CreatorsLab = () => {
           if (!github_username) return member;
 
           const response = await axios.get(
-            `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
+            `https://findmycofounder.onrender.com/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
             requestConfig
           );
 

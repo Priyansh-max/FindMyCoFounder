@@ -114,7 +114,7 @@ function IdeaForm() {
         additionalDetails: { ...prev.additionalDetails, loading: true }
       }));
 
-      const response = await axios.post('http://localhost:5000/api/validate/idea', {
+      const response = await axios.post('https://findmycofounder.onrender.com/api/validate/idea', {
         title : formRecord.title,
         description : formRecord.ideaDescription,
         devReq : formRecord.developerNeeds,
@@ -142,7 +142,7 @@ function IdeaForm() {
         console.log(ideaData);
 
         try{
-          const ideaResponse = await axios.post('http://localhost:5000/api/idea/create', ideaData, {
+          const ideaResponse = await axios.post('https://findmycofounder.onrender.com/api/idea/create', ideaData, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${session.access_token}`

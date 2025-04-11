@@ -59,12 +59,12 @@ export default function Manage() {
 
         // 4. Fetch team and idea data
         const [ideaResponse, teamResponse] = await Promise.all([
-          axios.get(`http://localhost:5000/api/idea/${ideaId}`, {
+          axios.get(`https://findmycofounder.onrender.com/api/idea/${ideaId}`, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
             }
           }),
-          axios.get(`http://localhost:5000/api/manage-team/get-team/${ideaId}`, {
+          axios.get(`https://findmycofounder.onrender.com/api/manage-team/get-team/${ideaId}`, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
             }
@@ -142,7 +142,7 @@ export default function Manage() {
 
       // 2. Fetch repository statistics from our backend
       const response = await axios.get(
-        `http://localhost:5000/api/github/repo-stats/${username}/${currentTeam.repo_name}/${currentTeam.updated_at}`,
+        `https://findmycofounder.onrender.com/api/github/repo-stats/${username}/${currentTeam.repo_name}/${currentTeam.updated_at}`,
         requestConfig
       );
 
@@ -179,7 +179,7 @@ export default function Manage() {
       // 1. Update team data in the backend
       const updated_at = new Date();
       const response = await axios.put(
-        `http://localhost:5000/api/manage-team/update-team/${ideaId}`,
+        `https://findmycofounder.onrender.com/api/manage-team/update-team/${ideaId}`,
         {
           repo_name: repo.name,
           repo_url: repo.html_url,
@@ -292,7 +292,7 @@ export default function Manage() {
 
           // Fetch member statistics
           const response = await axios.get(
-            `http://localhost:5000/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
+            `https://findmycofounder.onrender.com/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
             requestConfig
           );
 
