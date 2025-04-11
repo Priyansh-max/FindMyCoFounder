@@ -572,7 +572,7 @@ function Profile() {
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
-            Your Posted
+            Your Ideas
           </button>
           <button
             onClick={() => setActiveTab('authored')}
@@ -627,7 +627,13 @@ function Profile() {
             <h2 className="text-2xl font-bold mb-6 text-foreground">Your Posted Ideas</h2>
             <PostedTab ideas={ideas} session={session}/>
             {ideas.length === 0 && (
-              <p className="text-muted-foreground text-center py-4">No ideas posted yet</p>
+              <div className="text-center p-10">
+              <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-medium text-foreground mb-2">No ideas posted yet</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                You haven't created any ideas yet. Start by posting an idea.
+              </p>
+            </div>
             )}
           </div>
         )}
