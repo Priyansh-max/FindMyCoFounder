@@ -76,7 +76,7 @@ const createIdea = async (req, res) => {
           )
         `)
         .eq('status', 'open')
-        // .neq('founder_id', userId)
+        .neq('founder_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
