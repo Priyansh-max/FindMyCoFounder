@@ -4,20 +4,39 @@ import { X } from 'lucide-react';
 
 const SKILL_SUGGESTIONS = [
   // Programming Languages
-  'JavaScript', 'Python', 'Java', 'C++', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'Go', 'Rust',
+  'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'Go', 'Rust', 'Perl', 'Scala', 'Haskell', 'Dart', 'Elixir', 'C#', 'Shell Scripting',
+
   // Web Technologies
-  'React', 'Angular', 'Vue.js', 'Node.js', 'Express.js', 'Django', 'Flask', 'Laravel',
+  'React', 'Angular', 'Vue.js', 'Node.js', 'Express.js', 'Django', 'Flask', 'Laravel', 'Svelte', 'Next.js', 'Nuxt.js', 'SolidJS', 'FastAPI', 'Spring Boot', 'ASP.NET', 'WebAssembly',
+
+  // Frontend Development
+  'HTML', 'CSS', 'SCSS', 'Bootstrap', 'Tailwind CSS', 'Chakra UI', 'Material UI', 'Three.js', 'Framer Motion', 'GSAP',
+
   // Mobile Development
-  'React Native', 'Flutter', 'iOS Development', 'Android Development',
+  'React Native', 'Flutter', 'iOS Development', 'Android Development', 'SwiftUI', 'Jetpack Compose', 'Xamarin', 'Ionic', 'Cordova',
+
   // Database
-  'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Firebase',
+  'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Firebase', 'SQLite', 'MariaDB', 'Cassandra', 'DynamoDB', 'Neo4j', 'CouchDB', 'Realm', 'Supabase',
+
   // Cloud & DevOps
-  'AWS', 'Azure', 'Google Cloud', 'Docker', 'Kubernetes', 'CI/CD',
+  'AWS', 'Azure', 'Google Cloud', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform', 'Ansible', 'Jenkins', 'GitHub Actions', 'CircleCI', 'Travis CI', 'Helm', 'OpenShift', 'Serverless',
+
   // AI & ML
-  'Machine Learning', 'Deep Learning', 'TensorFlow', 'PyTorch', 'Computer Vision', 'NLP',
+  'Machine Learning', 'Deep Learning', 'TensorFlow', 'PyTorch', 'Computer Vision', 'NLP', 'Scikit-Learn', 'OpenCV', 'Hugging Face Transformers', 'Reinforcement Learning', 'Stable Diffusion', 'GANs', 'AutoML', 'ONNX',
+
+  // Data Science & Analytics
+  'Data Analysis', 'Pandas', 'NumPy', 'Matplotlib', 'Seaborn', 'Data Visualization', 'Big Data', 'Hadoop', 'Apache Spark', 'Kafka', 'ETL', 'Power BI', 'Tableau',
+
+  // Cybersecurity
+  'Ethical Hacking', 'Penetration Testing', 'Cryptography', 'OWASP', 'SOC', 'SIEM', 'Intrusion Detection', 'Reverse Engineering', 'Digital Forensics',
+
+  // Networking & System Administration
+  'Linux', 'Bash Scripting', 'Windows Server', 'Nginx', 'Apache', 'Networking', 'TCP/IP', 'Firewall Management', 'VPN Configuration', 'Load Balancing',
+
   // Other
-  'Blockchain', 'WebGL', 'Unity', 'Game Development', 'UI/UX Design', 'GraphQL', 'REST API'
+  'Blockchain', 'Solidity', 'Smart Contracts', 'Web3.js', 'Hardhat', 'Truffle', 'NFT Development', 'WebGL', 'Unity', 'Game Development', 'Unreal Engine', 'UI/UX Design', 'GraphQL', 'REST API', 'gRPC', 'Microservices', 'Message Queues (RabbitMQ, Kafka)', 'ROS (Robot Operating System)', 'Embedded Systems', 'IoT Development', 'AR/VR Development', 'Meta Quest Development', 'TDD (Test-Driven Development)', 'Figma', 'Adobe XD', 'Git', 'Agile Development', 'Scrum', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform', 'Ansible', 'Jenkins', 'GitHub Actions', 'CircleCI', 'Travis CI', 'Helm', 'OpenShift', 'Serverless',
 ];
+
 
 const SkillSelect = ({ selectedSkills, setSelectedSkills , text}) => {
   const [inputValue, setInputValue] = useState('');
