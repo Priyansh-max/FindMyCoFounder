@@ -64,7 +64,7 @@ const createApplication = async (req, res) => {
   const getApplicationbyUser = async (req, res) => {
     try {
       const userId = req.user.id;
-
+  
       const { data, error } = await supabase
         .from('applications')
         .select(`
@@ -85,20 +85,29 @@ const createApplication = async (req, res) => {
         `)
         .eq('profile_id', userId)
         .order('created_at', { ascending: false });
-
+  
       if (error) throw error;
-
-      // Transform the data to include founder details directly in the idea object
-      const formattedData = data.map(app => ({
-        ...app,
-        idea: {
-          ...app.ideas,
-          founder: app.ideas.profiles,
-          profiles: undefined // Remove nested profiles object
-        },
-        ideas: undefined // Remove the original ideas object
-      }));
-
+  
+      const formattedData = data.map(app => {
+        if (!app.ideas) {
+          // Idea was deleted or idea_id is null
+          return {
+            ...app,
+            status: 'rejected',
+            idea: null,
+          };
+        }
+  
+        return {
+          ...app,
+          idea: {
+            ...app.ideas,
+            founder: app.ideas.profiles,
+          },
+          status: app.status, // keep original status if idea exists
+        };
+      });
+  
       res.json({
         success: true,
         data: formattedData
@@ -111,6 +120,7 @@ const createApplication = async (req, res) => {
       });
     }
   };
+  
 
   //get the application in a particular idea....
   const getApplicationbyIdea = async (req, res) => {
