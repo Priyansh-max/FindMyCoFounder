@@ -146,7 +146,7 @@ function Profile() {
 
   async function fetchApplications(session) {
     try {
-      const response = await axios.get('https://findmycofounder.onrender.com/api/application/user', {
+      const response = await axios.get('http://localhost:5000/api/application/user', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
