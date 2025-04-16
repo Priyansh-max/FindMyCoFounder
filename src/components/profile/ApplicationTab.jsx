@@ -38,7 +38,7 @@ const ApplicationTab = ({filteredApplications}) => {
                         onClick={() => setSelectedApplication(app)}
                         className="text-left font-medium text-foreground hover:text-primary transition-colors w-fit"
                         >
-                        {app.idea.title}
+                        {app.idea?.title || "Deleted Idea"}
                         </button>
                     </div>
 
@@ -97,9 +97,9 @@ const ApplicationTab = ({filteredApplications}) => {
                     <div className="space-y-6">
                     {/* Header with Idea Title */}
                     <div>
-                        <h2 className="text-xl font-semibold text-foreground">{selectedApplication.idea.title}</h2>
+                        <h2 className="text-xl font-semibold text-foreground">{selectedApplication.idea?.title || "Deleted Idea"}</h2>
                         <p className="text-xs text-muted-foreground mt-1">
-                        {selectedApplication.idea.founder?.full_name || "Unknown"}
+                        {selectedApplication.idea?.founder?.full_name || "Unknown"}
                         </p>
                     </div>
 
@@ -112,11 +112,11 @@ const ApplicationTab = ({filteredApplications}) => {
                     {/* Idea Description */}
                     <div>
                         <h3 className="text-sm font-medium text-muted-foreground mb-2">Idea Description</h3>
-                        <p className="text-sm text-muted-foreground">{selectedApplication.idea.idea_desc}</p>
+                        <p className="text-sm text-muted-foreground">{selectedApplication.idea?.idea_desc || "Deleted Idea"}</p>
                     </div>
 
                     {/* Required Skills */}
-                    {selectedApplication.idea.dev_req && (
+                    {selectedApplication.idea?.dev_req && (
                         <div>
                         <h3 className="text-sm font-medium text-muted-foreground mb-2">Required Skills</h3>
                         <div className="flex flex-wrap gap-2">
