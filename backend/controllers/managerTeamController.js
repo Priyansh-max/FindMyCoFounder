@@ -58,6 +58,7 @@ const updateTeam = async (req, res) => {
 
     const repo_name = req.body.repo_name;
     const repo_url = req.body.repo_url;
+    const repo_owner = req.body.repo_owner;
     const updated_at = req.body.updated_at;
 
     try{
@@ -66,6 +67,7 @@ const updateTeam = async (req, res) => {
         .update({
             repo_name: repo_name,
             repo_url: repo_url,
+            repo_owner: repo_owner,
             updated_at: updated_at,
         })
         .eq('idea_id', idea_id);
