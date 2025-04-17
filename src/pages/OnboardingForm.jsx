@@ -37,6 +37,8 @@ const OnboardingForm = () => {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
 
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
+  
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -115,7 +117,7 @@ const OnboardingForm = () => {
       console.log(session);
 
       const response = await axios.post(
-        `https://findmycofounder.onrender.com/api/profile/resume`, 
+        `${apiUrl}/api/profile/resume`, 
         formData,
         {
           headers: {
@@ -178,7 +180,7 @@ const OnboardingForm = () => {
 
       const { data: { session } } = await supabase.auth.getSession();
 
-      const response = await axios.post('https://findmycofounder.onrender.com/api/validate/profile', {
+      const response = await axios.post(`${apiUrl}/api/validate/profile`, {
         fullName: formRecord.fullName,
         skills: formRecord.skills,
         portfolioUrl: formRecord.portfolioUrl,
@@ -208,7 +210,7 @@ const OnboardingForm = () => {
         console.log(profileData);
 
         try{
-          const profileResponse = await axios.post('https://findmycofounder.onrender.com/api/profile/create', profileData, {
+          const profileResponse = await axios.post(`${apiUrl}/api/profile/create`, profileData, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${session.access_token}`

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Info, AlertCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { toast } from "react-hot-toast";
-
 import { FaWhatsapp } from "react-icons/fa";
 import { FaDiscord } from "react-icons/fa";
 import slack from "../../assets/slack.png";
@@ -16,11 +15,12 @@ const Contact = ({ session, ideaId, team }) => {
   const [contactLoading, setContactLoading] = useState(false);
   
   console.log(team);
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   const handleContactSubmit = async () => {
     setContactLoading(true);
     try {
-      const response = await axios.put(`https://findmycofounder.onrender.com/api/manage-team/contact-info/${ideaId}`, {
+      const response = await axios.put(`${apiUrl}/api/manage-team/contact-info/${ideaId}`, {
         whatsapp_link: whatsappLink,
         slack_link: slackLink,
         discord_link: discordLink

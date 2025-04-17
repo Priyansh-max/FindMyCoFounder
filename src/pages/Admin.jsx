@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Video, AlertTriangle, Github, Users, GitPullRequest, GitMerge, Calendar, Clock, Info, GitCommitIcon, CircleDot, Flag, Shield } from 'lucide-react';
+import { CheckCircle, Video, AlertTriangle, Github, Users, GitPullRequest, GitMerge, Calendar, Clock, Info, GitCommitIcon, CircleDot, Flag, Shield } from 'lucide-react';
 import supabase from '../lib/supabase';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
@@ -20,6 +20,8 @@ const Admin = () => {
     "Does it provide a relevant description",
     "Mark SPAM"
   ];
+
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     const fetchSessionAndData = async () => {
@@ -57,7 +59,7 @@ const Admin = () => {
         return;
       }
       
-      const submissionsResponse = await axios.get('https://findmycofounder.onrender.com/api/admin/submissions', {
+      const submissionsResponse = await axios.get(`${apiUrl}/api/admin/submissions`, {
         headers: {
           Authorization: `Bearer ${sessionToUse.access_token}`
         }
@@ -168,7 +170,7 @@ const Admin = () => {
       console.log("Member Stats with Spam Flags:", memberStatsWithSpam);
       console.log("Checked Checklist Items:", checkedItems);
 
-      const response = await axios.put(`https://findmycofounder.onrender.com/api/admin/submissions/${submissionId}`, {
+      const response = await axios.put(`${apiUrl}/api/admin/submissions/${submissionId}`, {
         projectDetails,
         mem_details: memberStatsWithSpam,
         checklist: checkedItems

@@ -32,7 +32,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
 
   // Configure toast position to be on the right side to avoid overlapping with submission progress
   const toastOptions = { position: 'bottom-right' };
-  
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
   // Update state when props change
   useEffect(() => {
     setTeam(initialTeam);
@@ -73,7 +73,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       
       // Fetch fresh repo stats with cache-busting parameter
       const repoStatsResponse = await axios.get(
-        `https://findmycofounder.onrender.com/api/github/repo-stats/${username}/${team.repo_name}/${team.updated_at}`,
+        `${apiUrl}/api/github/repo-stats/${username}/${team.repo_name}/${team.updated_at}`,
         requestConfig
       );
       
@@ -119,7 +119,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
           
           // Fetch fresh member statistics with cache-busting parameter
           const response = await axios.get(
-            `https://findmycofounder.onrender.com/api/github/member-stats/${username}/${team.repo_name}/${github_username}/${team.updated_at}`,
+            `${apiUrl}/api/github/member-stats/${username}/${team.repo_name}/${github_username}/${team.updated_at}`,
             requestConfig
           );
           
@@ -269,7 +269,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       // Validate user-provided fields
       setCurrentSubmissionStep('validating');
       toast.loading("Validating your project details...", toastOptions);
-      const response = await axios.post('https://findmycofounder.onrender.com/api/validate/submit-project', {
+      const response = await axios.post(`${apiUrl}/api/validate/submit-project`, {
         projectLink,
         videoLink,
         description
@@ -326,7 +326,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       setUploadComplete(false);
       
       const logoResponse = await axios.post(
-        'https://findmycofounder.onrender.com/api/project-submit/logo-upload', 
+        `${apiUrl}/api/project-submit/logo-upload`, 
         formData, 
         {
           headers: {
@@ -438,7 +438,7 @@ const Submit = ({ session, ideaId, team: initialTeam, repostats: initialRepostat
       await new Promise(resolve => setTimeout(resolve, 2000)); // Short pause for visual flow
       
       const submitResponse = await axios.post(
-        `https://findmycofounder.onrender.com/api/project-submit/submit`,
+        `${apiUrl}/api/project-submit/submit`,
         {
           projectLink,
           videoLink,

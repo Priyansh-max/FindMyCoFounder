@@ -28,7 +28,7 @@ export default function Manage() {
   const [dailyCommitData, setDailyCommitData] = useState({ labels: [], datasets: [] });
   const [repo, setRepo] = useState([]);
   const [isConnecting, setIsConnecting] = useState(false);
-
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
   // Main data fetching effect
   useEffect(() => {
     const fetchAllData = async () => {
@@ -59,12 +59,12 @@ export default function Manage() {
 
         // 4. Fetch team and idea data
         const [ideaResponse, teamResponse] = await Promise.all([
-          axios.get(`https://findmycofounder.onrender.com/api/idea/${ideaId}`, {
+          axios.get(`${apiUrl}/api/idea/${ideaId}`, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
             }
           }),
-          axios.get(`https://findmycofounder.onrender.com/api/manage-team/get-team/${ideaId}`, {
+          axios.get(`${apiUrl}/api/manage-team/get-team/${ideaId}`, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
             }
@@ -142,7 +142,7 @@ export default function Manage() {
 
       // 2. Fetch repository statistics from our backend
       const response = await axios.get(
-        `https://findmycofounder.onrender.com/api/github/repo-stats/${username}/${currentTeam.repo_name}/${currentTeam.updated_at}`,
+        `${apiUrl}/api/github/repo-stats/${username}/${currentTeam.repo_name}/${currentTeam.updated_at}`,
         requestConfig
       );
 
@@ -179,10 +179,11 @@ export default function Manage() {
       // 1. Update team data in the backend
       const updated_at = new Date();
       const response = await axios.put(
-        `https://findmycofounder.onrender.com/api/manage-team/update-team/${ideaId}`,
+        `${apiUrl}/api/manage-team/update-team/${ideaId}`,
         {
           repo_name: repo.name,
           repo_url: repo.html_url,
+          repo_owner: repo.owner.login,
           updated_at: updated_at
         },
         {
@@ -292,7 +293,7 @@ export default function Manage() {
 
           // Fetch member statistics
           const response = await axios.get(
-            `https://findmycofounder.onrender.com/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
+            `${apiUrl}/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
             requestConfig
           );
 

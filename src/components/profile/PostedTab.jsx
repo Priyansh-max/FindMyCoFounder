@@ -11,7 +11,7 @@ const PostedTab = ({ideas , session}) => {
     const navigate = useNavigate();
     // Create a local copy of ideas that we can modify
     const [localIdeas, setLocalIdeas] = useState([]);
-    
+    const apiUrl = import.meta.env.VITE_BACKEND_URL;
     // Sync local ideas with parent ideas when they change
     useEffect(() => {
       setLocalIdeas(ideas);
@@ -52,7 +52,7 @@ const PostedTab = ({ideas , session}) => {
           toast.success(`Idea ${newStatus === 'open' ? 'reopened' : 'closed'} successfully`);
           
           // Send API request in the background
-          await axios.put(`https://findmycofounder.onrender.com/api/idea/status/${ideaId}`, { status: newStatus }, {
+          await axios.put(`${apiUrl}/api/idea/status/${ideaId}`, { status: newStatus }, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
             }

@@ -30,6 +30,8 @@ function IdeasList() {
   const [refreshLoading, setRefreshLoading] = useState(false);
   const [pitchValidation, setPitchValidation] = useState({ loading: false, valid: null, message: '' });
 
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
+
   useEffect(() => {
     console.log('Component mounted');
     checkUser();
@@ -87,7 +89,7 @@ function IdeasList() {
 
   const checkOnboardingStatus = async (session) => {
     try {
-      const response = await axios.get('https://findmycofounder.onrender.com/api/idealist/verify-onboarding', {
+      const response = await axios.get(`${apiUrl}/api/idealist/verify-onboarding`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -107,7 +109,7 @@ function IdeasList() {
 
   async function fetchIdeas(session) {
     try {
-      const response = await axios.get('https://findmycofounder.onrender.com/api/idea', {
+      const response = await axios.get(`${apiUrl}/api/idea`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -160,7 +162,7 @@ function IdeasList() {
     setPitchValidation({ loading: true, valid: null, message: '' });
 
     try {
-      const response = await axios.post(`https://findmycofounder.onrender.com/api/idealist/apply/${applyingToIdea}`, {
+      const response = await axios.post(`${apiUrl}/api/idealist/apply/${applyingToIdea}`, {
         pitch: pitchText
       }, {
         headers: {
@@ -183,6 +185,7 @@ function IdeasList() {
         setApplyOverlay(false);
         setApplyingToIdea(null);
         setPitchText('');
+        setPitchValidation({ loading: false, valid: null, message: '' });
       } else {
         setPitchValidation({ loading: false, valid: false, message: '' });
         toast.error('There is some error in submitting your application');
