@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+.env.production
+.env.development
 task.txt
 pointsystem.md
 # Editor directories and files
