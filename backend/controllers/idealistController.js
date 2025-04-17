@@ -53,7 +53,7 @@ const applyToIdea = async (req , res) => {
 
         // Validate the pitch
         try {
-            const pitchValidationResponse = await axios.post(`http://localhost:5000/api/validate/pitch`, {
+            const pitchValidationResponse = await axios.post(`${process.env.BACKEND_URL}/api/validate/pitch`, {
                 pitch: pitch
             });
             
@@ -68,7 +68,12 @@ const applyToIdea = async (req , res) => {
             }
         } catch (validationError) {
             console.error('Error validating pitch:', validationError);
-            // Continue with submission even if validation fails
+            return res.status(200).json({
+                success: false,
+                validationError: true,
+                message: validationError.response.data.message || 'Your pitch needs improvement',
+                validation: validationError.response.data
+            });
         }
 
         // Insert application
