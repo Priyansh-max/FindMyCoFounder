@@ -17,7 +17,7 @@ router.post("/pitch", async (req, res) => {
       1. The pitch:
          - Is not gibberish or meaningless
          - Is not too vague or broad
-         - It should look like a pitch for a application.
+         - It should look like an application.
 
 
       Respond in JSON format like this:
