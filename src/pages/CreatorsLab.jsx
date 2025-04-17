@@ -47,6 +47,8 @@ const CreatorsLab = () => {
     fetchData();
   }, [ideaId]);
 
+  const apiUrl = import.meta.env.VITE_BACKEND_URL;
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -70,6 +72,7 @@ const CreatorsLab = () => {
             slack_url,
             discord_url,
             repo_name,
+            repo_owner,
             repo_url
           )
         `)
@@ -88,7 +91,7 @@ const CreatorsLab = () => {
       });
 
       // Fetch team data
-      const response = await axios.get(`https://findmycofounder.onrender.com/api/manage-team/get-team/${ideaId}`, {
+      const response = await axios.get(`${apiUrl}/api/manage-team/get-team/${ideaId}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -117,7 +120,7 @@ const CreatorsLab = () => {
   const getMemberStats = async (session, team) => {
     if (!team || !session) return;
 
-    const username = session.user.user_metadata.user_name;
+    const username = team.repo_owner;
     const repoName = team.repo_name;
 
     if (!username || !repoName) return;
@@ -145,7 +148,7 @@ const CreatorsLab = () => {
           if (!github_username) return member;
 
           const response = await axios.get(
-            `https://findmycofounder.onrender.com/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
+            `${apiUrl}/api/github/member-stats/${username}/${repoName}/${github_username}/${member.joined_at}`,
             requestConfig
           );
 
@@ -179,6 +182,8 @@ const CreatorsLab = () => {
 
       setMemberStats(sortedMembers);
 
+      console.log("sortedMembers:", sortedMembers);
+
     } catch (error) {
       console.error('Error in getMemberStats:', error);
       toast.error('Failed to fetch member statistics');
@@ -197,7 +202,7 @@ const CreatorsLab = () => {
     <div className="max-w-8xl mx-auto px-4 py-8">
       <div className="flex flex-col space-y-8">
         {/* Header with Repo Info and Communication Links */}
-        <div className="bg-card text-card-foreground rounded-lg border-b border-border p-6 shadow-sm">
+        <div className="bg-card text-card-foreground py-4 border-b border-border shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Creators Lab</h1>
@@ -225,7 +230,7 @@ const CreatorsLab = () => {
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row md:justify-between gap-4 mt-4 pt-4 border-t border-border">
+          <div className="flex flex-col md:flex-row md:justify-between gap-4 mt-3 pt-3 border-t border-border">
             {/* Communication Links */}
             <div className="flex items-center flex-wrap gap-4">
               {contactInfo?.email && (
