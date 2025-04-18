@@ -100,7 +100,7 @@ const Navbar = ({user}) => {
           {/* Logo */}
           <Link to="/" className="flex items-center text-base sm:text-xl font-bold text-gray-800 dark:text-white">
             <FaHandshake className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-4 text-black-600 dark:text-white hover:text-black-800" />
-            <p className='hover:underline text-lg sm:text-xl'>FindMyTeam</p>
+            <p className='hover:underline text-base sm:text-xl'>FindMyTeam</p>
           </Link>
 
           {/* Desktop Navigation */}
