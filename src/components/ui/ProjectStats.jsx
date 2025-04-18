@@ -160,19 +160,19 @@ const ProjectStats = ({ stats }) => {
   };
 
   return (
-    <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
+    <div className="bg-card text-card-foreground rounded-lg border border-border p-4 sm:p-6 shadow-sm">
       {/* Header with Project Rating and Role */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <h3 className="text-[13px] font-medium text-muted-foreground">Project Rating</h3>
         <div className="flex items-center">
-          <p className="text-[32px] font-bold">
+          <p className="text-2xl sm:text-[32px] font-bold">
             {projectRatings.length > 1 ? projectRatings[projectRatings.length - 1].totalRating : 0}
           </p>
         </div>
       </div>
 
       {/* Rating Progress Graph */}
-      <div className="relative" style={{ height: '140px' }}>
+      <div className="relative h-[100px] sm:h-[140px]">
         {mounted && projectRatings.length > 1 ? (
           <ReactApexChart
             options={options}
