@@ -411,69 +411,66 @@ function Profile() {
               Overview
             </h2>
 
-            {/* Applications Sent Section */}
-            <div className='flex flex-col items-center'>
-              <div className="relative group">
-                <CircularProgress
-                  total={stats.applications_sent.total}
-                  accepted={stats.applications_sent.accepted}
-                  pending={stats.applications_sent.pending}
-                  rejected={stats.applications_sent.rejected}
-                  content="Applications Sent"
-                />
-                {/* Hover Stats */}
-                <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="absolute top-1/4 left-full ml-2">
-                    <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Accepted: {stats.applications_sent.accepted}
+            {/* Applications Wheels Section */}
+            <div className='flex flex-row sm:flex-col items-center gap-4 sm:gap-0 justify-between'>
+              {/* Applications Sent Section */}
+              <div className='flex flex-col items-center w-full sm:w-auto'>
+                <div className="relative group">
+                  <CircularProgress
+                    total={stats.applications_sent.total}
+                    accepted={stats.applications_sent.accepted}
+                    pending={stats.applications_sent.pending}
+                    rejected={stats.applications_sent.rejected}
+                    content="Applications Sent"
+                  />
+                  {/* Hover Stats - Mobile: Bottom, Desktop: Right */}
+                  <div className="absolute sm:top-0 sm:left-full top-full left-1/2 -translate-x-1/2 sm:translate-x-0 w-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex flex-col gap-1 sm:ml-2 mt-2 sm:mt-0">
+                      <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                        Accepted: {stats.applications_sent.accepted}
+                      </div>
+                      <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                        Pending: {stats.applications_sent.pending}
+                      </div>
+                      <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                        Rejected: {stats.applications_sent.rejected}
+                      </div>
                     </div>
                   </div>
-                  <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
-                    <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Pending: {stats.applications_sent.pending}
-                    </div>
-                  </div>
-                  <div className="absolute bottom-1/4 left-full ml-2">
-                    <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Rejected: {stats.applications_sent.rejected}
+                </div>
+              </div>
+
+              <div className="w-px sm:w-full h-40 sm:h-px sm:mt-4 mb-4 bg-border"></div>
+
+
+              {/* Application Received Section */}
+              <div className='flex flex-col items-center w-full sm:w-auto'>
+                <div className="relative group">
+                  <CircularProgress
+                    total={stats.applications_received.total}
+                    accepted={stats.applications_received.accepted}
+                    pending={stats.applications_received.pending}
+                    rejected={stats.applications_received.rejected}
+                    content="Applications Received"
+                  />
+                  {/* Hover Stats - Mobile: Bottom, Desktop: Right */}
+                  <div className="absolute sm:top-0 sm:left-full top-full left-1/2 -translate-x-1/2 sm:translate-x-0 w-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex flex-col gap-1 sm:ml-2 mt-2 sm:mt-0">
+                      <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                        Accepted: {stats.applications_received.accepted}
+                      </div>
+                      <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                        Pending: {stats.applications_received.pending}
+                      </div>
+                      <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
+                        Rejected: {stats.applications_received.rejected}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <div className="border-b border-border my-4"></div>
-
-            {/* Application Received Section */}
-            <div className='flex flex-col items-center'>
-              <div className="relative group">
-                <CircularProgress
-                  total={stats.applications_received.total}
-                  accepted={stats.applications_received.accepted}
-                  pending={stats.applications_received.pending}
-                  rejected={stats.applications_received.rejected}
-                  content="Applications Received"
-                />
-                {/* Hover Stats */}
-                <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="absolute top-1/4 left-full ml-2">
-                    <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Accepted: {stats.applications_received.accepted}
-                    </div>
-                  </div>
-                  <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
-                    <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Pending: {stats.applications_received.pending}
-                    </div>
-                  </div>
-                  <div className="absolute bottom-1/4 left-full ml-2">
-                    <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                      Rejected: {stats.applications_received.rejected}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             <div className="border-b border-border my-4"></div>
 

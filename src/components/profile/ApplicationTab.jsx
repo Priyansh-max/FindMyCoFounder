@@ -87,7 +87,7 @@ const ApplicationTab = ({filteredApplications}) => {
             </div>
 
             {selectedApplication && (
-                <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000]">
+                <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-[1000] p-10">
                     <div className="bg-card text-card-foreground p-6 rounded-lg shadow-lg dark:shadow-primary/10 w-[600px] relative border border-border">
                         {/* Close Button */}
                         <button
