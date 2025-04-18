@@ -476,28 +476,28 @@ function Profile() {
 
             {/* Stats Section */}
             <div className="grid grid-cols-3 gap-2">
-              <div className="bg-[#1e293b] rounded-lg p-3 flex flex-col items-center">
+              <div className="bg-muted-foreground/10 rounded-lg p-3 flex flex-col items-center">
                 <div className="flex items-center justify-center gap-2">
-                  <Lightbulb className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm text-gray-300">Ideas</span>
+                  <Lightbulb className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-muted-foreground">Ideas</span>
                 </div>
-                <span className="text-xl font-bold text-white mt-1">{stats.ideas_posted}</span>
+                <span className="text-xl font-bold text-foreground mt-1">{stats.ideas_posted}</span>
               </div>
 
-              <div className="bg-[#1e293b] rounded-lg p-3 flex flex-col items-center">
+              <div className="bg-muted-foreground/10 rounded-lg p-3 flex flex-col items-center">
                 <div className="flex items-center justify-center gap-2">
-                  <Users className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm text-gray-300">Contacts</span>
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-muted-foreground">Contacts</span>
                 </div>
-                <span className="text-xl font-bold text-white mt-1">{stats.applications_sent.pending}</span>
+                <span className="text-xl font-bold text-foreground mt-1">{stats.applications_sent.pending}</span>
               </div>
 
-              <div className="bg-[#1e293b] rounded-lg p-3 flex flex-col items-center">
+              <div className="bg-muted-foreground/10 rounded-lg p-3 flex flex-col items-center">
                 <div className="flex items-center justify-center gap-2">
-                  <Heart className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm text-gray-300">Likes</span>
+                  <Heart className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-muted-foreground">Likes</span>
                 </div>
-                <span className="text-xl font-bold text-white mt-1">{stats.applications_received.rejected}</span>
+                <span className="text-xl font-bold text-foreground mt-1">{stats.applications_received.rejected}</span>
               </div>
             </div>
           </div>
