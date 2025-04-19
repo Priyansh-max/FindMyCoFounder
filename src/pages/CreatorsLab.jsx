@@ -199,28 +199,28 @@ const CreatorsLab = () => {
   }
 
   return (
-    <div className="max-w-8xl mx-auto px-4 py-8">
-      <div className="flex flex-col space-y-8">
+    <div className="max-w-8xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <div className="flex flex-col space-y-4 sm:space-y-8">
         {/* Header with Repo Info and Communication Links */}
-        <div className="bg-card text-card-foreground py-4 border-b border-border shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-card text-card-foreground py-3 sm:py-4 border-b border-border shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Creators Lab</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Creators Lab</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">
                 Collaborate on {idea?.title || 'your project'}
               </p>
             </div>
             {contactInfo?.repo_name && (
-              <div className="flex items-center space-x-3">
-                <div className="relative group">
+              <div className="flex items-center">
+                <div className="relative group w-full sm:w-auto">
                   <div className="absolute -inset-[1px] rounded-md bg-gradient-to-r from-primary via-purple-500 to-primary opacity-75 blur-[2px] group-hover:opacity-100 transition-all duration-300 animate-border-glow"></div>
-                  <div className="relative flex items-center space-x-2 px-4 py-2 bg-background rounded-md border border-transparent">
-                    <Github className="w-5 h-5" />
+                  <div className="relative flex items-center space-x-2 px-3 sm:px-4 py-2 bg-background rounded-md border border-transparent">
+                    <Github className="w-4 h-4 sm:w-5 sm:h-5" />
                     <a 
                       href={contactInfo.repo_url} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="text-foreground hover:text-primary transition-colors"
+                      className="text-sm sm:text-base text-foreground hover:text-primary transition-colors truncate"
                     >
                       {contactInfo.repo_name}
                     </a>
@@ -230,15 +230,15 @@ const CreatorsLab = () => {
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row md:justify-between gap-4 mt-3 pt-3 border-t border-border">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-3  sm:gap-4 mt-3 pt-3 border-t border-border">
             {/* Communication Links */}
-            <div className="flex items-center flex-wrap gap-4">
+            <div className="flex items-center flex-wrap gap-2 px-2 sm:gap-4">
               {contactInfo?.email && (
                 <a 
                   href={`mailto:${contactInfo.email}`}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-primary" />
+                  <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                   <span>Email</span>
                 </a>
               )}
@@ -248,9 +248,9 @@ const CreatorsLab = () => {
                   href={contactInfo.whatsapp}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-green-500 transition-colors"  
+                  className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground hover:text-green-500 transition-colors"  
                 >
-                  <FaWhatsapp className="w-4 h-4 text-green-500" />
+                  <FaWhatsapp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
                   <span>WhatsApp</span>
                 </a>
               )}
@@ -260,9 +260,9 @@ const CreatorsLab = () => {
                   href={contactInfo.slack}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  <img src={slack} alt="slack" className="w-4 h-4" />
+                  <img src={slack} alt="slack" className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span>Slack</span>
                 </a>
               )}
@@ -272,9 +272,9 @@ const CreatorsLab = () => {
                   href={contactInfo.discord}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-indigo-500 transition-colors"
+                  className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground hover:text-indigo-500 transition-colors"
                 >
-                  <FaDiscord className="w-4 h-4 text-indigo-500" />
+                  <FaDiscord className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" />
                   <span>Discord</span>
                 </a>
               )}
@@ -283,53 +283,53 @@ const CreatorsLab = () => {
             {/* Guidelines Toggle Button */}
             <button
               onClick={() => setShowGuidelines(!showGuidelines)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-border bg-background hover:bg-muted transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-background hover:bg-muted transition-colors"
             >
-              <BookOpen className="w-4 h-4 text-primary" />
-              <span>{showGuidelines ? 'Hide' : 'Display'} Contribution Guidelines</span>
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+              <span>{showGuidelines ? 'Hide' : 'Display'} Guidelines</span>
             </button>
           </div>
 
           {/* Contribution Guidelines - Shown conditionally */}
           {showGuidelines && (
             <div className="mt-4 pt-4 border-t border-border">
-              <h3 className="text-base font-semibold mb-4">Contribution Guidelines</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <GitBranch className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+              <h3 className="text-sm sm:text-base font-semibold mb-3 sm:mb-4">Contribution Guidelines</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <GitBranch className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-medium">Branch Naming</h4>
-                    <p className="text-xs text-muted-foreground">
+                    <h4 className="text-xs sm:text-sm font-medium">Branch Naming</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">
                       Use descriptive branch names following the pattern: feature/description or fix/description
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <GitCommit className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <GitCommit className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-medium">Commit Messages</h4>
-                    <p className="text-xs text-muted-foreground">
+                    <h4 className="text-xs sm:text-sm font-medium">Commit Messages</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">
                       Write clear, descriptive commit messages that explain what changes were made and why
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <GitPullRequest className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <GitPullRequest className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-medium">Pull Requests</h4>
-                    <p className="text-xs text-muted-foreground">
+                    <h4 className="text-xs sm:text-sm font-medium">Pull Requests</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">
                       Create PRs for all changes. Include a description, screenshots if applicable, and tag team members
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-medium">Issues</h4>
-                    <p className="text-xs text-muted-foreground">
+                    <h4 className="text-xs sm:text-sm font-medium">Issues</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">
                       Create issues for bugs, feature requests, or improvements. Use appropriate labels and assign to members
                     </p>
                   </div>
@@ -340,37 +340,43 @@ const CreatorsLab = () => {
         </div>
 
         {/* Cache Status and Last Updated */}
-        <div className="flex mx-1 items-center justify-between mb-4 text-sm text-muted-foreground">
-            <div className="flex items-center space-x-2">
-              {isCached && (
-                <div className="flex items-center space-x-1">
-                  <RefreshCw className="w-4 h-4 text-primary" />
-                  <span>Ranking and stats are refreshed every hour</span>
-                </div>
-              )}
-            </div>
-            {lastUpdated && (
-              <div className="flex items-center space-x-1">
-                <span className={`inline-block w-2 h-2 rounded-full animate-pulse mr-2 ${isCached ? 'bg-yellow-400' : 'bg-green-400'}`}></span>
-                <span>
-                  Last updated: {new Date(lastUpdated).toLocaleTimeString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-1 mx-1 mb-2 sm:mb-4 text-xs sm:text-sm text-muted-foreground">
+          <div className="hidden sm:flex items-center space-x-1">
+            {isCached && (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                <span>Ranking and stats are refreshed every hour</span>
+              </>
             )}
+          </div>
+          {lastUpdated && (
+            <div className="flex items-center space-x-1">
+              <span className={`inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full animate-pulse mr-1.5 sm:mr-2 ${isCached ? 'bg-yellow-400' : 'bg-green-400'}`}></span>
+              <span className="whitespace-nowrap text-xs sm:text-sm">
+                Last updated: {new Date(lastUpdated).toLocaleTimeString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Team Members Section */}
-        <div className="bg-card text-card-foreground rounded-lg border border-border p-6 shadow-sm">
+        <div className="bg-card text-card-foreground rounded-lg border border-border p-4 sm:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Team Members</h2>
+            <h2 className="text-lg sm:text-xl font-semibold">Team Members</h2>
             <div className="flex items-center space-x-3">
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm sm:text-sm text-muted-foreground">
                 Total Members: {memberStats.length || 0}
               </div>
             </div>
           </div>
 
-          <div className="relative overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block relative overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-xs uppercase bg-muted/50">
                 <tr>
@@ -441,6 +447,86 @@ const CreatorsLab = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {memberStats.map((member, index) => (
+              <div 
+                key={member.id || member.email} 
+                className="bg-background rounded-lg border border-border p-4 space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {/* Rank and Avatar */}
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        {index === 0 ? (
+                          <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                            <Trophy className="w-5 h-5 text-yellow-500" />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+                            #{index + 1}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0">
+                        {member.avatar_url ? (
+                          <img 
+                            src={member.avatar_url}
+                            alt={member.full_name}
+                            className="h-8 w-8 rounded-full"
+                          />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Name and Username */}
+                    <div>
+                      <div className="text-sm font-medium">{member.full_name || 'Unknown'}</div>
+                      <div className="text-xs text-primary">{member.github_username || 'No GitHub username'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-muted/50 rounded-lg p-2">
+                    <div className="text-xs text-muted-foreground">Commits</div>
+                    <div className="font-medium">{member.stats?.commits || 0}</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-2">
+                    <div className="text-xs text-muted-foreground">Merged PRs</div>
+                    <div className="font-medium text-green-500">{member.stats?.merged_prs || 0}</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-2">
+                    <div className="text-xs text-muted-foreground">Closed Issues</div>
+                    <div className="font-medium text-blue-500">{member.stats?.closed_issues || 0}</div>
+                  </div>
+                  <div className="bg-primary/10 rounded-lg p-2">
+                    <div className="text-xs text-primary">Total Contributions</div>
+                    <div className="font-bold text-primary">
+                      {(member.stats?.commits || 0) + (member.stats?.merged_prs || 0) + (member.stats?.closed_issues || 0)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Joined Date */}
+                <div className="text-xs text-muted-foreground flex items-center">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  Joined: {member.joined_at ? new Date(member.joined_at).toLocaleDateString('en-US', { 
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  }) : 'Unknown'}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
