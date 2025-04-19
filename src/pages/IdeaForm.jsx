@@ -291,7 +291,7 @@ function IdeaForm() {
                         onChange={handleChange}
                         required
                         placeholder="Title goes here :) "
-                        className="w-full focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground"
+                        className="w-full focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground text-sm sm:text-base"
                       />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2">
                         <StatusIndicator status={fieldStatus.title} />
@@ -312,7 +312,7 @@ function IdeaForm() {
                         onChange={handleChange}
                         required
                         placeholder="Describe your initial idea for the developer to get started"
-                        className="w-full min-h-32 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground"
+                        className="w-full min-h-32 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground text-sm sm:text-base"
                       />
                       <div className="absolute right-2 top-2">
                         <StatusIndicator status={fieldStatus.description} />
@@ -355,7 +355,7 @@ function IdeaForm() {
                         onChange={handleChange}
                         required
                         placeholder="Describe any additional information here"
-                        className="w-full min-h-24 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground"
+                        className="w-full min-h-24 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground text-sm sm:text-base"
                       />
                       <div className="absolute right-2 top-2">
                         <StatusIndicator status={fieldStatus.additionalDetails} />
