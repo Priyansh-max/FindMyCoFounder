@@ -132,7 +132,7 @@ const SkillSelect = ({ selectedSkills, setSelectedSkills , text}) => {
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          className="flex-1 min-w-[100px] bg-white dark:bg-background border-none focus:border-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none transition-colors"
+          className="flex-1 min-w-[100px] bg-white dark:bg-background border-none focus:border-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none transition-colors placeholder:text-sm placeholder:text-muted-foreground"
           placeholder={selectedSkills.length === 0 ? text : ""}
         />
       </div>

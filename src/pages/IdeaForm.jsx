@@ -226,9 +226,9 @@ function IdeaForm() {
 
 
   return (
-    <div className="flex min-h-screen bg-background pt-8 justify-between px-20 transition-colors duration-200">
+    <div className="flex min-h-screen bg-background pt-8 justify-between px-2 sm:px-20 transition-colors duration-200">
       {/* Left Side - Image */}
-      <div className="ml-12 p-12">
+      <div className="hidden sm:block ml-12 p-12">
         {/* Image Section */}
         <div className="flex justify-center scale-125">
           <motion.img
@@ -264,13 +264,13 @@ function IdeaForm() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 p-8">
+      <div className="w-full lg:w-1/2 p-0 lg:p-8">
         <div className="max-w-2xl mx-auto">
           <Card className="border-border shadow-xl bg-card/90 backdrop-blur">
             <CardHeader className="space-y-1 pb-6">
-              <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-                <PlusCircle className="w-6 h-6 text-primary" />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+              <CardTitle className="text-lg sm:text-xl font-bold text-center flex items-center justify-center gap-2">
+                <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <span className="bg-clip-text text-transparent bg-primary">
                   Create a Project
                 </span>
               </CardTitle>
@@ -279,8 +279,8 @@ function IdeaForm() {
               <form onSubmit={handleSubmitDemo} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="title" className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <PenLine className="w-4 h-4 text-muted-foreground" />
+                    <label htmlFor="title" className="text-sm sm:text-base font-medium text-foreground flex items-center gap-2">
+                      <PenLine className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                       Title
                     </label>
                     <div className="relative">
@@ -291,7 +291,7 @@ function IdeaForm() {
                         onChange={handleChange}
                         required
                         placeholder="Title goes here :) "
-                        className="w-full focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none"
+                        className="w-full focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground"
                       />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2">
                         <StatusIndicator status={fieldStatus.title} />
@@ -300,8 +300,8 @@ function IdeaForm() {
                   </div>
 
                   <div className="space-y-2 relative">
-                    <label htmlFor="ideaDescription" className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4 text-muted-foreground" />
+                    <label htmlFor="ideaDescription" className="text-sm sm:text-base font-medium text-foreground flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                       Project Description
                     </label>
                     <div className="relative">
@@ -312,7 +312,7 @@ function IdeaForm() {
                         onChange={handleChange}
                         required
                         placeholder="Describe your initial idea for the developer to get started"
-                        className="w-full min-h-32 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none"
+                        className="w-full min-h-32 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground"
                       />
                       <div className="absolute right-2 top-2">
                         <StatusIndicator status={fieldStatus.description} />
@@ -326,8 +326,8 @@ function IdeaForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="developerNeeds" className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Code2 className="w-4 h-4 text-muted-foreground" />
+                    <label htmlFor="developerNeeds" className="text-sm sm:text-base font-medium text-foreground flex items-center gap-2">
+                      <Code2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                       Developer Requirements
                     </label>
                     <div className="relative">
@@ -343,8 +343,8 @@ function IdeaForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="additionalDetails" className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Handshake className="w-4 h-4 text-muted-foreground" />
+                    <label htmlFor="additionalDetails" className="text-sm sm:text-base font-medium text-foreground flex items-center gap-2">
+                      <Handshake className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                       Additional Information
                     </label>
                     <div className="relative">
@@ -355,7 +355,7 @@ function IdeaForm() {
                         onChange={handleChange}
                         required
                         placeholder="Describe any additional information here"
-                        className="w-full min-h-24 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none"
+                        className="w-full min-h-24 focus:ring-1 focus:ring-primary pr-8 bg-transparent border-input transition-none placeholder:text-sm placeholder:text-muted-foreground"
                       />
                       <div className="absolute right-2 top-2">
                         <StatusIndicator status={fieldStatus.additionalDetails} />
@@ -373,7 +373,7 @@ function IdeaForm() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">
