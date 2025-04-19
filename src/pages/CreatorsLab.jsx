@@ -202,7 +202,7 @@ const CreatorsLab = () => {
     <div className="max-w-8xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
       <div className="flex flex-col space-y-4 sm:space-y-8">
         {/* Header with Repo Info and Communication Links */}
-        <div className="bg-card text-card-foreground py-3 sm:py-4 border-b border-border shadow-sm">
+        <div className="bg-card px-3 rounded-lg text-card-foreground py-3 sm:py-4 border  border-border shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Creators Lab</h1>
@@ -496,15 +496,15 @@ const CreatorsLab = () => {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="bg-muted-foreground/10 rounded-lg p-2">
                     <div className="text-xs text-muted-foreground">Commits</div>
                     <div className="font-medium">{member.stats?.commits || 0}</div>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="bg-muted-foreground/10 rounded-lg p-2">
                     <div className="text-xs text-muted-foreground">Merged PRs</div>
                     <div className="font-medium text-green-500">{member.stats?.merged_prs || 0}</div>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="bg-muted-foreground/10 rounded-lg p-2">
                     <div className="text-xs text-muted-foreground">Closed Issues</div>
                     <div className="font-medium text-blue-500">{member.stats?.closed_issues || 0}</div>
                   </div>
