@@ -267,8 +267,8 @@ const IdeaDetails = () => {
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">Dashboard Required</h3>
-              <div className="text-sm text-amber-700 dark:text-amber-300">
+              <h3 className="text-xs sm:text-sm font-medium text-amber-800 dark:text-amber-200">Dashboard Required</h3>
+              <div className="text-xs sm:text-sm text-amber-700 dark:text-amber-300">
                 You need to create your team dashboard before you can manage applications. 
               </div>
             </div>
@@ -276,28 +276,28 @@ const IdeaDetails = () => {
         </div>
       )}
 
-      <div className="flex gap-8">
-        <div className='w-1/3 flex flex-col h-fit top-8'>
+      <div className="flex flex-col sm:flex-row gap-8">
+        <div className='w-full sm:w-1/3 flex flex-col h-fit top-8'>
             {idea ? (
             <div className="bg-card text-card-foreground p-6 rounded-lg shadow-md dark:shadow-primary/10 border border-border">
                 <div className='mb-2 flex flex-row gap-2 border-b border-border pb-2 items-center'>
-                    <ClipboardList className='w-5 h-5 text-primary' />
-                    <h2 className="text-2xl font-bold text-foreground">Summary</h2>
+                    <ClipboardList className='w-4 h-4 sm:w-5 sm:h-5 text-primary' />
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground">Summary</h2>
                 </div>
                 {/* Header with Company Name and Status */}
                 <div className="mb-2">
                     <div className="flex items-center justify-between mt-2 mb-2">
-                        <p className="text-xl font-semibold text-foreground">
+                        <p className="text-lg sm:text-xl font-semibold text-foreground">
                             {idea.title}
                         </p>
                         <div className="flex gap-4 items-center">
-                                <span className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium 
+                                <span className={`flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium 
                                     ${idea.status === 'open' 
                                         ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100' 
                                         : 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100'}`}>
                                     {idea.status === 'open' 
-                                        ? <CheckCircle className="w-4 h-4" /> 
-                                        : <XCircle className="w-3 h-3" />}
+                                        ? <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" /> 
+                                        : <XCircle className="w-3 h-3 sm:w-4 sm:h-4" />}
                                     {idea.status === 'open' ? 'Open' : 'Closed'}
                                 </span>
                         </div>
@@ -305,7 +305,7 @@ const IdeaDetails = () => {
                     
                     {/* Description */}
                     <div className='flex flex-row justify-between mt-2 mb-2'>
-                        <p className="text-muted-foreground">
+                        <p className="text-muted-foreground text-sm sm:text-base">
                             {idea.idea_desc}
                         </p>
 
@@ -317,7 +317,7 @@ const IdeaDetails = () => {
                           {idea.dev_req.split(',').map((skill, index) => (
                             <span 
                               key={index} 
-                              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+                              className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm bg-primary/10 text-primary"
                             >
                               {skill.trim()}
                             </span>
@@ -327,8 +327,8 @@ const IdeaDetails = () => {
                     )}
 
                     {/* Posted Date */}
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Clock className="w-4 h-4" />
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs sm:text-sm">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span>Posted on {idea.created_at ? new Intl.DateTimeFormat("en-US", {
                             dateStyle: "medium",
                         }).format(new Date(idea.created_at)) : 'Date not available'}</span>
@@ -337,44 +337,39 @@ const IdeaDetails = () => {
                 
                 <div className='w-full mt-4'>
                     <button 
-                        className='p-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg w-full transition-colors'
+                        className='w-full mt-3 sm:mt-4 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 rounded-md transition-colors text-sm'
                         onClick={handleOverlayEditIdea}
                     >
-                        <p className='text-lg'>Edit Idea</p>
+                      Edit Idea
                     </button>
                 </div>
-                <div className='flex flex-col items-center mt-8'>
-                    <div className="relative group">
-                        <CircularProgress
-                        total={stats.total}
-                        accepted={stats.accepted}
-                        pending={stats.pending}
-                        rejected={stats.rejected}
-                        content="Applications received"
-                        />
-                        {/* Hover Stats */}
-                        <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity         duration-200">
-                            <div className="absolute top-1/4 left-full ml-2">
-                                <div className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                                    Accepted: {stats.accepted}
-                                </div>
-                            </div>
-                            <div className="absolute top-1/2 left-full ml-2 -translate-y-1/2">
-                                <div className="bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                                    Pending: {stats.pending}
-                                </div>
-                            </div>
-                            <div className="absolute bottom-1/4 left-full ml-2">
-                                <div className="bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-100 px-2 py-1 rounded text-sm whitespace-nowrap">
-                                    Rejected: {stats.rejected}
-                                </div>
-                            </div>
+                {/* Replace CircularProgress with Stat Cards */}
+                <div className='mt-8 grid grid-cols-3 sm:grid-cols-3 gap-4'>
+                    {/* Accepted Applications */}
+                    <div className='bg-green-100 dark:bg-green-900/30 rounded-lg p-4'>
+                        <div className='flex flex-col items-center'>
+                            <span className='text-xl sm:text-2xl font-bold text-green-800 dark:text-green-100'>{stats.accepted}</span>
+                            <span className='text-xs sm:text-sm text-green-700 dark:text-green-200'>Accepted</span>
+                        </div>
+                    </div>
+                    {/* Pending Applications */}
+                    <div className='bg-yellow-100 dark:bg-yellow-900/30 rounded-lg p-4'>
+                        <div className='flex flex-col items-center'>
+                            <span className='text-xl sm:text-2xl font-bold text-yellow-800 dark:text-yellow-100'>{stats.pending}</span>
+                            <span className='text-xs sm:text-sm text-yellow-700 dark:text-yellow-200'>Pending</span>
+                        </div>
+                    </div>
+                    {/* Rejected Applications */}
+                    <div className='bg-red-100 dark:bg-red-900/30 rounded-lg p-4'>
+                        <div className='flex flex-col items-center'>
+                            <span className='text-xl sm:text-2xl font-bold text-red-800 dark:text-red-100'>{stats.rejected}</span>
+                            <span className='text-xs sm:text-sm text-red-700 dark:text-red-200'>Rejected</span>
                         </div>
                     </div>
                 </div>
                 <div className='w-full mt-6'>
                     <button 
-                        className={`w-full flex items-center justify-center p-1 text-lg rounded-md text-primary-foreground transition-colors
+                        className={`w-full mt-3 sm:mt-4 text-primary-foreground font-medium py-2 rounded-md transition-colors text-sm
                             ${teamCreation 
                                 ? 'bg-primary hover:bg-primary/90' 
                                 : 'bg-primary hover:bg-primary/40 animate-dashboard-blink'
@@ -395,16 +390,16 @@ const IdeaDetails = () => {
             </div>
             )}
         </div>
-        <div className="w-4/5 space-y-8">
+        <div className="w-full sm:w-4/5 space-y-8">
             {/* Applications Section */}
             <div className={`bg-card text-card-foreground p-6 rounded-xl shadow-md dark:shadow-primary/10 border border-border ${!teamCreation ? 'opacity-70 pointer-events-none' : ''}`}>
             {/* Filter Dropdown */}
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-foreground">Applications received</h2>  
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground">Applications received</h2>  
                     <select
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    className="border border-border rounded-md p-2 text-sm transition-all duration-200 
+                    className="border border-border rounded-md p-2 text-xs transition-all duration-200 
                     focus:outline-none focus:ring-2 focus:ring-primary 
                     hover:shadow-md cursor-pointer bg-background text-foreground"
                     disabled={!teamCreation}
@@ -418,15 +413,15 @@ const IdeaDetails = () => {
 
                 {/* No Team Message */}
                 {!teamCreation && (
-                  <div className="bg-muted/50 rounded-lg p-6 text-center my-4">
+                  <div className="bg-muted/50 rounded-lg p-4 text-center my-4">
                     <div className="flex flex-col items-center justify-center">
-                      <svg className="h-12 w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path>
                         <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"></path>
                         <path d="M9.5 9.5 14 5"></path>
                       </svg>
-                      <h3 className="text-lg font-medium text-foreground mb-1">Create Dashboard First</h3>
-                      <p className="text-sm text-muted-foreground max-w-md">
+                      <h3 className="text-sm sm:text-lg font-medium text-foreground mb-1">Create Dashboard First</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground max-w-md">
                         You need to create your team dashboard before you can manage applications.
                         This will set up the necessary environment for your team.
                       </p>
@@ -440,13 +435,13 @@ const IdeaDetails = () => {
                     {filteredApplications.length === 0 && (
                       <div className="text-center py-8 bg-muted/50 rounded-lg">
                         <div className="flex flex-col items-center justify-center">
-                          <svg className="h-12 w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M16 16v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path>
                             <path d="M9 15h3l8.5-8.5a1.5 1.5 0 0 0-3-3L9 12v3"></path>
                             <path d="M9.5 9.5 14 5"></path>
                           </svg>
-                          <h3 className="text-lg font-medium text-foreground mb-1">No Applications Yet</h3>
-                          <p className="text-sm text-muted-foreground max-w-md">
+                          <h3 className="text-sm sm:text-lg font-medium text-foreground mb-1">No Applications Yet</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground max-w-md">
                             You haven't received any applications yet. Hold tight!
                           </p>
                         </div>
@@ -454,27 +449,25 @@ const IdeaDetails = () => {
                       )}
                       {filteredApplications.map((app, index) => (
                           <div key={app.id} className="bg-card border border-border rounded-lg overflow-hidden">
-                              <div className="flex items-center gap-4 p-3">
-                                  {/* Index */}
-                                  <span className="w-6 text-sm text-muted-foreground">{index + 1}.</span>
-                                  
+                              <div className="flex flex-col sm:flex-row items-center gap-4 p-4">
                                   {/* Profile Info */}
-                                  <div className="flex items-center gap-3 w-[250px]">
+                                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    <span className="text-xs sm:text-sm text-muted-foreground">{index + 1}.</span>
                                       <img
                                           src={app.profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.profile?.full_name || 'User')}`}
                                           alt={app.profile?.full_name}
-                                          className="w-8 h-8 rounded-full border border-border"
+                                          className="w-6 h-6 sm:w-10 sm:h-10 rounded-full border border-border"
                                       />
                                       <button
                                           onClick={() => setSelectedProfile(app.profile)}
-                                          className="font-medium truncate hover:text-primary transition-colors text-left"
+                                          className="font-medium hover:text-primary transition-colors text-left text-sm sm:text-base break-normal"
                                       >
                                           {app.profile?.full_name || "Unknown"}
                                       </button>
                                   </div>
 
-                                  {/* Links */}
-                                  <div className="flex items-center gap-2">
+                                  {/* Links and Actions - Responsive */}
+                                  <div className="flex gap-3 w-full sm:justify-start">
                                       {app.profile?.github_url && (
                                           <a
                                               href={app.profile.github_url}
@@ -483,7 +476,7 @@ const IdeaDetails = () => {
                                               className="text-muted-foreground hover:text-foreground transition-colors"
                                               title="GitHub Profile"
                                           >
-                                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                              <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
                                                   <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
                                               </svg>
                                           </a>
@@ -496,7 +489,7 @@ const IdeaDetails = () => {
                                               className="text-muted-foreground hover:text-foreground transition-colors"
                                               title="Resume"
                                           >
-                                              <ClipboardList className="w-5 h-5" />
+                                              <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
                                           </a>
                                       )}
                                       {app.profile?.portfolio_url && (
@@ -507,25 +500,21 @@ const IdeaDetails = () => {
                                               className="text-muted-foreground hover:text-foreground transition-colors"
                                               title="Portfolio"
                                           >
-                                              <Users className="w-5 h-5" />
+                                              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                                           </a>
                                       )}
+
+                                      <button
+                                        onClick={() => setSelectedApplication(app)}
+                                        className="text-xs font-medium text-primary hover:text-primary/80 transition-colors px-3 py-1 rounded-full bg-primary/10"
+                                      >
+                                        View Application
+                                      </button>
                                   </div>
-
-                                  {/* View Application Button */}
-                                  <button
-                                      onClick={() => setSelectedApplication(app)}
-                                      className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                                  >
-                                      View Application
-                                  </button>
-
-                                  {/* Spacer */}
-                                  <div className="flex-1" />
 
                                   {/* Status Badge */}
                                   <div className={cn(
-                                      "px-2 py-1 rounded-full text-xs font-medium",
+                                      "px-3 py-1 rounded-full text-xs font-medium",
                                       app.status === "pending" && "bg-yellow-500/20 text-yellow-500",
                                       app.status === "accepted" && "bg-green-500/20 text-green-500",
                                       app.status === "rejected" && "bg-red-500/20 text-red-500"
@@ -538,14 +527,14 @@ const IdeaDetails = () => {
                                       <div className="flex items-center gap-2">
                                           <button
                                               onClick={() => handleStatusUpdate(app.id, "accepted")}
-                                              className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/20 transition-colors"
+                                              className="p-2 rounded-lg text-green-500 hover:bg-green-500/20 transition-colors"
                                               title="Accept Application"
                                           >
                                               <Check className="w-4 h-4" />
                                           </button>
                                           <button
                                               onClick={() => handleStatusUpdate(app.id, "rejected")}
-                                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/20 transition-colors"
+                                              className="p-2 rounded-lg text-red-500 hover:bg-red-500/20 transition-colors"
                                               title="Reject Application"
                                           >
                                               <X className="w-4 h-4" />
