@@ -86,6 +86,8 @@ const LandingPage = () => {
               >
                 Connect with passionate collaborators and bring your projects to life. 
                 Share your vision, find the perfect team, and start building together.
+
+                Re-build the landing page...
               </motion.p>
               <motion.div 
                 className="flex justify-center"
