@@ -349,8 +349,9 @@ export default function Manage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground text-center text-sm max-w-xs">It may take time the first time!! but I promise it won't fail</p>
       </div>
     );
   }
