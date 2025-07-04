@@ -10,10 +10,14 @@ if (process.env.REDIS_URL) {
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
     maxRetriesPerRequest: 3,
-    lazyConnect: true,
+    lazyConnect: false, // Connect immediately
     keepAlive: 30000,
     connectTimeout: 10000,
     commandTimeout: 5000,
+    // TLS configuration for Upstash
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates
+    },
     // Retry strategy
     retryStrategy: (times) => {
       const delay = Math.min(times * 50, 2000);
@@ -34,7 +38,7 @@ if (process.env.REDIS_URL) {
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
     maxRetriesPerRequest: 3,
-    lazyConnect: true,
+    lazyConnect: false, // Connect immediately
   });
   console.log(`Connecting to Redis at ${process.env.REDIS_HOST || "localhost"}:${process.env.REDIS_PORT || 6379}`);
 }
@@ -56,12 +60,21 @@ client.on("close", () => console.log("🔌 Redis connection closed"));
 client.on("reconnecting", () => console.log("🔄 Redis reconnecting..."));
 client.on("end", () => console.log("🔚 Redis connection ended"));
 
+// Force connection to establish immediately
+console.log(`Initial Redis status: ${client.status}`);
+if (client.status === 'wait') {
+  console.log("🔄 Establishing Redis connection...");
+  client.connect().catch(err => {
+    console.error("❌ Failed to connect to Redis:", err.message);
+  });
+}
+
 // Helper function to get cached data with connection check
 const getCachedData = async (key) => {
   try {
     // Check if Redis is available
     if (client.status !== 'ready') {
-      console.log('Redis not ready, skipping cache read');
+      console.log(`Redis not ready (status: ${client.status}), skipping cache read`);
       return null;
     }
     
@@ -95,7 +108,7 @@ const setCachedData = async (key, data, expirationInSeconds = 3600) => {
   try {
     // Check if Redis is available
     if (client.status !== 'ready') {
-      console.log('Redis not ready, skipping cache write');
+      console.log(`Redis not ready (status: ${client.status}), skipping cache write`);
       return false;
     }
     
@@ -121,7 +134,7 @@ const hasCache = async (key) => {
   try {
     // Check if Redis is available
     if (client.status !== 'ready') {
-      console.log('Redis not ready, skipping cache check');
+      console.log(`Redis not ready (status: ${client.status}), skipping cache check`);
       return false;
     }
     
