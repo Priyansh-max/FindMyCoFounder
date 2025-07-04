@@ -30,6 +30,40 @@ app.get('/', (req, res) => {
   res.send('Hi');
 });
 
+// Temporary Redis health check endpoint
+app.get('/health/redis', async (req, res) => {
+  try {
+    const { client } = require('./services/caching');
+    
+    // Check Redis status
+    const status = client.status;
+    const info = {
+      status: status,
+      uptime: process.uptime(),
+      redis_url_configured: !!process.env.REDIS_URL,
+      timestamp: new Date().toISOString()
+    };
+    
+    if (status === 'ready') {
+      // Try a simple operation
+      await client.ping();
+      await client.set('health_check', 'ok', 'EX', 10);
+      const result = await client.get('health_check');
+      
+      info.ping_success = true;
+      info.set_get_success = result === 'ok';
+    }
+    
+    res.json(info);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      redis_status: 'error',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 app.use('/api/profile', profileRoutes);
 app.use('/api/validate', emailValidation);
 app.use('/api/validate', ideaValidation);
